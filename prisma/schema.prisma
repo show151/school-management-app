@@ -1,0 +1,68 @@
+datasource db {
+  provider = "sqlite"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// 1. ユーザー情報
+model User {
+  id        String   @id @default(uuid())
+  name      String   // ユーザー名
+  email     String   @unique
+  password  String   // bcryptでハッシュ化されたパスワード
+  lessons   Lesson[] // ユーザーが持つ授業一覧
+  tasks     Task[]   // ユーザーが持つ課題一覧
+  tests     Test[]   // ユーザーが持つテスト一覧
+  createdAt DateTime @default(now())
+}
+
+// 2. 授業情報
+model Lesson {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dayOfWeek String   // 月、火、水、木、金
+  period    Int      // 1, 2, 3, 4, 5, 6 限
+  subject   String   // 教科名
+}
+
+// 3. 課題情報
+model Task {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  adminBatchId String?
+  subject   String   // 教科名
+  title     String   // 課題のタイトル
+  dueDate   DateTime // 締切日
+  isCompleted Boolean @default(false) // 状態（未完了: false, 完了: true）
+}
+
+// 4. テスト情報
+model Test {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subject   String   // 教科名
+  period    Int      // 時限
+  range     String   // 範囲
+  testDate  DateTime // テスト実施日
+}
+
+// 5. 管理者が登録する教科
+model Subject {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+}
+
+// 6. 管理者からの日々の連絡
+model Announcement {
+  id        String   @id @default(uuid())
+  title     String
+  body      String
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+}
