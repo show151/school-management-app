@@ -52,6 +52,14 @@ export async function POST(request: Request) {
       );
     }
 
+    // � 📧 本番環境でのみメールアドレス確認をチェック（開発環境では確認不要）
+    if (process.env.NODE_ENV === 'production' && !user.emailVerified) {
+      return NextResponse.json(
+        { error: 'メールアドレスがまだ確認されていません。登録時に送信されたメール内のリンクをクリックしてください。' },
+        { status: 403 }
+      );
+    }
+
     // 🔒 パスワードの照合 (bcrypt)
     const isPasswordValid = await bcrypt.compare(password, user.password);
 

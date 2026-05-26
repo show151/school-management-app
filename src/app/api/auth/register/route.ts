@@ -3,6 +3,11 @@ import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcrypt';
 import { validateEmail, validatePassword, validateName } from '@/lib/security';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { sendVerificationEmail, sendAdminNotificationEmail } from '@/lib/email';
+import { generateToken, getTokenExpiry } from '@/lib/token';
+import { getRequiredEnv } from '@/lib/env';
+
+const ADMIN_EMAIL = getRequiredEnv('ADMIN_EMAIL');
 
 export async function POST(request: Request) {
   try {
@@ -67,17 +72,40 @@ export async function POST(request: Request) {
     // 🔒 パスワードのハッシュ化（bcrypt、salt round: 10）
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // 📧 メール認証トークンを生成
+    const verificationToken = generateToken();
+    const verificationTokenExpiry = getTokenExpiry(24); // 24時間有効
+
     // データベースへの保存
     const user = await prisma.user.create({
       data: {
         name,
         email,
         password: hashedPassword,
+        verificationToken,
+        verificationTokenExpiry,
+        // 🔒 開発環境では自動確認、本番環境ではメール確認が必須
+        emailVerified: process.env.NODE_ENV !== 'production',
       },
     });
 
+    // 📧 メール認証メール送信
+    const emailSent = await sendVerificationEmail(email, name, verificationToken);
+
+    if (!emailSent) {
+      console.error('Failed to send verification email for user:', user.id);
+      // メール送信失敗でもユーザー作成は成功とする
+      // (本番環境では別途ログや通知が必要)
+    }
+
+    // 📧 管理者に通知
+    await sendAdminNotificationEmail(ADMIN_EMAIL, name, email);
+
     return NextResponse.json(
-      { message: 'ユーザー登録が完了しました。', userId: user.id },
+      {
+        message: '登録が完了しました。確認メールをお送りしましたので、メール内のリンクをクリックしてメールアドレスを確認してください。',
+        userId: user.id,
+      },
       { status: 201 }
     );
   } catch (error) {

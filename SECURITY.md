@@ -136,6 +136,7 @@ IP アドレスベースのレート制限を実装:
 - [bcrypt npm パッケージ](https://www.npmjs.com/package/bcrypt)
 - [jose - JWT 処理（Edge Runtime 対応）](https://github.com/panva/jose)
 - [Next.js セキュリティベストプラクティス](https://nextjs.org/docs/app/building-your-application/configuring/environment-variables)
+- [メール機能ガイド](./EMAIL_SETUP.md) - Resend を使用したメール送信機能
 
 ---
 
