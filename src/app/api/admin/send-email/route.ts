@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import jwt from 'jsonwebtoken';
 import { prisma } from '@/lib/prisma';
+import { getAdminSessionFromRequest } from '@/lib/admin-auth';
 import {
   sendBulkTaskNotificationEmail,
   sendBulkTestNotificationEmail,
@@ -25,51 +25,11 @@ interface SendEmailRequest {
 
 export async function POST(request: Request) {
   try {
-    // 認証チェック - Bearer トークン
-    const authHeader = request.headers.get('Authorization');
-    const cookieHeader = request.headers.get('Cookie');
-
-    console.log('📧 send-email request:');
-    console.log('Authorization header:', authHeader ? 'present' : 'missing');
-    console.log('Cookie header:', cookieHeader ? 'present' : 'missing');
-
-    let isAuthorized = false;
-
-    // 方法1: Bearer トークンでの認証
-    if (authHeader?.startsWith('Bearer ')) {
-      const token = authHeader.slice(7);
-      try {
-        jwt.verify(token, JWT_SECRET);
-        console.log('✅ JWT verified via Bearer token');
-        isAuthorized = true;
-      } catch (err) {
-        console.error('❌ JWT verification failed:', err);
-      }
-    }
-
-    // 方法2: admin_token クッキーでの認証
-    if (!isAuthorized && cookieHeader) {
-      const cookies = cookieHeader.split('; ');
-      const adminTokenCookie = cookies.find(c => c.startsWith('admin_token='));
-      
-      if (adminTokenCookie) {
-        const token = adminTokenCookie.split('=')[1];
-        try {
-          jwt.verify(token, JWT_SECRET);
-          console.log('✅ JWT verified via admin_token cookie');
-          isAuthorized = true;
-        } catch (err) {
-          console.error('❌ admin_token verification failed:', err);
-        }
-      }
-    }
-
-    if (!isAuthorized) {
-      console.error('❌ Unauthorized request');
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+    // 認証チェック - 統一されたヘルパーを使用
+    const adminSession = await getAdminSessionFromRequest(request);
+    if (!adminSession) {
+      console.error('❌ Unauthorized request to send-email');
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body: SendEmailRequest = await request.json();
