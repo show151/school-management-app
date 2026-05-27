@@ -51,10 +51,10 @@ export async function GET(request: Request) {
     }
 
     const [tasks, announcements, lessons, tests, reads] = await Promise.all([
-      prisma.task.findMany({ where: { userId }, orderBy: { dueDate: 'asc' } }),
-      prisma.announcement.findMany({ orderBy: [{ date: 'desc' }, { createdAt: 'desc' }], take: 10 }),
+      prisma.task.findMany({ where: { userId }, orderBy: { dueDate: 'asc' }, take: 3 }),
+      prisma.announcement.findMany({ orderBy: [{ date: 'desc' }, { createdAt: 'desc' }], take: 3 }),
       prisma.lesson.findMany({ orderBy: [{ dayOfWeek: 'asc' }, { period: 'asc' }] }),
-      prisma.test.findMany({ where: { userId }, orderBy: { testDate: 'asc' } }),
+      prisma.test.findMany({ where: { userId }, orderBy: { testDate: 'asc' }, take: 3 }),
       prisma.announcementRead.findMany({ where: { userId }, select: { announcementId: true } }),
     ]);
 

@@ -207,7 +207,10 @@ export default function DashboardPage() {
           <div className="card space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-[var(--foreground)]">課題の状況</h2>
-              <span className="text-sm text-[var(--muted)]">未完了 {incompleteTasks.length} / 全 {data.tasks.length}</span>
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-[var(--muted)]">未完了 {incompleteTasks.length} / 全 {data.tasks.length}</span>
+                <button onClick={() => router.push("/dashboard/tasks")} className="text-xs font-medium px-3 py-1.5 rounded-xl border transition-colors" style={{ borderColor: "var(--border)", color: "var(--muted)", backgroundColor: "var(--card)" }}>すべて見る →</button>
+              </div>
             </div>
 
             {/* 進捗バー */}
@@ -298,6 +301,7 @@ export default function DashboardPage() {
                 未読 {unreadCount}
               </span>
             )}
+            <button onClick={() => router.push("/dashboard/announcements")} className="ml-auto text-xs font-medium px-3 py-1.5 rounded-xl border transition-colors" style={{ borderColor: "var(--border)", color: "var(--muted)", backgroundColor: "var(--card)" }}>すべて見る →</button>
           </div>
           <div className="space-y-3">
             {data.announcements.length === 0 ? (
