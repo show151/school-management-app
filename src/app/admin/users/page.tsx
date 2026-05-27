@@ -64,7 +64,7 @@ export default function AdminUsersPage() {
                     ) : (
                       users.map((user) => (
                         <tr key={user.id} className="hover:bg-[var(--admin-50)] transition-colors">
-                          <td className="px-4 py-4 text-sm font-bold text-[var(--admin-600)]">{user.studentNumber ?? —}</td>
+                          <td className="px-4 py-4 text-sm font-bold text-[var(--admin-600)]">{user.studentNumber ?? '-'}</td>
                           <td className="px-4 py-4 text-sm font-medium text-[var(--foreground)]">{user.name}</td>
                           <td className="px-4 py-4 text-sm text-[var(--muted)]">{user.email}</td>
                           <td className="px-4 py-4 text-sm text-[var(--muted)]">{new Date(user.createdAt).toLocaleDateString("ja-JP")}</td>
