@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
-import jwt from "jsonwebtoken";
-import { ADMIN_EMAIL, ADMIN_PASSWORD, JWT_SECRET } from "@/lib/admin-auth";
+import { SignJWT } from 'jose';
+import { JWT_SECRET } from "@/lib/admin-auth";
+import { prisma } from '@/lib/prisma';
+import bcrypt from 'bcrypt';
 import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
@@ -22,14 +24,34 @@ export async function POST(request: Request) {
       password?: string;
     };
 
-    if (email !== ADMIN_EMAIL || password !== ADMIN_PASSWORD) {
+    // First try DB-based admin user
+    const adminUser = await prisma.user.findUnique({ where: { email } });
+    let isAdminAuthenticated = false;
+
+    if (adminUser && adminUser.isAdmin) {
+      isAdminAuthenticated = await bcrypt.compare(password || '', adminUser.password);
+    }
+
+    // Fallback to env-based admin (for bootstrap) if no DB admin found
+    if (!isAdminAuthenticated && (process.env.ADMIN_EMAIL || process.env.ADMIN_PASSWORD)) {
+      if (email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD) {
+        isAdminAuthenticated = true;
+      }
+    }
+
+    if (!isAdminAuthenticated) {
       return NextResponse.json(
         { error: "管理者情報が正しくありません。" },
         { status: 401 }
       );
     }
 
-    const token = jwt.sign({ role: "admin", email }, JWT_SECRET, { expiresIn: "8h" });
+    const secret = new TextEncoder().encode(JWT_SECRET);
+    const token = await new SignJWT({ role: 'admin', email })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setIssuedAt()
+      .setExpirationTime('8h')
+      .sign(secret);
     const response = NextResponse.json({ message: "管理者ログインに成功しました。" });
 
     // 🔒 クッキーに安全に保存

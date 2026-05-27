@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
+import { SignJWT } from 'jose';
 import { getRequiredEnv } from '@/lib/env';
 import { validateEmail } from '@/lib/security';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { redisRateLimit } from '@/lib/redis-rate-limit';
 
 const JWT_SECRET = getRequiredEnv('JWT_SECRET');
 
@@ -15,7 +16,14 @@ export async function POST(request: Request) {
     const rateLimitKey = `${ip}:login`;
     
     // 1時間に10回まで
-    if (!checkRateLimit(rateLimitKey, 10, 60 * 60 * 1000)) {
+    let allowed = true;
+    if (process.env.REDIS_URL) {
+      allowed = await redisRateLimit(rateLimitKey, 10, 60 * 60);
+    } else {
+      allowed = checkRateLimit(rateLimitKey, 10, 60 * 60 * 1000);
+    }
+
+    if (!allowed) {
       return NextResponse.json(
         { error: 'ログインの試行回数が多すぎます。少し時間をおいてから再度お試しください。' },
         { status: 429 }
@@ -70,12 +78,13 @@ export async function POST(request: Request) {
       );
     }
 
-    // 🔒 JWT トークンの作成（有効期限を1時間にする）
-    const token = jwt.sign(
-      { userId: user.id, email: user.email },
-      JWT_SECRET,
-      { expiresIn: '1h' }
-    );
+    // 🔒 JWT トークンの作成（有効期限を1時間にする） using jose
+    const secret = new TextEncoder().encode(JWT_SECRET);
+    const token = await new SignJWT({ userId: user.id, email: user.email })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setIssuedAt()
+      .setExpirationTime('1h')
+      .sign(secret);
 
     const response = NextResponse.json({
       message: 'ログインに成功しました。',

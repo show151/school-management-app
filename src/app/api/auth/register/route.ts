@@ -5,9 +5,7 @@ import { validateEmail, validatePassword, validateName } from '@/lib/security';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { sendVerificationEmail, sendAdminNotificationEmail } from '@/lib/email';
 import { generateToken, getTokenExpiry } from '@/lib/token';
-import { getRequiredEnv } from '@/lib/env';
-
-const ADMIN_EMAIL = getRequiredEnv('ADMIN_EMAIL');
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || null;
 
 export async function POST(request: Request) {
   try {
@@ -98,8 +96,10 @@ export async function POST(request: Request) {
       // (本番環境では別途ログや通知が必要)
     }
 
-    // 📧 管理者に通知
-    await sendAdminNotificationEmail(ADMIN_EMAIL, name, email);
+    // 📧 管理者に通知（管理者メールが設定されている場合のみ）
+    if (ADMIN_EMAIL) {
+      await sendAdminNotificationEmail(ADMIN_EMAIL, name, email);
+    }
 
     return NextResponse.json(
       {

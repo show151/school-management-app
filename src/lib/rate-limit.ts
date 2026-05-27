@@ -61,7 +61,6 @@ export function cleanupExpiredEntries(): void {
   }
 }
 
-// 定期的にクリーンアップを実行（5分ごと）
-if (typeof global !== "undefined") {
-  setInterval(cleanupExpiredEntries, 5 * 60 * 1000);
-}
+// Note: do NOT run automatic intervals in serverless environments.
+// If periodic cleanup is required, call `cleanupExpiredEntries()` from a
+// background worker or a scheduled job (cron) in your deployment environment.

@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import { sanitizeInput } from '@/lib/security';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -16,6 +17,7 @@ export async function sendVerificationEmail(
   const verificationUrl = `${APP_URL}/auth/verify?token=${verificationToken}`;
 
   try {
+    const safeName = sanitizeInput(name);
     console.log(`📧 Sending verification email to ${email}...`);
     const result = await resend.emails.send({
       from: FROM_EMAIL,
@@ -24,7 +26,7 @@ export async function sendVerificationEmail(
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2>メールアドレスの確認</h2>
-          <p>${name}さん、こんにちは！</p>
+          <p>${safeName}さん、こんにちは！</p>
           <p>スクール管理アプリへの登録ありがとうございます。</p>
           <p>以下のリンクをクリックして、メールアドレスを確認してください：</p>
           <a href="${verificationUrl}" style="display: inline-block; background-color: #4f46e5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0;">
@@ -60,6 +62,7 @@ export async function sendPasswordResetEmail(
   const resetUrl = `${APP_URL}/auth/reset-password?token=${resetToken}`;
 
   try {
+    const safeName = sanitizeInput(name);
     console.log(`📧 Sending password reset email to ${email}...`);
     const result = await resend.emails.send({
       from: FROM_EMAIL,
@@ -68,7 +71,7 @@ export async function sendPasswordResetEmail(
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2>パスワードリセット</h2>
-          <p>${name}さん</p>
+          <p>${safeName}さん</p>
           <p>パスワードをリセットするためのリクエストを受け取りました。</p>
           <p>以下のリンクをクリックして、新しいパスワードを設定してください：</p>
           <a href="${resetUrl}" style="display: inline-block; background-color: #4f46e5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0;">
@@ -104,6 +107,8 @@ export async function sendAdminNotificationEmail(
   userEmail: string
 ): Promise<boolean> {
   try {
+    const safeUserName = sanitizeInput(userName);
+    const safeUserEmail = sanitizeInput(userEmail);
     console.log(`📧 Sending admin notification email to ${adminEmail}...`);
     const result = await resend.emails.send({
       from: FROM_EMAIL,
@@ -116,11 +121,11 @@ export async function sendAdminNotificationEmail(
           <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
             <tr style="background-color: #f5f5f5;">
               <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">ユーザー名</td>
-              <td style="padding: 10px; border: 1px solid #ddd;">${userName}</td>
+              <td style="padding: 10px; border: 1px solid #ddd;">${safeUserName}</td>
             </tr>
             <tr>
               <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">メールアドレス</td>
-              <td style="padding: 10px; border: 1px solid #ddd;">${userEmail}</td>
+              <td style="padding: 10px; border: 1px solid #ddd;">${safeUserEmail}</td>
             </tr>
             <tr style="background-color: #f5f5f5;">
               <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">登録日時</td>
@@ -164,18 +169,20 @@ export async function sendTaskNotificationEmail(
   });
 
   try {
+    const safeName = sanitizeInput(name);
+    const safeTaskTitle = sanitizeInput(taskTitle);
     console.log(`📧 Sending task notification email to ${email}...`);
     const result = await resend.emails.send({
       from: FROM_EMAIL,
       to: email,
-      subject: `新しい課題が配布されました: ${taskTitle}`,
+      subject: `新しい課題が配布されました: ${safeTaskTitle}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2>新しい課題が配布されました</h2>
-          <p>${name}さん</p>
+          <p>${safeName}さん</p>
           <p>新しい課題が配布されました。以下の詳細をご確認ください。</p>
           <div style="background-color: #f5f5f5; padding: 20px; border-radius: 6px; margin: 20px 0;">
-            <p><strong>課題：</strong> ${taskTitle}</p>
+            <p><strong>課題：</strong> ${safeTaskTitle}</p>
             <p><strong>締切日：</strong> ${dueDateStr}</p>
           </div>
           <p>
@@ -219,19 +226,22 @@ export async function sendTestNotificationEmail(
   });
 
   try {
+    const safeName = sanitizeInput(name);
+    const safeSubject = sanitizeInput(subject);
+    const safeRange = sanitizeInput(range);
     console.log(`📧 Sending test notification email to ${email}...`);
     const result = await resend.emails.send({
       from: FROM_EMAIL,
       to: email,
-      subject: `新しいテストが追加されました: ${subject}`,
+      subject: `新しいテストが追加されました: ${safeSubject}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2>新しいテストが追加されました</h2>
-          <p>${name}さん</p>
+          <p>${safeName}さん</p>
           <p>新しいテスト情報が追加されました。以下の詳細をご確認ください。</p>
           <div style="background-color: #f5f5f5; padding: 20px; border-radius: 6px; margin: 20px 0;">
-            <p><strong>教科：</strong> ${subject}</p>
-            <p><strong>範囲：</strong> ${range}</p>
+            <p><strong>教科：</strong> ${safeSubject}</p>
+            <p><strong>範囲：</strong> ${safeRange}</p>
             <p><strong>テスト日時：</strong> ${testDateStr}</p>
           </div>
           <p>
@@ -266,18 +276,21 @@ export async function sendAnnouncementEmail(
   body: string
 ): Promise<boolean> {
   try {
+    const safeName = sanitizeInput(name);
+    const safeTitle = sanitizeInput(title);
+    const safeBody = sanitizeInput(body);
     console.log(`📧 Sending announcement email to ${email}...`);
     const result = await resend.emails.send({
       from: FROM_EMAIL,
       to: email,
-      subject: `お知らせ: ${title}`,
+      subject: `お知らせ: ${safeTitle}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2>お知らせ</h2>
-          <p>${name}さん</p>
-          <h3>${title}</h3>
+          <p>${safeName}さん</p>
+          <h3>${safeTitle}</h3>
           <div style="background-color: #f5f5f5; padding: 20px; border-radius: 6px; margin: 20px 0; line-height: 1.6;">
-            ${body.replace(/\n/g, '<br>')}
+            ${safeBody.replace(/\n/g, '<br>')}
           </div>
           <p>詳細はダッシュボードでご確認ください。</p>
           <p>

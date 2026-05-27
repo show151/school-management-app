@@ -14,7 +14,8 @@ type AdminTaskSummary = {
 };
 
 export async function GET(request: Request) {
-  if (!getAdminSessionFromRequest(request)) {
+  const adminSession = await getAdminSessionFromRequest(request);
+  if (!adminSession) {
     return NextResponse.json({ error: "管理者認証が必要です。" }, { status: 401 });
   }
 
@@ -50,7 +51,8 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  if (!getAdminSessionFromRequest(request)) {
+  const adminSession = await getAdminSessionFromRequest(request);
+  if (!adminSession) {
     return NextResponse.json({ error: "管理者認証が必要です。" }, { status: 401 });
   }
 
@@ -109,7 +111,8 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  if (!getAdminSessionFromRequest(request)) {
+  const adminSession = await getAdminSessionFromRequest(request);
+  if (!adminSession) {
     return NextResponse.json({ error: "管理者認証が必要です。" }, { status: 401 });
   }
 

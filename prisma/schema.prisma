@@ -12,6 +12,7 @@ model User {
   name                    String   // ユーザー名
   email                   String   @unique
   password                String   // bcryptでハッシュ化されたパスワード
+  isAdmin                 Boolean  @default(false)
   emailVerified           Boolean  @default(false) // メール認証済みフラグ
   verificationToken       String?  // メール認証トークン
   verificationTokenExpiry DateTime? // メール認証トークン有効期限

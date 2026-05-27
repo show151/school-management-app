@@ -1,4 +1,4 @@
-import jwt from "jsonwebtoken";
+import { jwtVerify } from 'jose';
 import { getRequiredEnv } from "@/lib/env";
 
 export type AdminSession = {
@@ -6,11 +6,11 @@ export type AdminSession = {
   email: string;
 };
 
-export const ADMIN_EMAIL = getRequiredEnv("ADMIN_EMAIL");
-export const ADMIN_PASSWORD = getRequiredEnv("ADMIN_PASSWORD");
+export const ADMIN_EMAIL = process.env.ADMIN_EMAIL || null;
+export const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || null;
 export const JWT_SECRET = getRequiredEnv("JWT_SECRET");
 
-export function getAdminSessionFromRequest(request: Request): AdminSession | null {
+export async function getAdminSessionFromRequest(request: Request): Promise<AdminSession | null> {
   const cookieHeader = request.headers.get("cookie") || "";
   const token = cookieHeader
     .split("; ")
@@ -20,7 +20,9 @@ export function getAdminSessionFromRequest(request: Request): AdminSession | nul
   if (!token) return null;
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as Partial<AdminSession>;
+    const secret = new TextEncoder().encode(JWT_SECRET);
+    const { payload } = await jwtVerify(token, secret);
+    const decoded = payload as Partial<AdminSession>;
     if (decoded.role !== "admin" || typeof decoded.email !== "string") return null;
     return { role: "admin", email: decoded.email };
   } catch {
