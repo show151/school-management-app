@@ -71,4 +71,15 @@ model Announcement {
   body      String
   date      DateTime @default(now())
   createdAt DateTime @default(now())
+  reads     AnnouncementRead[]
+}
+
+// 7. 連絡の既読管理
+model AnnouncementRead {
+  id             String       @id @default(uuid())
+  userId         String
+  announcementId String
+  readAt         DateTime     @default(now())
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  @@unique([userId, announcementId])
 }
