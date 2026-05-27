@@ -9,13 +9,17 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [nameError, setNameError] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !email.trim() || !password) {
-      alert("名前・メール・パスワードを入力してください。");
-      return;
-    }
+    setNameError(""); setEmailError(""); setPasswordError("");
+    if (!name.trim()) setNameError('名前を入力してください。');
+    if (!email.trim()) setEmailError('メールアドレスを入力してください。');
+    if (!password) setPasswordError('パスワードを入力してください。');
+    if (!name.trim() || !email.trim() || !password) return;
 
     setLoading(true);
     try {
@@ -54,6 +58,7 @@ export default function RegisterPage() {
             placeholder="山田 太郎"
             required
           />
+          {nameError && <small className="text-xs text-red-600">{nameError}</small>}
         </div>
 
         <div>
@@ -66,6 +71,7 @@ export default function RegisterPage() {
             placeholder="user@example.com"
             required
           />
+          {emailError && <small className="text-xs text-red-600">{emailError}</small>}
         </div>
 
         <div>
@@ -78,6 +84,7 @@ export default function RegisterPage() {
             placeholder="8文字以上の安全なパスワード"
             required
           />
+          {passwordError && <small className="text-xs text-red-600">{passwordError}</small>}
         </div>
 
         <div>

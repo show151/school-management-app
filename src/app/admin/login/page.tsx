@@ -8,13 +8,26 @@ export default function AdminLoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setEmailError("");
+    setPasswordError("");
     setLoading(true);
-
+    if (!email.trim()) {
+      setEmailError("メールアドレスを入力してください。");
+      setLoading(false);
+      return;
+    }
+    if (!password) {
+      setPasswordError("パスワードを入力してください。");
+      setLoading(false);
+      return;
+    }
     try {
       const res = await fetch("/api/admin/auth/login", {
         method: "POST",
@@ -60,6 +73,7 @@ export default function AdminLoginPage() {
               className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500"
               placeholder="admin@example.com"
             />
+            {emailError && <small className="text-xs text-red-600 mt-1">{emailError}</small>}
           </div>
 
           <div>
@@ -71,6 +85,7 @@ export default function AdminLoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500"
             />
+            {passwordError && <small className="text-xs text-red-600 mt-1">{passwordError}</small>}
           </div>
 
           <button

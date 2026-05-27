@@ -33,6 +33,9 @@ export default function AdminTasksPage() {
   const [title, setTitle] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [loading, setLoading] = useState(true);
+  const [subjectError, setSubjectError] = useState("");
+  const [titleError, setTitleError] = useState("");
+  const [dueDateError, setDueDateError] = useState("");
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
 
   const fetchTasks = useCallback(async () => {
@@ -80,6 +83,10 @@ export default function AdminTasksPage() {
 
   const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubjectError(""); setTitleError(""); setDueDateError("");
+    if (!subject) setSubjectError("教科を選択してください。");
+    if (!title) setTitleError("課題タイトルを入力してください。");
+    if (!dueDate) setDueDateError("締切日を入力してください。");
     if (!subject || !title || !dueDate) return;
 
     try {
@@ -191,6 +198,7 @@ export default function AdminTasksPage() {
                     </option>
                   ))}
                 </select>
+                {subjectError && <small className="text-xs text-red-600 mt-1">{subjectError}</small>}
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium text-gray-600">課題タイトル</label>
@@ -202,6 +210,7 @@ export default function AdminTasksPage() {
                   onChange={(e) => setTitle(e.target.value)}
                   className="w-full rounded-lg border border-gray-300 bg-white p-2 text-sm text-gray-900 placeholder:text-gray-500"
                 />
+                {titleError && <small className="text-xs text-red-600 mt-1">{titleError}</small>}
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium text-gray-600">締切日</label>
@@ -212,6 +221,7 @@ export default function AdminTasksPage() {
                   onChange={(e) => setDueDate(e.target.value)}
                   className="w-full rounded-lg border border-gray-300 bg-white p-2 text-sm text-gray-900"
                 />
+                {dueDateError && <small className="text-xs text-red-600 mt-1">{dueDateError}</small>}
               </div>
 
               {/* ユーザー選択 */}

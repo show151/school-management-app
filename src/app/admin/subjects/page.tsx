@@ -13,6 +13,7 @@ export default function AdminSubjectsPage() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(true);
+  const [nameError, setNameError] = useState("");
 
   const reload = async () => {
     const res = await fetch("/api/admin/subjects");
@@ -49,7 +50,11 @@ export default function AdminSubjectsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    setNameError("");
+    if (!name.trim()) {
+      setNameError("教科名を入力してください。");
+      return;
+    }
 
     const res = await fetch("/api/admin/subjects", {
       method: "POST",
@@ -107,6 +112,7 @@ export default function AdminSubjectsPage() {
               className="min-w-0 flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500"
               placeholder="例: 数学"
             />
+            {nameError && <small className="text-xs text-red-600 mt-1">{nameError}</small>}
             <button className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
               登録
             </button>

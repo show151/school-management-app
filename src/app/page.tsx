@@ -12,12 +12,24 @@ export default function AuthPage() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [nameError, setNameError] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setMessage("");
     setLoading(true);
+
+    setNameError(""); setEmailError(""); setPasswordError("");
+    if (!isLogin && !name.trim()) setNameError('名前を入力してください。');
+    if (!email.trim()) setEmailError('メールアドレスを入力してください。');
+    if (!password) setPasswordError('パスワードを入力してください。');
+    if ((!isLogin && !name.trim()) || !email.trim() || !password) {
+      setLoading(false);
+      return;
+    }
 
     const endpoint = isLogin ? "/api/auth/login" : "/api/auth/register";
 
@@ -91,6 +103,7 @@ export default function AuthPage() {
                   className="appearance-none rounded-lg relative block w-full bg-white px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm"
                   placeholder="太郎"
                 />
+                {nameError && <small className="text-xs text-red-600">{nameError}</small>}
               </div>
             )}
             <div>
@@ -105,6 +118,7 @@ export default function AuthPage() {
                 className="appearance-none rounded-lg relative block w-full bg-white px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm"
                 placeholder="you@example.com"
               />
+              {emailError && <small className="text-xs text-red-600">{emailError}</small>}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -118,6 +132,7 @@ export default function AuthPage() {
                 className="appearance-none rounded-lg relative block w-full bg-white px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm"
                 placeholder="••••••••"
               />
+              {passwordError && <small className="text-xs text-red-600">{passwordError}</small>}
               {!isLogin && (
                 <p className="mt-1 text-xs text-gray-500">
                   ※ 大文字、小文字、数字、記号を含む8文字以上が必要です。

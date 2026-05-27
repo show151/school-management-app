@@ -27,6 +27,10 @@ export default function AdminTestsPage() {
   const [range, setRange] = useState("");
   const [testDate, setTestDate] = useState("");
   const [loading, setLoading] = useState(true);
+  const [subjectError, setSubjectError] = useState("");
+  const [periodError, setPeriodError] = useState("");
+  const [rangeError, setRangeError] = useState("");
+  const [testDateError, setTestDateError] = useState("");
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
 
   useEffect(() => {
@@ -59,6 +63,11 @@ export default function AdminTestsPage() {
 
   const handleAddTest = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubjectError(""); setPeriodError(""); setRangeError(""); setTestDateError("");
+    if (!subject) setSubjectError('教科を入力してください。');
+    if (!period) setPeriodError('時限を入力してください。');
+    if (!range) setRangeError('範囲を入力してください。');
+    if (!testDate) setTestDateError('テスト日時を入力してください。');
     if (!subject || !period || !range || !testDate) return;
 
     try {
@@ -174,6 +183,7 @@ export default function AdminTestsPage() {
                   onChange={(e) => setSubject(e.target.value)}
                   className="w-full rounded-lg border border-gray-300 bg-white p-2 text-sm text-gray-900 placeholder:text-gray-500"
                 />
+                {subjectError && <small className="text-xs text-red-600 mt-1">{subjectError}</small>}
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium text-gray-600">時限</label>
@@ -186,6 +196,7 @@ export default function AdminTestsPage() {
                   onChange={(e) => setPeriod(e.target.value)}
                   className="w-full rounded-lg border border-gray-300 bg-white p-2 text-sm text-gray-900 placeholder:text-gray-500"
                 />
+                {periodError && <small className="text-xs text-red-600 mt-1">{periodError}</small>}
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium text-gray-600">範囲</label>
@@ -197,6 +208,7 @@ export default function AdminTestsPage() {
                   onChange={(e) => setRange(e.target.value)}
                   className="w-full rounded-lg border border-gray-300 bg-white p-2 text-sm text-gray-900 placeholder:text-gray-500"
                 />
+                {rangeError && <small className="text-xs text-red-600 mt-1">{rangeError}</small>}
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium text-gray-600">テスト日時</label>
@@ -207,6 +219,7 @@ export default function AdminTestsPage() {
                   onChange={(e) => setTestDate(e.target.value)}
                   className="w-full rounded-lg border border-gray-300 bg-white p-2 text-sm text-gray-900"
                 />
+                {testDateError && <small className="text-xs text-red-600 mt-1">{testDateError}</small>}
               </div>
 
               {/* ユーザー選択 */}

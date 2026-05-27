@@ -13,6 +13,7 @@ export default function AdminLessonsPage() {
   const [dayOfWeek, setDayOfWeek] = useState("月");
   const [period, setPeriod] = useState(1);
   const [subject, setSubject] = useState("");
+  const [subjectError, setSubjectError] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -35,8 +36,11 @@ export default function AdminLessonsPage() {
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!subject) return;
+    setSubjectError("");
+    if (!subject) {
+      setSubjectError('教科を選択してください。');
+      return;
+    }
     const res = await fetch('/api/admin/lessons', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -46,7 +50,7 @@ export default function AdminLessonsPage() {
     const newLesson = await res.json();
     setLessons(prev => [...prev, newLesson]);
     setSubject('');
-    
+    setSubjectError("");
   };
 
   const handleDelete = async (id: string) => {
@@ -76,10 +80,13 @@ export default function AdminLessonsPage() {
             </select>
                 <div className="flex gap-2">
               
-                  <select value={subject} onChange={e => setSubject(e.target.value)} className="flex-1 p-2 border rounded text-gray-800">
-                    <option value="">— 教科を選択 —</option>
-                    {subjects.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
-                  </select>
+                  <div className="flex-1">
+                    <select value={subject} onChange={e => { setSubject(e.target.value); setSubjectError(""); }} className="w-full p-2 border rounded text-gray-800">
+                      <option value="">— 教科を選択 —</option>
+                      {subjects.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+                    </select>
+                    {subjectError && <small className="text-xs text-red-600 mt-1">{subjectError}</small>}
+                  </div>
                   <button type="submit" className="px-3 py-2 bg-indigo-600 text-white rounded">追加</button>
                 </div>
           </form>

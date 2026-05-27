@@ -25,6 +25,8 @@ export default function AdminAnnouncementsPage() {
   const [body, setBody] = useState("");
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [loading, setLoading] = useState(true);
+  const [titleError, setTitleError] = useState("");
+  const [bodyError, setBodyError] = useState("");
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
 
   const reload = async () => {
@@ -65,6 +67,9 @@ export default function AdminAnnouncementsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setTitleError(""); setBodyError("");
+    if (!title.trim()) setTitleError('件名を入力してください。');
+    if (!body.trim()) setBodyError('本文を入力してください。');
     if (!title.trim() || !body.trim()) return;
 
     const res = await fetch("/api/admin/announcements", {
@@ -177,6 +182,7 @@ export default function AdminAnnouncementsPage() {
                   className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500"
                   placeholder="例: 明日の持ち物"
                 />
+                {titleError && <small className="text-xs text-red-600 mt-1">{titleError}</small>}
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium text-gray-600">本文</label>
@@ -186,6 +192,7 @@ export default function AdminAnnouncementsPage() {
                   className="min-h-20 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500"
                   placeholder="連絡内容を入力"
                 />
+                {bodyError && <small className="text-xs text-red-600 mt-1">{bodyError}</small>}
               </div>
 
               {/* ユーザー選択 */}
