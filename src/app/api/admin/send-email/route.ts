@@ -12,6 +12,7 @@ const JWT_SECRET = process.env.JWT_SECRET || '';
 interface SendEmailRequest {
   type: 'task' | 'test' | 'announcement';
   userIds: string[];
+  studentNumbers?: number[];
   payload: {
     taskTitle?: string;
     dueDate?: string;
@@ -47,19 +48,28 @@ export async function POST(request: Request) {
       );
     }
 
-    // ユーザー情報を取得
-    console.log('🔍 Looking for users with IDs:', body.userIds);
-    const users = await prisma.user.findMany({
-      where: {
-        id: { in: body.userIds },
-        emailVerified: true, // 検証済みユーザーのみ
-      },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-      },
-    });
+    // ユーザー情報を取得（ID と 出席番号 の両方をサポート）
+    const userIdList = Array.isArray(body.userIds) ? body.userIds : [];
+    const studentNumbers = Array.isArray(body.studentNumbers) ? body.studentNumbers : [];
+
+    console.log('🔍 Looking for users with IDs:', userIdList, 'or studentNumbers:', studentNumbers);
+
+    const usersById = userIdList.length > 0 ? await prisma.user.findMany({
+      where: { id: { in: userIdList }, emailVerified: true },
+      select: { id: true, email: true, name: true },
+    }) : [];
+
+    const usersByNumber = studentNumbers.length > 0 ? await prisma.user.findMany({
+      where: { studentNumber: { in: studentNumbers }, emailVerified: true },
+      select: { id: true, email: true, name: true },
+    }) : [];
+
+    // マージして重複を除去
+    const usersMap: Record<string, { id: string; email: string; name: string }> = {};
+    for (const u of [...usersById, ...usersByNumber]) {
+      usersMap[u.id] = u;
+    }
+    const users = Object.values(usersMap);
 
     console.log('✅ Found users:', users.length);
     if (users.length === 0) {
