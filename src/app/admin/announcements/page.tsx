@@ -17,27 +17,6 @@ export default function AdminAnnouncementsPage() {
   const [titleError, setTitleError] = useState("");
   const [bodyError, setBodyError] = useState("");
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
-  const [studentNumbersInput, setStudentNumbersInput] = useState("");
-
-  const parseStudentNumbers = (input: string): number[] => {
-    if (!input) return [];
-    const parts = input.split(/[,\s]+/).map(p => p.trim()).filter(Boolean);
-    const numbers = new Set<number>();
-    for (const part of parts) {
-      if (part.includes('-')) {
-        const [a, b] = part.split('-').map(x => Number(x.trim()));
-        if (!Number.isNaN(a) && !Number.isNaN(b)) {
-          const start = Math.min(a, b);
-          const end = Math.max(a, b);
-          for (let i = start; i <= end; i++) numbers.add(i);
-        }
-      } else {
-        const n = Number(part);
-        if (!Number.isNaN(n)) numbers.add(n);
-      }
-    }
-    return Array.from(numbers).sort((x, y) => x - y);
-  };
 
   const reload = async () => {
     const res = await fetch("/api/admin/announcements");
@@ -79,12 +58,11 @@ export default function AdminAnnouncementsPage() {
     if (!res.ok) { alert("連絡の登録に失敗しました。"); return; }
 
     if (selectedUserIds.length > 0) {
-      const parsed = parseStudentNumbers(studentNumbersInput);
       const emailRes = await fetch("/api/admin/send-email", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "announcement", userIds: selectedUserIds, studentNumbers: parsed, payload: { title, body } }),
+        body: JSON.stringify({ type: "announcement", userIds: selectedUserIds, payload: { title, body } }),
       });
       if (!emailRes.ok) {
         const error = await emailRes.json().catch(() => ({ error: "Unknown error" }));
@@ -161,11 +139,6 @@ export default function AdminAnnouncementsPage() {
                     ))
                   )}
                 </div>
-              </div>
-
-              <div>
-                <label className="mb-1 block text-xs font-medium text-[var(--muted)]">出席番号で指定（カンマ区切り、範囲可 例: 1,2,5-10）</label>
-                <input value={studentNumbersInput} onChange={(e) => setStudentNumbersInput(e.target.value)} placeholder="例: 1,2,5-10" />
               </div>
 
               <div className="space-y-2 pt-2">

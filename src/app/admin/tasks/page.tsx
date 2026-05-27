@@ -20,27 +20,6 @@ export default function AdminTasksPage() {
   const [titleError, setTitleError] = useState("");
   const [dueDateError, setDueDateError] = useState("");
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
-  const [studentNumbersInput, setStudentNumbersInput] = useState("");
-
-  const parseStudentNumbers = (input: string): number[] => {
-    if (!input) return [];
-    const parts = input.split(/[,\s]+/).map(p => p.trim()).filter(Boolean);
-    const numbers = new Set<number>();
-    for (const part of parts) {
-      if (part.includes('-')) {
-        const [a, b] = part.split('-').map(x => Number(x.trim()));
-        if (!Number.isNaN(a) && !Number.isNaN(b)) {
-          const start = Math.min(a, b);
-          const end = Math.max(a, b);
-          for (let i = start; i <= end; i++) numbers.add(i);
-        }
-      } else {
-        const n = Number(part);
-        if (!Number.isNaN(n)) numbers.add(n);
-      }
-    }
-    return Array.from(numbers).sort((x, y) => x - y);
-  };
 
   const fetchTasks = useCallback(async () => {
     try {
@@ -89,12 +68,11 @@ export default function AdminTasksPage() {
     if (!res.ok) { alert("追加に失敗しました。"); return; }
 
     if (selectedUserIds.length > 0) {
-      const parsed = parseStudentNumbers(studentNumbersInput);
       const emailRes = await fetch("/api/admin/send-email", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "task", userIds: selectedUserIds, studentNumbers: parsed, payload: { taskTitle: title, dueDate } }),
+        body: JSON.stringify({ type: "task", userIds: selectedUserIds, payload: { taskTitle: title, dueDate } }),
       });
       if (!emailRes.ok) {
         const error = await emailRes.json().catch(() => ({ error: "Unknown error" }));
@@ -173,11 +151,6 @@ export default function AdminTasksPage() {
                     ))
                   )}
                 </div>
-              </div>
-
-              <div>
-                <label className="mb-1 block text-xs font-medium text-[var(--muted)]">出席番号で指定（カンマ区切り、範囲可 例: 1,2,5-10）</label>
-                <input value={studentNumbersInput} onChange={(e) => setStudentNumbersInput(e.target.value)} placeholder="例: 1,2,5-10" />
               </div>
 
               <div className="space-y-2 pt-2">
