@@ -298,3 +298,118 @@ export async function sendAnnouncementEmail(
     return false;
   }
 }
+
+/**
+ * 複数ユーザーへのタスク通知メール一括送信
+ */
+export async function sendBulkTaskNotificationEmail(
+  recipients: Array<{ email: string; name: string }>,
+  taskTitle: string,
+  dueDate: Date
+): Promise<{ success: number; failed: number; errors: string[] }> {
+  const dueDateStr = dueDate.toLocaleDateString('ja-JP', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  let successCount = 0;
+  let failedCount = 0;
+  const errors: string[] = [];
+
+  console.log(`📧 Sending task notification to ${recipients.length} users...`);
+
+  for (const recipient of recipients) {
+    const success = await sendTaskNotificationEmail(
+      recipient.email,
+      recipient.name,
+      taskTitle,
+      dueDate
+    );
+    if (success) {
+      successCount++;
+    } else {
+      failedCount++;
+      errors.push(`${recipient.email}: Failed to send`);
+    }
+  }
+
+  console.log(
+    `✅ Task notification complete: ${successCount} succeeded, ${failedCount} failed`
+  );
+  return { success: successCount, failed: failedCount, errors };
+}
+
+/**
+ * 複数ユーザーへのテスト通知メール一括送信
+ */
+export async function sendBulkTestNotificationEmail(
+  recipients: Array<{ email: string; name: string }>,
+  subject: string,
+  testDate: Date,
+  range: string
+): Promise<{ success: number; failed: number; errors: string[] }> {
+  let successCount = 0;
+  let failedCount = 0;
+  const errors: string[] = [];
+
+  console.log(`📧 Sending test notification to ${recipients.length} users...`);
+
+  for (const recipient of recipients) {
+    const success = await sendTestNotificationEmail(
+      recipient.email,
+      recipient.name,
+      subject,
+      testDate,
+      range
+    );
+    if (success) {
+      successCount++;
+    } else {
+      failedCount++;
+      errors.push(`${recipient.email}: Failed to send`);
+    }
+  }
+
+  console.log(
+    `✅ Test notification complete: ${successCount} succeeded, ${failedCount} failed`
+  );
+  return { success: successCount, failed: failedCount, errors };
+}
+
+/**
+ * 複数ユーザーへのお知らせメール一括送信
+ */
+export async function sendBulkAnnouncementEmail(
+  recipients: Array<{ email: string; name: string }>,
+  title: string,
+  body: string
+): Promise<{ success: number; failed: number; errors: string[] }> {
+  let successCount = 0;
+  let failedCount = 0;
+  const errors: string[] = [];
+
+  console.log(`📧 Sending announcement to ${recipients.length} users...`);
+
+  for (const recipient of recipients) {
+    const success = await sendAnnouncementEmail(
+      recipient.email,
+      recipient.name,
+      title,
+      body
+    );
+    if (success) {
+      successCount++;
+    } else {
+      failedCount++;
+      errors.push(`${recipient.email}: Failed to send`);
+    }
+  }
+
+  console.log(
+    `✅ Announcement complete: ${successCount} succeeded, ${failedCount} failed`
+  );
+  return { success: successCount, failed: failedCount, errors };
+}

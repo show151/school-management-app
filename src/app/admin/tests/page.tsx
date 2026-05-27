@@ -1,20 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-type Task = {
-  batchId: string;
-  subject: string;
-  title: string;
-  dueDate: string;
-  assignedCount: number;
-  completedCount: number;
-};
-
-type Subject = {
+type Test = {
   id: string;
-  name: string;
+  subject: string;
+  period: number;
+  range: string;
+  testDate: string;
 };
 
 type User = {
@@ -24,45 +18,30 @@ type User = {
   createdAt: string;
 };
 
-export default function AdminTasksPage() {
+export default function AdminTestsPage() {
   const router = useRouter();
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [tests, setTests] = useState<Test[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [subject, setSubject] = useState("");
-  const [title, setTitle] = useState("");
-  const [dueDate, setDueDate] = useState("");
+  const [period, setPeriod] = useState("");
+  const [range, setRange] = useState("");
+  const [testDate, setTestDate] = useState("");
   const [loading, setLoading] = useState(true);
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
-
-  const fetchTasks = useCallback(async () => {
-    try {
-      const res = await fetch("/api/admin/tasks");
-      if (!res.ok) throw new Error();
-      const data = (await res.json()) as Task[];
-      setTasks(data);
-    } catch {
-      router.push("/admin/login");
-    } finally {
-      setLoading(false);
-    }
-  }, [router]);
 
   useEffect(() => {
     let isMounted = true;
 
-    Promise.all([fetch("/api/admin/tasks"), fetch("/api/admin/subjects"), fetch("/api/admin/users")])
-      .then(async ([tasksRes, subjectsRes, usersRes]) => {
-        if (!tasksRes.ok || !subjectsRes.ok || !usersRes.ok) throw new Error();
-        const nextTasks = (await tasksRes.json()) as Task[];
-        const nextSubjects = (await subjectsRes.json()) as Subject[];
+    Promise.all([fetch("/api/admin/tests"), fetch("/api/admin/users")])
+      .then(async ([testsRes, usersRes]) => {
+        if (!testsRes.ok || !usersRes.ok) throw new Error();
+        const nextTests = (await testsRes.json()) as Test[];
         const nextUsers = (await usersRes.json()) as User[];
-        return { nextTasks, nextSubjects, nextUsers };
+        return { nextTests, nextUsers };
       })
-      .then(({ nextTasks, nextSubjects, nextUsers }) => {
+      .then(({ nextTests, nextUsers }) => {
         if (isMounted) {
-          setTasks(nextTasks);
-          setSubjects(nextSubjects);
+          setTests(nextTests);
           setUsers(nextUsers);
         }
       })
@@ -78,28 +57,29 @@ export default function AdminTasksPage() {
     };
   }, [router]);
 
-  const handleAddTask = async (e: React.FormEvent) => {
+  const handleAddTest = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!subject || !title || !dueDate) return;
+    if (!subject || !period || !range || !testDate) return;
 
     try {
-      const res = await fetch("/api/admin/tasks", {
+      const res = await fetch("/api/admin/tests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subject, title, dueDate }),
+        body: JSON.stringify({ subject, period: parseInt(period), range, testDate }),
       });
       if (res.ok) {
-        const newTask = await res.json();
-        
+        const newTest = await res.json();
+
         // 選択されたユーザーにメール送信
         if (selectedUserIds.length > 0) {
           console.log("📧 Sending email to", selectedUserIds.length, "users");
           const payload = {
-            type: "task",
+            type: "test",
             userIds: selectedUserIds,
             payload: {
-              taskTitle: title,
-              dueDate: dueDate,
+              subject: subject,
+              testDate: testDate,
+              range: range,
             },
           };
           console.log("📤 Request payload:", JSON.stringify(payload, null, 2));
@@ -125,10 +105,16 @@ export default function AdminTasksPage() {
         }
 
         setSubject("");
-        setTitle("");
-        setDueDate("");
+        setPeriod("");
+        setRange("");
+        setTestDate("");
         setSelectedUserIds([]);
-        fetchTasks();
+
+        // テスト一覧を再取得
+        const testsRes = await fetch("/api/admin/tests");
+        if (testsRes.ok) {
+          setTests(await testsRes.json());
+        }
       }
     } catch (error) {
       console.error("Error:", error);
@@ -136,15 +122,17 @@ export default function AdminTasksPage() {
     }
   };
 
-  const handleDeleteTask = async (batchId: string) => {
-    if (!confirm("この課題を削除してもよろしいですか？")) return;
+  const handleDeleteTest = async (id: string) => {
+    if (!confirm("このテスト情報を削除してもよろしいですか？")) return;
     try {
-      const res = await fetch("/api/admin/tasks", {
+      const res = await fetch("/api/admin/tests", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ batchId }),
+        body: JSON.stringify({ id }),
       });
-      if (res.ok) fetchTasks();
+      if (res.ok) {
+        setTests(tests.filter(t => t.id !== id));
+      }
     } catch {
       alert("削除に失敗しました。");
     }
@@ -168,48 +156,55 @@ export default function AdminTasksPage() {
           >
             管理メニューへ戻る
           </button>
-          <h1 className="text-2xl font-bold text-gray-900">課題管理</h1>
+          <h1 className="text-2xl font-bold text-gray-900">テスト情報管理</h1>
         </div>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
           {/* フォーム + ユーザー選択 */}
           <div className="h-fit rounded-xl border border-gray-200 bg-white p-5 shadow-sm lg:col-span-2">
-            <h2 className="mb-3 text-base font-bold text-gray-800">新しい課題を追加</h2>
-            <form onSubmit={handleAddTask} className="space-y-3">
+            <h2 className="mb-3 text-base font-bold text-gray-800">新しいテストを追加</h2>
+            <form onSubmit={handleAddTest} className="space-y-3">
               <div>
                 <label className="mb-1 block text-xs font-medium text-gray-600">教科</label>
-                <select
-                  required
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 bg-white p-2 text-sm text-gray-900"
-                >
-                  <option value="">教科を選択</option>
-                  {subjects.map((subjectOption) => (
-                    <option key={subjectOption.id} value={subjectOption.name}>
-                      {subjectOption.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-gray-600">課題タイトル</label>
                 <input
                   type="text"
                   required
-                  placeholder="例: 教科書 p.45 練習問題"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="例: 数学"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
                   className="w-full rounded-lg border border-gray-300 bg-white p-2 text-sm text-gray-900 placeholder:text-gray-500"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-gray-600">締切日</label>
+                <label className="mb-1 block text-xs font-medium text-gray-600">時限</label>
                 <input
-                  type="date"
+                  type="number"
                   required
-                  value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
+                  min="1"
+                  placeholder="例: 1"
+                  value={period}
+                  onChange={(e) => setPeriod(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 bg-white p-2 text-sm text-gray-900 placeholder:text-gray-500"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-gray-600">範囲</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="例: 第1章～第3章"
+                  value={range}
+                  onChange={(e) => setRange(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 bg-white p-2 text-sm text-gray-900 placeholder:text-gray-500"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-gray-600">テスト日時</label>
+                <input
+                  type="datetime-local"
+                  required
+                  value={testDate}
+                  onChange={(e) => setTestDate(e.target.value)}
                   className="w-full rounded-lg border border-gray-300 bg-white p-2 text-sm text-gray-900"
                 />
               </div>
@@ -263,27 +258,28 @@ export default function AdminTasksPage() {
             </form>
           </div>
 
-          {/* 右: 現在の課題一覧 */}
+          {/* 右: 現在のテスト一覧 */}
           <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm lg:col-span-2">
-            <h2 className="mb-3 text-base font-bold text-gray-800">現在の課題一覧</h2>
-            {tasks.length === 0 ? (
-              <p className="text-sm text-gray-400">登録されている課題はありません。</p>
+            <h2 className="mb-3 text-base font-bold text-gray-800">現在のテスト一覧</h2>
+            {tests.length === 0 ? (
+              <p className="text-sm text-gray-400">登録されているテストはありません。</p>
             ) : (
               <div className="space-y-2">
-                {tasks.map((task) => (
-                  <div key={task.batchId} className="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-3 transition">
-                    <div className="flex items-center space-x-3">
-                      <div>
-                        <p className="text-sm font-semibold text-gray-800">
-                          【{task.subject}】{task.title}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          締切: {new Date(task.dueDate).toLocaleDateString()} / 完了 {task.completedCount} / 配布 {task.assignedCount}
-                        </p>
-                      </div>
+                {tests.map((test) => (
+                  <div key={test.id} className="flex items-start justify-between rounded-lg border border-gray-200 bg-white p-3 transition">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-800">
+                        【{test.subject}】{test.period}時限
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        範囲: {test.range}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        日時: {new Date(test.testDate).toLocaleDateString()}
+                      </p>
                     </div>
                     <button
-                      onClick={() => handleDeleteTask(task.batchId)}
+                      onClick={() => handleDeleteTest(test.id)}
                       className="p-1 text-xs font-medium text-red-500 hover:text-red-700"
                     >
                       削除
