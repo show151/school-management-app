@@ -7,12 +7,14 @@ export default function AuthPage() {
   const router = useRouter();
   const [isLogin, setIsLogin] = useState(true); // trueならログイン、falseなら新規登録
   const [name, setName] = useState("");
+  const [studentNumber, setStudentNumber] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [nameError, setNameError] = useState("");
+  const [studentNumberError, setStudentNumberError] = useState("");
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
 
@@ -22,7 +24,7 @@ export default function AuthPage() {
     setMessage("");
     setLoading(true);
 
-    setNameError(""); setEmailError(""); setPasswordError("");
+    setNameError(""); setStudentNumberError(""); setEmailError(""); setPasswordError("");
     if (!isLogin && !name.trim()) setNameError('名前を入力してください。');
     if (!email.trim()) setEmailError('メールアドレスを入力してください。');
     if (!password) setPasswordError('パスワードを入力してください。');
@@ -37,7 +39,7 @@ export default function AuthPage() {
       const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(isLogin ? { email, password } : { name, email, password }),
+        body: JSON.stringify(isLogin ? { email, password } : { name, studentNumber: studentNumber ? Number(studentNumber) : null, email, password }),
       });
 
       const data = (await res.json()) as { error?: string };
@@ -54,9 +56,10 @@ export default function AuthPage() {
         }, 1000);
       } else {
         setMessage("ユーザー登録が完了しました！ログインしてください。");
-        setIsLogin(true); // 登録できたらログインモードに切り替え
-        setName("");     // 名前入力をクリア
-        setPassword("");  // パスワード入力をクリア
+        setIsLogin(true);
+        setName("");
+        setStudentNumber("");
+        setPassword("");
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "エラーが発生しました。");
@@ -98,6 +101,20 @@ export default function AuthPage() {
                   placeholder="太郎"
                 />
                 {nameError && <small className="text-xs text-red-600">{nameError}</small>}
+              </div>
+            )}
+
+            {!isLogin && (
+              <div>
+                <label className="block text-sm font-medium text-[var(--foreground)] mb-1">出席番号（任意）</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={studentNumber}
+                  onChange={(e) => setStudentNumber(e.target.value)}
+                  placeholder="例: 15"
+                />
+                {studentNumberError && <small className="text-xs text-red-600">{studentNumberError}</small>}
               </div>
             )}
 

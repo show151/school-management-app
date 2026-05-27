@@ -21,9 +21,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const { name, email, password } = await request.json();
+    const { name, email, password, studentNumber } = await request.json();
 
-    // ✅ 入力値の検証
     if (!name || !email || !password) {
       return NextResponse.json(
         { error: '名前、メールアドレス、パスワードを入力してください。' },
@@ -55,6 +54,14 @@ export async function POST(request: Request) {
       );
     }
 
+    // 出席番号の重複チェック
+    if (studentNumber) {
+      const existingNumber = await prisma.user.findUnique({ where: { studentNumber: Number(studentNumber) } });
+      if (existingNumber) {
+        return NextResponse.json({ error: 'この出席番号は既に登録されています。' }, { status: 400 });
+      }
+    }
+
     // メールの重複チェック
     const existingUser = await prisma.user.findUnique({
       where: { email },
@@ -80,9 +87,9 @@ export async function POST(request: Request) {
         name,
         email,
         password: hashedPassword,
+        studentNumber: studentNumber ? Number(studentNumber) : null,
         verificationToken,
         verificationTokenExpiry,
-        // 🔒 開発環境では自動確認、本番環境ではメール確認が必須
         emailVerified: process.env.NODE_ENV !== 'production',
       },
     });

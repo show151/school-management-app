@@ -12,11 +12,12 @@ export async function GET(request: Request) {
     const users = await prisma.user.findMany({
       select: {
         id: true,
+        studentNumber: true,
         name: true,
         email: true,
         createdAt: true,
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: { studentNumber: "asc" },
     });
 
     return NextResponse.json(users);

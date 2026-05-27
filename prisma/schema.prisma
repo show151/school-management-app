@@ -9,18 +9,19 @@ generator client {
 // 1. ユーザー情報
 model User {
   id                      String   @id @default(uuid())
-  name                    String   // ユーザー名
+  studentNumber           Int?     @unique // 出席番号
+  name                    String
   email                   String   @unique
-  password                String   // bcryptでハッシュ化されたパスワード
+  password                String
   isAdmin                 Boolean  @default(false)
-  emailVerified           Boolean  @default(false) // メール認証済みフラグ
-  verificationToken       String?  // メール認証トークン
-  verificationTokenExpiry DateTime? // メール認証トークン有効期限
-  resetToken              String?  // パスワードリセットトークン
-  resetTokenExpiry        DateTime? // パスワードリセットトークン有効期限
-  lessons                 Lesson[] // ユーザーが持つ授業一覧
-  tasks                   Task[]   // ユーザーが持つ課題一覧
-  tests                   Test[]   // ユーザーが持つテスト一覧
+  emailVerified           Boolean  @default(false)
+  verificationToken       String?
+  verificationTokenExpiry DateTime?
+  resetToken              String?
+  resetTokenExpiry        DateTime?
+  lessons                 Lesson[]
+  tasks                   Task[]
+  tests                   Test[]
   createdAt               DateTime @default(now())
 }
 

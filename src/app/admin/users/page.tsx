@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-type User = { id: string; name: string; email: string; createdAt: string };
+type User = { id: string; studentNumber: number | null; name: string; email: string; createdAt: string };
 
 export default function AdminUsersPage() {
   const router = useRouter();
@@ -48,24 +48,26 @@ export default function AdminUsersPage() {
                 <table className="w-full divide-y" style={{ borderColor: "var(--border)" }}>
                   <thead style={{ backgroundColor: "var(--admin-50)" }}>
                     <tr>
-                      <th className="px-6 py-3 text-left text-sm font-semibold text-[var(--admin-600)]">名前</th>
-                      <th className="px-6 py-3 text-left text-sm font-semibold text-[var(--admin-600)]">メールアドレス</th>
-                      <th className="px-6 py-3 text-left text-sm font-semibold text-[var(--admin-600)]">登録日</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-[var(--admin-600)]">出席番号</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-[var(--admin-600)]">名前</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-[var(--admin-600)]">メールアドレス</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-[var(--admin-600)]">登録日</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y" style={{ borderColor: "var(--border)" }}>
                     {users.length === 0 ? (
                       <tr>
-                        <td colSpan={3} className="px-6 py-4 text-center text-sm text-[var(--muted)]">
+                        <td colSpan={4} className="px-4 py-4 text-center text-sm text-[var(--muted)]">
                           ユーザーがまだ登録されていません。
                         </td>
                       </tr>
                     ) : (
                       users.map((user) => (
                         <tr key={user.id} className="hover:bg-[var(--admin-50)] transition-colors">
-                          <td className="px-6 py-4 text-sm font-medium text-[var(--foreground)]">{user.name}</td>
-                          <td className="px-6 py-4 text-sm text-[var(--muted)]">{user.email}</td>
-                          <td className="px-6 py-4 text-sm text-[var(--muted)]">{new Date(user.createdAt).toLocaleDateString("ja-JP")}</td>
+                          <td className="px-4 py-4 text-sm font-bold text-[var(--admin-600)]">{user.studentNumber ?? —}</td>
+                          <td className="px-4 py-4 text-sm font-medium text-[var(--foreground)]">{user.name}</td>
+                          <td className="px-4 py-4 text-sm text-[var(--muted)]">{user.email}</td>
+                          <td className="px-4 py-4 text-sm text-[var(--muted)]">{new Date(user.createdAt).toLocaleDateString("ja-JP")}</td>
                         </tr>
                       ))
                     )}
