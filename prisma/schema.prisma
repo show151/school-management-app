@@ -27,8 +27,8 @@ model User {
 // 2. 授業情報
 model Lesson {
   id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   dayOfWeek String   // 月、火、水、木、金
   period    Int      // 1, 2, 3, 4, 5, 6 限
   subject   String   // 教科名

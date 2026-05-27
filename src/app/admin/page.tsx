@@ -58,6 +58,13 @@ export default function AdminPage() {
             </span>
           </button>
           <button
+            onClick={() => router.push("/admin/lessons")}
+            className="rounded-xl border border-gray-200 bg-white p-5 text-left shadow-sm transition hover:border-indigo-300 hover:bg-indigo-50"
+          >
+            <span className="block text-base font-semibold text-gray-900">時間割管理</span>
+            <span className="mt-1 block text-sm text-gray-500">生徒の時間割を登録・編集します（1〜4限）。</span>
+          </button>
+          <button
             onClick={() => router.push("/admin/tasks")}
             className="rounded-xl border border-gray-200 bg-white p-5 text-left shadow-sm transition hover:border-indigo-300 hover:bg-indigo-50"
           >

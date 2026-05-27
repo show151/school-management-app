@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import jwt from 'jsonwebtoken';
+import { jwtVerify } from 'jose';
 import { getRequiredEnv } from '@/lib/env';
 
 const JWT_SECRET = getRequiredEnv('JWT_SECRET');
@@ -19,11 +19,23 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: '認証トークンがありません。' }, { status: 401 });
     }
 
-    // 2. トークンをデコードして userId を抽出
-    let decoded: { userId: string };
+    // 2. トークンをデコードして userId を抽出 (jose を使用)
+    let userId: string;
     try {
-      decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
-    } catch {
+      const secret = new TextEncoder().encode(JWT_SECRET);
+      const verified = await jwtVerify(token, secret);
+      // payload は SignJWT でセットしたオブジェクト
+      const payload = verified.payload as { userId?: string };
+      if (!payload.userId) {
+        const response = NextResponse.json(
+          { error: '認証情報が不正です。' },
+          { status: 401 }
+        );
+        response.cookies.set('auth_token', '', { maxAge: 0, path: '/' });
+        return response;
+      }
+      userId = payload.userId;
+    } catch (err) {
       const response = NextResponse.json(
         { error: '認証情報の有効期限が切れています。再ログインしてください。' },
         { status: 401 }
@@ -32,9 +44,7 @@ export async function GET(request: Request) {
       return response;
     }
 
-    const userId = decoded.userId;
-
-    const [tasks, announcements] = await Promise.all([
+    const [tasks, announcements, lessons] = await Promise.all([
       prisma.task.findMany({
         where: { userId },
         orderBy: { dueDate: 'asc' }, // 締切が近い順
@@ -43,10 +53,14 @@ export async function GET(request: Request) {
         orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
         take: 10,
       }),
+      prisma.lesson.findMany({
+        where: { userId },
+        orderBy: [{ dayOfWeek: 'asc' }, { period: 'asc' }],
+      }),
     ]);
 
     // 4. まとめてフロントエンドに返す
-    return NextResponse.json({ tasks, announcements });
+    return NextResponse.json({ tasks, announcements, lessons });
   } catch (error) {
     console.error('Dashboard Data Fetch Error:', error);
     return NextResponse.json({ error: 'データの取得に失敗しました。' }, { status: 500 });

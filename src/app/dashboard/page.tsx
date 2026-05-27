@@ -11,6 +11,13 @@ type Task = {
   isCompleted: boolean;
 };
 
+type Lesson = {
+  id: string;
+  dayOfWeek: string; // e.g. '月','火','水','木','金'
+  period: number;
+  subject: string;
+};
+
 type Announcement = {
   id: string;
   title: string;
@@ -21,6 +28,7 @@ type Announcement = {
 type DashboardData = {
   tasks: Task[];
   announcements: Announcement[];
+  lessons?: Lesson[];
 };
 
 export default function DashboardPage() {
@@ -28,6 +36,7 @@ export default function DashboardPage() {
   const [data, setData] = useState<DashboardData>({
     tasks: [],
     announcements: [],
+    lessons: [],
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -148,6 +157,43 @@ export default function DashboardPage() {
                 </div>
               ))
             )}
+          </div>
+        </div>
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+          <h2 className="text-lg font-bold text-gray-900">時間割</h2>
+          <div className="mt-4 overflow-auto">
+            <table className="w-full table-fixed text-sm">
+              <thead>
+                <tr>
+                  <th className="w-20 p-2">時限</th>
+                  {['月','火','水','木','金'].map(d => (
+                    <th key={d} className="p-2 text-left">{d}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {Array.from({ length: 4 }).map((_, idx) => {
+                  const period = idx + 1;
+                  return (
+                    <tr key={period} className="border-t">
+                      <td className="p-2 font-medium">{period}限</td>
+                      {['月','火','水','木','金'].map((d) => {
+                        const lesson = data.lessons?.find(l => l.dayOfWeek === d && l.period === period);
+                        return (
+                          <td key={d} className="p-2 align-top">
+                            {lesson ? (
+                              <div className="rounded-sm bg-indigo-100 p-2 text-sm font-semibold text-indigo-900">{lesson.subject}</div>
+                            ) : (
+                              <div className="text-sm text-gray-600">—</div>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
 
