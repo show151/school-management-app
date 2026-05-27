@@ -81,7 +81,7 @@ export default function AdminUsersPage() {
                 <tbody className="divide-y divide-gray-200">
                   {users.length === 0 ? (
                     <tr>
-                      <td colSpan={3} className="px-6 py-4 text-center text-sm text-gray-500">
+                      <td colSpan={3} className="px-6 py-4 text-center text-sm text-gray-700">
                         ユーザーがまだ登録されていません。
                       </td>
                     </tr>

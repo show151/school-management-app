@@ -200,7 +200,7 @@ export default function AdminAnnouncementsPage() {
                 </label>
                 <div className="max-h-32 space-y-1 overflow-y-auto rounded-lg border border-gray-300 bg-gray-50 p-2">
                   {users.length === 0 ? (
-                    <p className="text-xs text-gray-400">ユーザーが登録されていません</p>
+                    <p className="text-xs text-gray-700">ユーザーが登録されていません</p>
                   ) : (
                     users.map((user) => (
                       <label key={user.id} className="flex cursor-pointer items-center space-x-2 rounded px-1 py-1 hover:bg-gray-100">
@@ -241,7 +241,7 @@ export default function AdminAnnouncementsPage() {
           <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm lg:col-span-2">
             <h2 className="mb-3 text-base font-bold text-gray-800">連絡一覧</h2>
             {announcements.length === 0 ? (
-              <p className="text-sm text-gray-400">まだ連絡が登録されていません。</p>
+              <p className="text-sm text-gray-700">まだ連絡が登録されていません。</p>
             ) : (
               <div className="space-y-2">
                 {announcements.map((announcement) => (

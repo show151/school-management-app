@@ -4,25 +4,30 @@ import { prisma } from "@/lib/prisma";
 import { sendAnnouncementEmail } from "@/lib/email";
 
 export async function GET(request: Request) {
-  const adminSession = await getAdminSessionFromRequest(request);
-  if (!adminSession) {
-    return NextResponse.json({ error: "管理者認証が必要です。" }, { status: 401 });
+  try {
+    const adminSession = await getAdminSessionFromRequest(request);
+    if (!adminSession) {
+      return NextResponse.json({ error: "管理者認証が必要です。" }, { status: 401 });
+    }
+
+    const announcements = await prisma.announcement.findMany({
+      orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+    });
+
+    return NextResponse.json(announcements);
+  } catch (error) {
+    console.error('GET /api/admin/announcements error:', error);
+    return NextResponse.json({ error: 'お知らせ一覧の取得に失敗しました。' }, { status: 500 });
   }
-
-  const announcements = await prisma.announcement.findMany({
-    orderBy: [{ date: "desc" }, { createdAt: "desc" }],
-  });
-
-  return NextResponse.json(announcements);
 }
 
 export async function POST(request: Request) {
-  const adminSession = await getAdminSessionFromRequest(request);
-  if (!adminSession) {
-    return NextResponse.json({ error: "管理者認証が必要です。" }, { status: 401 });
-  }
-
   try {
+    const adminSession = await getAdminSessionFromRequest(request);
+    if (!adminSession) {
+      return NextResponse.json({ error: "管理者認証が必要です。" }, { status: 401 });
+    }
+
     const { title, body, date } = (await request.json()) as {
       title?: string;
       body?: string;
@@ -55,24 +60,26 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json(announcement, { status: 201 });
-  } catch {
+  } catch (error) {
+    console.error('POST /api/admin/announcements error:', error);
     return NextResponse.json({ error: "連絡の登録に失敗しました。" }, { status: 500 });
   }
 }
 
 export async function DELETE(request: Request) {
-  const adminSession = await getAdminSessionFromRequest(request);
-  if (!adminSession) {
-    return NextResponse.json({ error: "管理者認証が必要です。" }, { status: 401 });
-  }
-
   try {
+    const adminSession = await getAdminSessionFromRequest(request);
+    if (!adminSession) {
+      return NextResponse.json({ error: "管理者認証が必要です。" }, { status: 401 });
+    }
+
     const { id } = (await request.json()) as { id?: string };
     if (!id) return NextResponse.json({ error: "IDが必要です。" }, { status: 400 });
 
     await prisma.announcement.delete({ where: { id } });
     return NextResponse.json({ message: "削除しました。" });
-  } catch {
+  } catch (error) {
+    console.error('DELETE /api/admin/announcements error:', error);
     return NextResponse.json({ error: "連絡の削除に失敗しました。" }, { status: 500 });
   }
 }

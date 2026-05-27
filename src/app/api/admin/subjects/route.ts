@@ -3,16 +3,21 @@ import { getAdminSessionFromRequest } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(request: Request) {
-  const adminSession = await getAdminSessionFromRequest(request);
-  if (!adminSession) {
-    return NextResponse.json({ error: "管理者認証が必要です。" }, { status: 401 });
+  try {
+    const adminSession = await getAdminSessionFromRequest(request);
+    if (!adminSession) {
+      return NextResponse.json({ error: "管理者認証が必要です。" }, { status: 401 });
+    }
+
+    const subjects = await prisma.subject.findMany({
+      orderBy: { name: "asc" },
+    });
+
+    return NextResponse.json(subjects);
+  } catch (error) {
+    console.error('GET /api/admin/subjects error:', error);
+    return NextResponse.json({ error: '教科一覧の取得に失敗しました。' }, { status: 500 });
   }
-
-  const subjects = await prisma.subject.findMany({
-    orderBy: { name: "asc" },
-  });
-
-  return NextResponse.json(subjects);
 }
 
 export async function POST(request: Request) {

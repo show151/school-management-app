@@ -121,13 +121,13 @@ export default function DashboardPage() {
         <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold text-gray-900">課題の状況</h2>
-            <span className="text-sm text-gray-500">
+            <span className="text-sm text-gray-700">
               未完了 {incompleteTasks.length} / 全 {data.tasks.length}
             </span>
           </div>
           <div className="mt-4 space-y-3">
             {data.tasks.length === 0 ? (
-              <p className="text-sm text-gray-500">現在登録されている課題はありません。</p>
+              <p className="text-sm text-gray-700">現在登録されている課題はありません。</p>
             ) : (
               data.tasks.map((task) => (
                 <div
@@ -201,7 +201,7 @@ export default function DashboardPage() {
           <h2 className="text-lg font-bold text-gray-900">日々の連絡</h2>
           <div className="mt-4 space-y-3">
             {data.announcements.length === 0 ? (
-              <p className="text-sm text-gray-500">現在表示できる連絡はありません。</p>
+              <p className="text-sm text-gray-700">現在表示できる連絡はありません。</p>
             ) : (
               data.announcements.map((announcement) => (
                 <article key={announcement.id} className="rounded-lg border border-gray-100 bg-gray-50 p-3">

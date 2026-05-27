@@ -116,7 +116,7 @@ export default function AdminSubjectsPage() {
         <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
           <h2 className="mb-3 text-base font-bold text-gray-800">登録済み教科</h2>
           {subjects.length === 0 ? (
-            <p className="text-sm text-gray-500">まだ教科が登録されていません。</p>
+            <p className="text-sm text-gray-700">まだ教科が登録されていません。</p>
           ) : (
             <div className="space-y-2">
               {subjects.map((subject) => (

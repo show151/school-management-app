@@ -4,16 +4,21 @@ import { prisma } from "@/lib/prisma";
 import { sendTestNotificationEmail } from "@/lib/email";
 
 export async function GET(request: Request) {
-  const adminSession = await getAdminSessionFromRequest(request);
-  if (!adminSession) {
-    return NextResponse.json({ error: "管理者認証が必要です。" }, { status: 401 });
+  try {
+    const adminSession = await getAdminSessionFromRequest(request);
+    if (!adminSession) {
+      return NextResponse.json({ error: "管理者認証が必要です。" }, { status: 401 });
+    }
+
+    const tests = await prisma.test.findMany({
+      orderBy: { testDate: "asc" },
+    });
+
+    return NextResponse.json(tests);
+  } catch (error) {
+    console.error('GET /api/admin/tests error:', error);
+    return NextResponse.json({ error: 'テスト一覧の取得に失敗しました。' }, { status: 500 });
   }
-
-  const tests = await prisma.test.findMany({
-    orderBy: { testDate: "asc" },
-  });
-
-  return NextResponse.json(tests);
 }
 
 export async function POST(request: Request) {

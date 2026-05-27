@@ -35,6 +35,7 @@ export default function AdminLessonsPage() {
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (!subject) return;
     const res = await fetch('/api/admin/lessons', {
       method: 'POST',
@@ -45,6 +46,7 @@ export default function AdminLessonsPage() {
     const newLesson = await res.json();
     setLessons(prev => [...prev, newLesson]);
     setSubject('');
+    
   };
 
   const handleDelete = async (id: string) => {
@@ -65,20 +67,21 @@ export default function AdminLessonsPage() {
         </div>
 
         <div className="rounded-xl border bg-white p-5">
-          <form onSubmit={handleAdd} className="grid grid-cols-1 gap-3 sm:grid-cols-4">
+              <form onSubmit={handleAdd} className="grid grid-cols-1 gap-3 sm:grid-cols-4">
             <select value={dayOfWeek} onChange={e => setDayOfWeek(e.target.value)} className="p-2 border rounded text-gray-800">
               {['月','火','水','木','金'].map(d => <option key={d} value={d}>{d}</option>)}
             </select>
             <select value={period} onChange={e => setPeriod(parseInt(e.target.value))} className="p-2 border rounded text-gray-800">
               {[1,2,3,4].map(p => <option key={p} value={p}>{p}限</option>)}
             </select>
-            <div className="flex gap-2">
-              <select value={subject} onChange={e => setSubject(e.target.value)} className="flex-1 p-2 border rounded text-gray-800">
-                <option value="">— 教科を選択 —</option>
-                {subjects.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
-              </select>
-              <button type="submit" className="px-3 py-2 bg-indigo-600 text-white rounded">追加</button>
-            </div>
+                <div className="flex gap-2">
+              
+                  <select value={subject} onChange={e => setSubject(e.target.value)} className="flex-1 p-2 border rounded text-gray-800">
+                    <option value="">— 教科を選択 —</option>
+                    {subjects.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+                  </select>
+                  <button type="submit" className="px-3 py-2 bg-indigo-600 text-white rounded">追加</button>
+                </div>
           </form>
         </div>
 
@@ -88,7 +91,7 @@ export default function AdminLessonsPage() {
             <ul className="space-y-2">
               {lessons.map(l => (
                 <li key={l.id} className="flex items-center justify-between border p-2 rounded">
-                  <div className="text-sm text-gray-800">{l.dayOfWeek} {l.period}限 — {l.subject} (user: {l.userId})</div>
+                  <div className="text-sm text-gray-800">{l.dayOfWeek} {l.period}限 — {l.subject} {l.userId ? `(user: ${l.userId})` : ''}</div>
                   <button
                     onClick={() => handleDelete(l.id)}
                     title="削除"
