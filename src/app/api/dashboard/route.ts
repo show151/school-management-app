@@ -44,23 +44,35 @@ export async function GET(request: Request) {
       return response;
     }
 
+    // admin_token の有無で管理者かどうか判定
+    const adminToken = cookieHeader
+      .split('; ')
+      .find((row) => row.startsWith('admin_token='))
+      ?.split('=')[1];
+    let isAdmin = false;
+    if (adminToken) {
+      try {
+        const secret = new TextEncoder().encode(JWT_SECRET);
+        const { payload } = await jwtVerify(adminToken, secret);
+        isAdmin = (payload as { role?: string }).role === 'admin';
+      } catch { /* 無効なトークンは無視 */ }
+    }
+
     const [tasks, announcements, lessons] = await Promise.all([
       prisma.task.findMany({
         where: { userId },
-        orderBy: { dueDate: 'asc' }, // 締切が近い順
+        orderBy: { dueDate: 'asc' },
       }),
       prisma.announcement.findMany({
         orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
         take: 10,
       }),
       prisma.lesson.findMany({
-        where: { userId },
         orderBy: [{ dayOfWeek: 'asc' }, { period: 'asc' }],
       }),
     ]);
 
-    // 4. まとめてフロントエンドに返す
-    return NextResponse.json({ tasks, announcements, lessons });
+    return NextResponse.json({ tasks, announcements, lessons, isAdmin });
   } catch (error) {
     console.error('Dashboard Data Fetch Error:', error);
     return NextResponse.json({ error: 'データの取得に失敗しました。' }, { status: 500 });

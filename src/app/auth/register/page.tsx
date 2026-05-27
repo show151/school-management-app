@@ -46,15 +46,16 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="max-w-md mx-auto p-6">
-      <h1 className="text-2xl font-semibold mb-4">ユーザー登録</h1>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
+    <div className="min-h-screen flex items-center justify-center bg-[var(--background)] px-4">
+      <div className="login-card">
+        <h1 className="text-2xl font-semibold mb-4 text-[var(--foreground)] text-center">ユーザー登録</h1>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
           <label className="block text-sm font-medium">名前</label>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="mt-1 block w-full border rounded px-3 py-2"
+            className="mt-1 block w-full rounded-xl border border-slate-200 px-3 py-2 text-[var(--foreground)] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)]"
             placeholder="山田 太郎"
             required
           />
@@ -98,9 +99,10 @@ export default function RegisterPage() {
         </div>
       </form>
 
-      <p className="mt-4 text-sm text-gray-600">
-        既にアカウントをお持ちですか？ <a href="/login" className="text-blue-600">ログイン</a>
+        <p className="mt-4 text-sm text-[var(--muted)] text-center">
+        既にアカウントをお持ちですか？ <a href="/login" className="text-[var(--primary)]">ログイン</a>
       </p>
+      </div>
     </div>
   );
 }

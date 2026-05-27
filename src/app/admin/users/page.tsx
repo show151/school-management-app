@@ -3,12 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-type User = {
-  id: string;
-  name: string;
-  email: string;
-  createdAt: string;
-};
+type User = { id: string; name: string; email: string; createdAt: string };
 
 export default function AdminUsersPage() {
   const router = useRouter();
@@ -17,98 +12,70 @@ export default function AdminUsersPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const response = await fetch("/api/admin/users");
-        if (!response.ok) {
-          throw new Error("ユーザー情報の取得に失敗しました。");
-        }
-        const data = await response.json();
-        setUsers(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "エラーが発生しました。");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUsers();
+    fetch("/api/admin/users")
+      .then((res) => {
+        if (!res.ok) throw new Error("ユーザー情報の取得に失敗しました。");
+        return res.json();
+      })
+      .then((data) => setUsers(data))
+      .catch((err) => setError(err instanceof Error ? err.message : "エラーが発生しました。"))
+      .finally(() => setLoading(false));
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="mx-auto max-w-6xl space-y-6">
+    <div className="min-h-screen bg-[var(--background)] admin-theme">
+      <div className="container-responsive py-6 space-y-6">
         <div className="flex items-center justify-between">
-          <button
-            onClick={() => router.push("/admin")}
-            className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
-          >
+          <button onClick={() => router.push("/admin")} className="text-sm font-medium admin-link md:hidden">
             ← 管理メニューに戻る
           </button>
-          <h1 className="text-2xl font-bold text-gray-900">ユーザー管理</h1>
+          <h1 className="text-2xl font-bold text-[var(--foreground)]">ユーザー管理</h1>
           <div className="w-32" />
         </div>
 
-        {loading && (
-          <div className="rounded-lg bg-white p-6 text-center">
-            <p className="text-gray-600">読み込み中...</p>
-          </div>
-        )}
+        {loading && <div className="card p-6 text-center text-[var(--muted)]">読み込み中...</div>}
 
         {error && (
-          <div className="rounded-lg bg-red-50 p-4">
-            <p className="text-red-800">{error}</p>
+          <div className="rounded-xl p-4 bg-red-50 border border-red-200">
+            <p className="text-red-700 text-sm">{error}</p>
           </div>
         )}
 
         {!loading && !error && (
-          <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow">
-            <div className="overflow-x-auto">
-              <table className="w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
-                      名前
-                    </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
-                      メールアドレス
-                    </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
-                      登録日
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {users.length === 0 ? (
+          <>
+            <div className="card overflow-hidden p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full divide-y" style={{ borderColor: "var(--border)" }}>
+                  <thead style={{ backgroundColor: "var(--admin-50)" }}>
                     <tr>
-                      <td colSpan={3} className="px-6 py-4 text-center text-sm text-gray-700">
-                        ユーザーがまだ登録されていません。
-                      </td>
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-[var(--admin-600)]">名前</th>
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-[var(--admin-600)]">メールアドレス</th>
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-[var(--admin-600)]">登録日</th>
                     </tr>
-                  ) : (
-                    users.map((user) => (
-                      <tr key={user.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                          {user.name}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-600">
-                          {user.email}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-600">
-                          {new Date(user.createdAt).toLocaleDateString("ja-JP")}
+                  </thead>
+                  <tbody className="divide-y" style={{ borderColor: "var(--border)" }}>
+                    {users.length === 0 ? (
+                      <tr>
+                        <td colSpan={3} className="px-6 py-4 text-center text-sm text-[var(--muted)]">
+                          ユーザーがまだ登録されていません。
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                    ) : (
+                      users.map((user) => (
+                        <tr key={user.id} className="hover:bg-[var(--admin-50)] transition-colors">
+                          <td className="px-6 py-4 text-sm font-medium text-[var(--foreground)]">{user.name}</td>
+                          <td className="px-6 py-4 text-sm text-[var(--muted)]">{user.email}</td>
+                          <td className="px-6 py-4 text-sm text-[var(--muted)]">{new Date(user.createdAt).toLocaleDateString("ja-JP")}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+            <p className="text-sm text-[var(--muted)]">合計: <span className="font-semibold text-[var(--foreground)]">{users.length}</span> ユーザー</p>
+          </>
         )}
-
-        <div className="text-sm text-gray-600">
-          合計: <span className="font-semibold">{users.length}</span> ユーザー
-        </div>
       </div>
     </div>
   );

@@ -1,116 +1,204 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
-type Lesson = { id: string; userId?: string | null; dayOfWeek: string; period: number; subject: string };
+type Lesson = { id: string; dayOfWeek: string; period: number; subject: string };
 type SubjectItem = { id: string; name: string };
+
+const DAYS = ["月", "火", "水", "木", "金"];
+const PERIODS = [1, 2, 3, 4];
+
+const COLORS = [
+  { bg: "#dbeafe", text: "#1d4ed8", border: "#93c5fd" },
+  { bg: "#dcfce7", text: "#15803d", border: "#86efac" },
+  { bg: "#fef9c3", text: "#a16207", border: "#fde047" },
+  { bg: "#fce7f3", text: "#be185d", border: "#f9a8d4" },
+  { bg: "#ede9fe", text: "#6d28d9", border: "#c4b5fd" },
+  { bg: "#ffedd5", text: "#c2410c", border: "#fdba74" },
+  { bg: "#cffafe", text: "#0e7490", border: "#67e8f9" },
+  { bg: "#f1f5f9", text: "#475569", border: "#cbd5e1" },
+];
 
 export default function AdminLessonsPage() {
   const router = useRouter();
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [subjects, setSubjects] = useState<SubjectItem[]>([]);
-  const [dayOfWeek, setDayOfWeek] = useState("月");
-  const [period, setPeriod] = useState(1);
-  const [subject, setSubject] = useState("");
-  const [subjectError, setSubjectError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [dragSubject, setDragSubject] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState<string | null>(null);
+  const colorMap = useRef<Record<string, (typeof COLORS)[0]>>({});
+
+  const getColor = (subject: string) => {
+    if (!colorMap.current[subject]) {
+      const idx = Object.keys(colorMap.current).length % COLORS.length;
+      colorMap.current[subject] = COLORS[idx];
+    }
+    return colorMap.current[subject];
+  };
 
   useEffect(() => {
     let mounted = true;
-    Promise.all([fetch('/api/admin/subjects'), fetch('/api/admin/lessons')])
+    Promise.all([fetch("/api/admin/subjects"), fetch("/api/admin/lessons")])
       .then(async ([sRes, lRes]) => {
-        if (!sRes.ok) throw new Error('unauth');
-        const subjects = await sRes.json();
-        const lessons = await lRes.json();
-        if (mounted) {
-          setSubjects(subjects);
-          setLessons(lessons);
-        }
+        if (!sRes.ok) throw new Error("unauth");
+        const [s, l] = await Promise.all([sRes.json(), lRes.json()]);
+        if (mounted) { setSubjects(s); setLessons(l); }
       })
-      .catch(() => router.push('/admin/login'))
-      .finally(() => mounted && setLoading(false));
-
+      .catch(() => router.push("/admin/login"))
+      .finally(() => { if (mounted) setLoading(false); });
     return () => { mounted = false; };
   }, [router]);
 
-  const handleAdd = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubjectError("");
-    if (!subject) {
-      setSubjectError('教科を選択してください。');
+  const getLesson = (day: string, period: number) =>
+    lessons.find((l) => l.dayOfWeek === day && l.period === period);
+
+  const handleDrop = async (day: string, period: number) => {
+    setDragOver(null);
+    if (!dragSubject) return;
+
+    const existing = getLesson(day, period);
+    if (existing) {
+      await fetch("/api/admin/lessons", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: existing.id }),
+      });
+    }
+
+    const res = await fetch("/api/admin/lessons", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ dayOfWeek: day, period, subject: dragSubject }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      alert(`登録に失敗しました (${res.status})\n${err.error ?? ""}`);
       return;
     }
-    const res = await fetch('/api/admin/lessons', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dayOfWeek, period, subject }),
-    });
-    if (!res.ok) return alert('追加に失敗しました');
     const newLesson = await res.json();
-    setLessons(prev => [...prev, newLesson]);
-    setSubject('');
-    setSubjectError("");
+
+    setLessons((prev) => {
+      const filtered = existing ? prev.filter((l) => l.id !== existing.id) : prev;
+      return [...filtered, newLesson];
+    });
+    setDragSubject(null);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('この時間割を削除しますか？')) return;
-    const res = await fetch('/api/admin/lessons', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
-    if (!res.ok) return alert('削除に失敗しました');
-    setLessons(prev => prev.filter(l => l.id !== id));
+  const handleCellClick = async (day: string, period: number) => {
+    const existing = getLesson(day, period);
+    if (!existing) return;
+    const res = await fetch("/api/admin/lessons", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: existing.id }),
+    });
+    if (!res.ok) { alert("削除に失敗しました"); return; }
+    setLessons((prev) => prev.filter((l) => l.id !== existing.id));
   };
 
-  if (loading) return <div className="p-8 text-center">読み込み中...</div>;
+  if (loading) return <div className="p-8 text-center text-[var(--muted)]">読み込み中...</div>;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="mx-auto max-w-4xl space-y-6">
+    <div className="min-h-screen bg-[var(--background)] admin-theme">
+      <div className="container-responsive py-6 space-y-6">
         <div className="flex items-center justify-between">
-          <button onClick={() => router.push('/admin')} className="text-sm text-indigo-600">管理メニューへ戻る</button>
-          <h1 className="text-2xl font-bold">時間割管理</h1>
+          <button onClick={() => router.push("/admin")} className="text-sm font-medium admin-link md:hidden">
+            管理メニューへ戻る
+          </button>
+          <h1 className="text-2xl font-bold text-[var(--foreground)]">時間割管理</h1>
         </div>
 
-        <div className="rounded-xl border bg-white p-5">
-              <form onSubmit={handleAdd} className="grid grid-cols-1 gap-3 sm:grid-cols-4">
-            <select value={dayOfWeek} onChange={e => setDayOfWeek(e.target.value)} className="p-2 border rounded text-gray-800">
-              {['月','火','水','木','金'].map(d => <option key={d} value={d}>{d}</option>)}
-            </select>
-            <select value={period} onChange={e => setPeriod(parseInt(e.target.value))} className="p-2 border rounded text-gray-800">
-              {[1,2,3,4].map(p => <option key={p} value={p}>{p}限</option>)}
-            </select>
-                <div className="flex gap-2">
-              
-                  <div className="flex-1">
-                    <select value={subject} onChange={e => { setSubject(e.target.value); setSubjectError(""); }} className="w-full p-2 border rounded text-gray-800">
-                      <option value="">— 教科を選択 —</option>
-                      {subjects.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
-                    </select>
-                    {subjectError && <small className="text-xs text-red-600 mt-1">{subjectError}</small>}
-                  </div>
-                  <button type="submit" className="px-3 py-2 bg-indigo-600 text-white rounded">追加</button>
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* 左: 教科カード */}
+          <div className="lg:w-48 shrink-0">
+            <div className="card">
+              <h2 className="text-sm font-bold text-[var(--foreground)] mb-3">教科</h2>
+              <p className="text-xs text-[var(--muted)] mb-3">ドラッグしてグリッドに配置</p>
+              {subjects.length === 0 ? (
+                <p className="text-xs text-[var(--muted)]">教科が登録されていません</p>
+              ) : (
+                <div className="flex flex-row lg:flex-col flex-wrap gap-2">
+                  {subjects.map((s) => {
+                    const c = getColor(s.name);
+                    return (
+                      <div
+                        key={s.id}
+                        draggable
+                        onDragStart={() => setDragSubject(s.name)}
+                        onDragEnd={() => setDragSubject(null)}
+                        className="cursor-grab active:cursor-grabbing rounded-xl px-3 py-2 text-sm font-semibold select-none border"
+                        style={{ backgroundColor: c.bg, color: c.text, borderColor: c.border }}
+                      >
+                        {s.name}
+                      </div>
+                    );
+                  })}
                 </div>
-          </form>
-        </div>
+              )}
+            </div>
+          </div>
 
-        <div className="rounded-xl border bg-white p-5">
-          <h2 className="font-bold mb-3 text-gray-900">登録済み時間割</h2>
-          {lessons.length === 0 ? <p className="text-sm text-gray-700">まだ登録がありません。</p> : (
-            <ul className="space-y-2">
-              {lessons.map(l => (
-                <li key={l.id} className="flex items-center justify-between border p-2 rounded">
-                  <div className="text-sm text-gray-800">{l.dayOfWeek} {l.period}限 — {l.subject} {l.userId ? `(user: ${l.userId})` : ''}</div>
-                  <button
-                    onClick={() => handleDelete(l.id)}
-                    title="削除"
-                    aria-label="削除"
-                    className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-red-300"
-                  >
-                    削除
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
+          {/* 右: 時間割グリッド */}
+          <div className="flex-1 card overflow-x-auto">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-bold text-[var(--foreground)]">時間割グリッド</h2>
+              <p className="text-xs text-[var(--muted)]">セルをクリックで削除</p>
+            </div>
+            <table className="w-full table-fixed text-sm min-w-[400px]">
+              <thead>
+                <tr style={{ backgroundColor: "var(--admin-50)" }}>
+                  <th className="w-14 p-2 text-xs font-semibold text-[var(--admin-600)] rounded-tl-xl">時限</th>
+                  {DAYS.map((d, i) => (
+                    <th key={d} className={`p-2 text-xs font-semibold text-[var(--admin-600)] ${i === 4 ? "rounded-tr-xl" : ""}`}>
+                      {d}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {PERIODS.map((period) => (
+                  <tr key={period} className="border-t" style={{ borderColor: "var(--border)" }}>
+                    <td className="p-2 text-xs font-semibold text-center text-[var(--muted)]">{period}限</td>
+                    {DAYS.map((day) => {
+                      const lesson = getLesson(day, period);
+                      const cellKey = `${day}-${period}`;
+                      const isOver = dragOver === cellKey;
+                      const c = lesson ? getColor(lesson.subject) : null;
+                      return (
+                        <td
+                          key={day}
+                          className="p-1.5 align-top"
+                          onDragOver={(e) => { e.preventDefault(); setDragOver(cellKey); }}
+                          onDragLeave={() => setDragOver(null)}
+                          onDrop={() => handleDrop(day, period)}
+                        >
+                          <div
+                            onClick={() => handleCellClick(day, period)}
+                            className="rounded-xl min-h-[52px] flex items-center justify-center transition-colors border"
+                            style={{
+                              backgroundColor: isOver ? "var(--admin-50)" : lesson && c ? c.bg : "transparent",
+                              borderColor: isOver ? "var(--admin-600)" : lesson && c ? c.border : "var(--border)",
+                              borderStyle: isOver || lesson ? "solid" : "dashed",
+                              cursor: lesson ? "pointer" : "default",
+                            }}
+                          >
+                            {lesson ? (
+                              <span className="text-xs font-semibold px-1 text-center" style={{ color: c!.text }}>
+                                {lesson.subject}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-[var(--muted)] opacity-40">+</span>
+                            )}
+                          </div>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

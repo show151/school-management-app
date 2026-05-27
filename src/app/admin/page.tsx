@@ -11,67 +11,39 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="mx-auto max-w-4xl space-y-6">
+    <div className="min-h-screen bg-[var(--background)] admin-theme">
+      <div className="container-responsive py-6 space-y-6">
         <div className="flex items-center justify-between">
-          <button
-            onClick={() => router.push("/dashboard")}
-            className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
-          >
-            ダッシュボードへ戻る
-          </button>
-          <h1 className="text-2xl font-bold text-gray-900">管理メニュー</h1>
+          <h1 className="text-2xl font-bold text-[var(--foreground)]">管理メニュー</h1>
           <button
             onClick={handleLogout}
-            className="rounded-lg bg-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-300"
+            className="rounded-xl bg-[var(--card)] border px-3 py-1.5 text-sm font-medium text-[var(--admin-600)] hover:bg-[var(--admin-50)] transition-colors"
+            style={{ borderColor: 'var(--border)' }}
           >
             ログアウト
           </button>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <button
-            onClick={() => router.push("/admin/users")}
-            className="rounded-xl border border-gray-200 bg-white p-5 text-left shadow-sm transition hover:border-indigo-300 hover:bg-indigo-50"
-          >
-            <span className="block text-base font-semibold text-gray-900">ユーザー管理</span>
-            <span className="mt-1 block text-sm text-gray-500">
-              登録済みユーザーの名前とメールアドレスを確認します。
-            </span>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <button onClick={() => router.push("/admin/users")} className="card text-left transition hover:border-[var(--admin-600)] hover:bg-[var(--admin-50)]">
+            <span className="block text-base font-semibold text-[var(--foreground)]">ユーザー管理</span>
+            <span className="mt-1 block text-sm text-[var(--muted)]">登録済みユーザーの名前とメールアドレスを確認します。</span>
           </button>
-          <button
-            onClick={() => router.push("/admin/announcements")}
-            className="rounded-xl border border-gray-200 bg-white p-5 text-left shadow-sm transition hover:border-indigo-300 hover:bg-indigo-50"
-          >
-            <span className="block text-base font-semibold text-gray-900">日々の連絡</span>
-            <span className="mt-1 block text-sm text-gray-500">
-              通常ユーザーのダッシュボードに表示する連絡を登録します。
-            </span>
+          <button onClick={() => router.push("/admin/announcements")} className="card text-left transition hover:border-[var(--admin-600)] hover:bg-[var(--admin-50)]">
+            <span className="block text-base font-semibold text-[var(--foreground)]">日々の連絡</span>
+            <span className="mt-1 block text-sm text-[var(--muted)]">通常ユーザーのダッシュボードに表示する連絡を登録します。</span>
           </button>
-          <button
-            onClick={() => router.push("/admin/subjects")}
-            className="rounded-xl border border-gray-200 bg-white p-5 text-left shadow-sm transition hover:border-indigo-300 hover:bg-indigo-50"
-          >
-            <span className="block text-base font-semibold text-gray-900">教科登録</span>
-            <span className="mt-1 block text-sm text-gray-500">
-              課題登録で使う教科名を管理します。
-            </span>
+          <button onClick={() => router.push("/admin/subjects")} className="card text-left transition hover:border-[var(--admin-600)] hover:bg-[var(--admin-50)]">
+            <span className="block text-base font-semibold text-[var(--foreground)]">教科登録</span>
+            <span className="mt-1 block text-sm text-[var(--muted)]">課題登録で使う教科名を管理します。</span>
           </button>
-          <button
-            onClick={() => router.push("/admin/lessons")}
-            className="rounded-xl border border-gray-200 bg-white p-5 text-left shadow-sm transition hover:border-indigo-300 hover:bg-indigo-50"
-          >
-            <span className="block text-base font-semibold text-gray-900">時間割管理</span>
-            <span className="mt-1 block text-sm text-gray-500">生徒の時間割を登録・編集します（1〜4限）。</span>
+          <button onClick={() => router.push("/admin/lessons")} className="card text-left transition hover:border-[var(--admin-600)] hover:bg-[var(--admin-50)]">
+            <span className="block text-base font-semibold text-[var(--foreground)]">時間割管理</span>
+            <span className="mt-1 block text-sm text-[var(--muted)]">生徒の時間割を登録・編集します（1〜4限）。</span>
           </button>
-          <button
-            onClick={() => router.push("/admin/tasks")}
-            className="rounded-xl border border-gray-200 bg-white p-5 text-left shadow-sm transition hover:border-indigo-300 hover:bg-indigo-50"
-          >
-            <span className="block text-base font-semibold text-gray-900">課題管理</span>
-            <span className="mt-1 block text-sm text-gray-500">
-              登録済みユーザー全員に課題を配布します。
-            </span>
+          <button onClick={() => router.push("/admin/tasks")} className="card text-left transition hover:border-[var(--admin-600)] hover:bg-[var(--admin-50)]">
+            <span className="block text-base font-semibold text-[var(--foreground)]">課題管理</span>
+            <span className="mt-1 block text-sm text-[var(--muted)]">登録済みユーザー全員に課題を配布します。</span>
           </button>
         </div>
       </div>

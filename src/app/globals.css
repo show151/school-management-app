@@ -1,8 +1,26 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* 学生向け・目に優しいパレット */
+  --background: #f0f7ff; /* 薄いスカイブルー背景 */
+  --card: #ffffff;
+  --foreground: #1e293b; /* やや柔らかいほぼ黒 */
+  --muted: #64748b; /* slate-500 */
+  --border: #cbd5e1; /* slate-300 */
+
+  /* プライマリ（インディゴ系・目に優しい） */
+  --primary: #4f46e5; /* indigo-600 */
+  --primary-700: #4338ca; /* indigo-700 */
+  --primary-50: #eef2ff; /* indigo-50 */
+
+  /* Admin（ティール系） */
+  --admin: #0d9488; /* teal-600 */
+  --admin-600: #0d9488;
+  --admin-50: #f0fdfa; /* teal-50 */
+
+  /* お知らせ（スカイブルー） */
+  --accent: #0284c7; /* sky-600 */
+  --accent-bg: #e0f2fe; /* sky-100 */
 }
 
 @theme inline {
@@ -14,13 +32,165 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #0f172a;
+    --card: #1e293b;
+    --foreground: #e2e8f0;
+    --muted: #94a3b8;
+    --border: #334155;
+    --primary-50: #1e1b4b;
+    --admin-50: #042f2e;
+    --accent-bg: #0c4a6e;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+  font-size: 15px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4 {
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+}
+
+p, li, td, th {
+  line-height: 1.75;
+}
+
+/* Component utilities for consistent look */
+@layer components {
+  .card {
+    @apply rounded-2xl p-5;
+    background-color: var(--card);
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.06), 0 1px 3px rgba(0,0,0,0.04);
+  }
+
+  /* Floating login/register card */
+  .login-card {
+    @apply w-full max-w-md mx-auto p-8 rounded-2xl;
+    background-color: var(--card);
+    border: 1px solid var(--border);
+    box-shadow: 0 8px 32px rgba(79, 70, 229, 0.10), 0 2px 8px rgba(0,0,0,0.04);
+  }
+
+  /* Info / Announcement bar */
+  .info-bar {
+    @apply w-full rounded-2xl p-4 text-sm font-medium;
+    background-color: var(--accent-bg);
+    border-left: 4px solid var(--accent);
+    color: var(--accent);
+  }
+
+  /* Timetable day badge */
+  .day-badge {
+    @apply inline-block px-2 py-1 rounded-md text-sm font-semibold;
+    background-color: var(--primary-50);
+    color: var(--primary);
+  }
+
+  /* Task item */
+  .task-item {
+    @apply flex items-center gap-3 rounded-2xl border p-3 transition-colors;
+    border-color: var(--border);
+    background-color: var(--card);
+  }
+  .task-item:hover {
+    background-color: var(--primary-50);
+  }
+  .task-checkbox {
+    @apply h-5 w-5 rounded border flex-shrink-0;
+    accent-color: var(--primary);
+    border-color: var(--border);
+  }
+  .task-complete {
+    opacity: 0.55;
+  }
+  .task-complete p:first-child {
+    text-decoration: line-through;
+  }
+
+  /* Admin theme helpers */
+  .admin-theme {
+    --admin-color: var(--admin-600);
+  }
+  .admin-btn {
+    @apply inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors;
+    background-color: var(--admin-600);
+  }
+  .admin-btn:hover { filter: brightness(1.1); }
+  .status-badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium;
+    background-color: var(--admin-50);
+    color: var(--admin-600);
+  }
+  .admin-link {
+    color: var(--admin-600);
+  }
+  .admin-link:hover { color: var(--admin); }
+
+  .admin-outline {
+    @apply rounded-xl border px-3 py-1 text-sm font-medium;
+    border-color: var(--admin-600);
+    color: var(--admin-600);
+    background-color: transparent;
+  }
+  .admin-outline:hover { background-color: var(--admin-50); }
+
+  .admin-pill {
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium;
+    background-color: var(--admin-50);
+    color: var(--admin-600);
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors;
+    background-color: var(--primary);
+  }
+  .btn-primary:hover { background-color: var(--primary-700); }
+
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="date"],
+  input[type="number"],
+  input[type="datetime-local"],
+  select,
+  textarea {
+    @apply w-full rounded-xl border px-3 py-2 text-sm placeholder-slate-400 transition-colors;
+    border-color: var(--border);
+    color: var(--foreground);
+    background-color: var(--card);
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+  }
+
+  .muted {
+    color: var(--muted);
+  }
+}
+
+/* Responsive container helper */
+@layer utilities {
+  .container-responsive {
+    width: 100%;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  @media (min-width: 640px) {
+    .container-responsive { padding-left: 1.5rem; padding-right: 1.5rem; }
+  }
+  @media (min-width: 1024px) {
+    .container-responsive { max-width: 1280px; padding-left: 2rem; padding-right: 2rem; }
+  }
 }

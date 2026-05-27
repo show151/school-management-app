@@ -66,77 +66,67 @@ export default function AuthPage() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-xl shadow-md border border-gray-100">
+    <main className="min-h-screen flex items-center justify-center bg-[var(--background)] px-4">
+      <div className="login-card">
         <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-950">
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-[var(--foreground)]">
             {isLogin ? "スクール管理アプリにログイン" : "新しくアカウントを作成"}
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
+          <p className="mt-2 text-center text-sm text-[var(--muted)]">
             課題やテストの提出遅れをゼロに
           </p>
         </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
-            <div className="p-3 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded">
-              {error}
-            </div>
+            <div className="p-3 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded">{error}</div>
           )}
           {message && (
-            <div className="p-3 bg-green-50 border-l-4 border-green-500 text-green-700 text-sm rounded">
-              {message}
-            </div>
+            <div className="p-3 bg-green-50 border-l-4 border-green-500 text-green-700 text-sm rounded">{message}</div>
           )}
 
           <div className="rounded-md shadow-sm space-y-4">
             {!isLogin && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  名前
-                </label>
+                <label className="block text-sm font-medium text-[var(--foreground)] mb-1">名前</label>
                 <input
                   type="text"
                   required={!isLogin}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="appearance-none rounded-lg relative block w-full bg-white px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                  className="appearance-none rounded-lg relative block w-full bg-white px-3 py-2 border border-gray-300 placeholder-gray-500 text-[var(--foreground)] focus:outline-none focus:ring-[var(--primary)] focus:border-[var(--primary)] text-sm"
                   placeholder="太郎"
                 />
                 {nameError && <small className="text-xs text-red-600">{nameError}</small>}
               </div>
             )}
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                メールアドレス
-              </label>
+              <label className="block text-sm font-medium text-[var(--foreground)] mb-1">メールアドレス</label>
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="appearance-none rounded-lg relative block w-full bg-white px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                className="appearance-none rounded-lg relative block w-full bg-white px-3 py-2 border border-gray-300 placeholder-gray-500 text-[var(--foreground)] focus:outline-none focus:ring-[var(--primary)] focus:border-[var(--primary)] text-sm"
                 placeholder="you@example.com"
               />
               {emailError && <small className="text-xs text-red-600">{emailError}</small>}
             </div>
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                パスワード
-              </label>
+              <label className="block text-sm font-medium text-[var(--foreground)] mb-1">パスワード</label>
               <input
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="appearance-none rounded-lg relative block w-full bg-white px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                className="appearance-none rounded-lg relative block w-full bg-white px-3 py-2 border border-gray-300 placeholder-gray-500 text-[var(--foreground)] focus:outline-none focus:ring-[var(--primary)] focus:border-[var(--primary)] text-sm"
                 placeholder="••••••••"
               />
               {passwordError && <small className="text-xs text-red-600">{passwordError}</small>}
               {!isLogin && (
-                <p className="mt-1 text-xs text-gray-500">
-                  ※ 大文字、小文字、数字、記号を含む8文字以上が必要です。
-                </p>
+                <p className="mt-1 text-xs text-[var(--muted)]">※ 大文字、小文字、数字、記号を含む8文字以上が必要です。</p>
               )}
             </div>
           </div>
@@ -145,7 +135,7 @@ export default function AuthPage() {
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out disabled:opacity-50"
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-[var(--primary)] hover:bg-[var(--primary-700)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--primary)] transition duration-150 ease-in-out disabled:opacity-50"
             >
               {loading ? "処理中..." : isLogin ? "ログインする" : "アカウントを登録する"}
             </button>
@@ -160,19 +150,14 @@ export default function AuthPage() {
               setError("");
               setMessage("");
             }}
-            className="text-sm font-medium text-indigo-600 hover:text-indigo-500 transition duration-150"
+            className="text-sm font-medium text-[var(--primary)] hover:text-[var(--primary-700)] transition duration-150"
           >
             {isLogin ? "まだ登録していない方はこちら（新規登録）" : "すでに登録済みの方はこちら（ログイン）"}
           </button>
         </div>
 
         <div className="text-center">
-          <button
-            onClick={() => router.push("/admin/login")}
-            className="text-xs font-medium text-gray-500 hover:text-gray-700"
-          >
-            管理者はこちら
-          </button>
+          <button onClick={() => router.push("/admin/login")} className="text-xs font-medium text-[var(--muted)] md:hidden">管理者はこちら</button>
         </div>
       </div>
     </main>

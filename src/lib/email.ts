@@ -426,3 +426,51 @@ export async function sendBulkAnnouncementEmail(
   );
   return { success: successCount, failed: failedCount, errors };
 }
+
+/**
+ * 課題締め切り1日前リマインダーメール送信
+ */
+export async function sendTaskReminderEmail(
+  email: string,
+  name: string,
+  taskTitle: string,
+  subject: string,
+  dueDate: Date
+): Promise<boolean> {
+  const dueDateStr = dueDate.toLocaleDateString('ja-JP', {
+    year: 'numeric', month: '2-digit', day: '2-digit',
+  });
+
+  try {
+    const safeName = sanitizeInput(name);
+    const safeTitle = sanitizeInput(taskTitle);
+    const safeSubject = sanitizeInput(subject);
+    const result = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: email,
+      subject: `【締め切り明日】${safeSubject}：${safeTitle}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #c2410c;">⚠️ 課題の締め切りは明日です</h2>
+          <p>${safeName}さん</p>
+          <p>以下の課題の締め切りが<strong>明日（${dueDateStr}）</strong>に迫っています。</p>
+          <div style="background-color: #fff7ed; border-left: 4px solid #f97316; padding: 16px; border-radius: 6px; margin: 20px 0;">
+            <p style="margin:0"><strong>教科：</strong> ${safeSubject}</p>
+            <p style="margin:8px 0 0"><strong>課題：</strong> ${safeTitle}</p>
+            <p style="margin:8px 0 0"><strong>締切日：</strong> ${dueDateStr}</p>
+          </div>
+          <p>
+            <a href="${APP_URL}/dashboard" style="display: inline-block; background-color: #4f46e5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px;">
+              ダッシュボードで確認
+            </a>
+          </p>
+        </div>
+      `,
+    });
+    console.log(`✅ Task reminder sent to ${email}:`, result);
+    return true;
+  } catch (error) {
+    console.error(`❌ Failed to send task reminder to ${email}:`, error);
+    return false;
+  }
+}

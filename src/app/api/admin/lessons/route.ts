@@ -28,10 +28,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "必須フィールドが不足しています。" }, { status: 400 });
     }
 
-    const data: any = { dayOfWeek, period, subject };
-    if (userId) data.userId = userId;
-
-    const lesson = await prisma.lesson.create({ data });
+    const lesson = await prisma.lesson.create({
+      data: { dayOfWeek, period, subject },
+    });
     return NextResponse.json(lesson, { status: 201 });
   } catch (err) {
     console.error('Create lesson error:', err);
