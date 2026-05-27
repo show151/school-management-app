@@ -135,9 +135,23 @@ export default function DashboardPage() {
 
         {/* お知らせバー（未読のみ） */}
         {data.announcements.filter((a) => !readIds.has(a.id)).slice(0, 1).map((a) => (
-          <div key={a.id} className="info-bar flex items-center justify-between gap-3">
-            <span>{a.title} — {a.body}</span>
-            <button onClick={() => handleMarkRead(a.id)} className="shrink-0 text-xs underline opacity-70 hover:opacity-100">既読</button>
+          <div key={a.id} className="card flex items-start gap-4"
+            style={{ borderLeft: "4px solid var(--accent)", backgroundColor: "var(--accent-bg)" }}>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: "var(--accent)" }}>お知らせ</span>
+                <span className="text-xs" style={{ color: "var(--muted)" }}>{new Date(a.date).toLocaleDateString()}</span>
+              </div>
+              <p className="text-sm font-bold" style={{ color: "var(--foreground)" }}>{a.title}</p>
+              <p className="text-sm mt-1" style={{ color: "var(--foreground)" }}>{a.body}</p>
+            </div>
+            <button
+              onClick={() => handleMarkRead(a.id)}
+              className="shrink-0 text-xs font-medium px-3 py-1.5 rounded-xl transition-colors"
+              style={{ backgroundColor: "var(--card)", color: "var(--muted)", border: "1px solid var(--border)" }}
+            >
+              既読
+            </button>
           </div>
         ))}
 
@@ -294,14 +308,14 @@ export default function DashboardPage() {
                 return (
                   <article key={a.id}
                     className="rounded-2xl p-3 border transition-opacity"
-                    style={{ borderColor: "var(--border)", backgroundColor: isRead ? "var(--background)" : "var(--primary-50)", opacity: isRead ? 0.7 : 1 }}>
+                    style={{ borderColor: "var(--border)", backgroundColor: isRead ? "var(--background)" : "var(--primary-50)" }}>
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           {!isRead && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: "var(--accent)" }} />}
                           <h3 className="text-sm font-semibold text-[var(--foreground)]">{a.title}</h3>
                         </div>
-                        <p className="mt-1 whitespace-pre-wrap text-sm text-[var(--muted)]">{a.body}</p>
+                        <p className="mt-1 whitespace-pre-wrap text-sm" style={{ color: isRead ? "var(--muted)" : "var(--foreground)" }}>{a.body}</p>
                       </div>
                       <div className="flex flex-col items-end gap-1 shrink-0">
                         <span className="text-xs text-[var(--muted)]">{new Date(a.date).toLocaleDateString()}</span>

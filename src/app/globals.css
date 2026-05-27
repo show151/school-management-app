@@ -4,8 +4,8 @@
   /* 学生向け・目に優しいパレット */
   --background: #f0f7ff; /* 薄いスカイブルー背景 */
   --card: #ffffff;
-  --foreground: #1e293b; /* やや柔らかいほぼ黒 */
-  --muted: #64748b; /* slate-500 */
+  --foreground: #0f172a; /* slate-900 */
+  --muted: #475569; /* slate-600 → コントラスト比改善 */
   --border: #cbd5e1; /* slate-300 */
 
   /* プライマリ（インディゴ系・目に優しい） */
@@ -61,6 +61,9 @@ h1, h2, h3, h4 {
 p, li, td, th {
   line-height: 1.75;
 }
+
+/* text-xs は小さすぎるので最小フォントサイズを保証 */
+.text-xs { font-size: 0.8rem !important; }
 
 /* Component utilities for consistent look */
 @layer components {
