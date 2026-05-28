@@ -6,10 +6,6 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@school-management.com';
 const APP_URL = process.env.APP_URL || 'http://localhost:3000';
 
-function isResendError(result: { error?: unknown }): boolean {
-  return Boolean(result.error);
-}
-
 /**
  * ユーザー登録確認メール送信
  */
@@ -45,8 +41,9 @@ export async function sendVerificationEmail(
       `,
     });
 
-    if (isResendError(result)) {
-      throw new Error(JSON.stringify(result.error));
+    if (result.error) {
+      console.warn('⚠️ Verification email rejected by Resend:', result.error);
+      return false;
     }
 
     console.log(`✅ Verification email sent successfully:`, result);
@@ -97,8 +94,9 @@ export async function sendPasswordResetEmail(
       `,
     });
 
-    if (isResendError(result)) {
-      throw new Error(JSON.stringify(result.error));
+    if (result.error) {
+      console.warn('⚠️ Password reset email rejected by Resend:', result.error);
+      return false;
     }
 
     console.log(`✅ Password reset email sent successfully:`, result);
@@ -155,8 +153,9 @@ export async function sendAdminNotificationEmail(
       `,
     });
 
-    if (isResendError(result)) {
-      throw new Error(JSON.stringify(result.error));
+    if (result.error) {
+      console.warn('⚠️ Admin notification email rejected by Resend:', result.error);
+      return false;
     }
 
     console.log(`✅ Admin notification email sent successfully:`, result);
@@ -216,8 +215,9 @@ export async function sendTaskNotificationEmail(
       `,
     });
 
-    if (isResendError(result)) {
-      throw new Error(JSON.stringify(result.error));
+    if (result.error) {
+      console.warn('⚠️ Task notification email rejected by Resend:', result.error);
+      return false;
     }
 
     console.log(`✅ Task notification email sent successfully:`, result);
@@ -280,8 +280,9 @@ export async function sendTestNotificationEmail(
       `,
     });
 
-    if (isResendError(result)) {
-      throw new Error(JSON.stringify(result.error));
+    if (result.error) {
+      console.warn('⚠️ Test notification email rejected by Resend:', result.error);
+      return false;
     }
 
     console.log(`✅ Test notification email sent successfully:`, result);
@@ -331,8 +332,9 @@ export async function sendAnnouncementEmail(
       `,
     });
 
-    if (isResendError(result)) {
-      throw new Error(JSON.stringify(result.error));
+    if (result.error) {
+      console.warn('⚠️ Announcement email rejected by Resend:', result.error);
+      return false;
     }
 
     console.log(`✅ Announcement email sent successfully:`, result);
@@ -502,8 +504,9 @@ export async function sendTaskReminderEmail(
       `,
     });
 
-    if (isResendError(result)) {
-      throw new Error(JSON.stringify(result.error));
+    if (result.error) {
+      console.warn('⚠️ Task reminder email rejected by Resend:', result.error);
+      return false;
     }
 
     console.log(`✅ Task reminder sent to ${email}:`, result);
