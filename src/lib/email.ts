@@ -6,6 +6,10 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@school-management.com';
 const APP_URL = process.env.APP_URL || 'http://localhost:3000';
 
+function isResendError(result: { error?: unknown }): boolean {
+  return Boolean(result.error);
+}
+
 /**
  * ユーザー登録確認メール送信
  */
@@ -40,6 +44,11 @@ export async function sendVerificationEmail(
         </div>
       `,
     });
+
+    if (isResendError(result)) {
+      throw new Error(JSON.stringify(result.error));
+    }
+
     console.log(`✅ Verification email sent successfully:`, result);
     return true;
   } catch (error) {
@@ -87,6 +96,11 @@ export async function sendPasswordResetEmail(
         </div>
       `,
     });
+
+    if (isResendError(result)) {
+      throw new Error(JSON.stringify(result.error));
+    }
+
     console.log(`✅ Password reset email sent successfully:`, result);
     return true;
   } catch (error) {
@@ -140,6 +154,11 @@ export async function sendAdminNotificationEmail(
         </div>
       `,
     });
+
+    if (isResendError(result)) {
+      throw new Error(JSON.stringify(result.error));
+    }
+
     console.log(`✅ Admin notification email sent successfully:`, result);
     return true;
   } catch (error) {
@@ -196,6 +215,11 @@ export async function sendTaskNotificationEmail(
         </div>
       `,
     });
+
+    if (isResendError(result)) {
+      throw new Error(JSON.stringify(result.error));
+    }
+
     console.log(`✅ Task notification email sent successfully:`, result);
     return true;
   } catch (error) {
@@ -255,6 +279,11 @@ export async function sendTestNotificationEmail(
         </div>
       `,
     });
+
+    if (isResendError(result)) {
+      throw new Error(JSON.stringify(result.error));
+    }
+
     console.log(`✅ Test notification email sent successfully:`, result);
     return true;
   } catch (error) {
@@ -301,6 +330,11 @@ export async function sendAnnouncementEmail(
         </div>
       `,
     });
+
+    if (isResendError(result)) {
+      throw new Error(JSON.stringify(result.error));
+    }
+
     console.log(`✅ Announcement email sent successfully:`, result);
     return true;
   } catch (error) {
@@ -467,6 +501,11 @@ export async function sendTaskReminderEmail(
         </div>
       `,
     });
+
+    if (isResendError(result)) {
+      throw new Error(JSON.stringify(result.error));
+    }
+
     console.log(`✅ Task reminder sent to ${email}:`, result);
     return true;
   } catch (error) {
