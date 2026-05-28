@@ -173,9 +173,7 @@ export default function AuthPage() {
           </button>
         </div>
 
-        <div className="text-center">
-          <button onClick={() => router.push("/admin/login")} className="text-xs font-medium text-[var(--muted)] md:hidden">管理者はこちら</button>
-        </div>
+        {/* 管理者リンクはヘッダーの `isAdmin` によって表示されます */}
       </div>
     </main>
   );
