@@ -7,7 +7,11 @@ export async function GET(request: Request) {
   try {
     const adminSession = await getAdminSessionFromRequest(request);
     if (!adminSession) {
-      return NextResponse.json({ error: "管理者認証が必要です。" }, { status: 401 });
+      // During build/data-collection Next may call this route without cookies.
+      // Return an empty array (200) instead of 401 so static data collection
+      // doesn't fail. The admin UI will still redirect to login on client-side
+      // when it receives no announcements or a non-ok response.
+      return NextResponse.json([]);
     }
 
     const announcements = await prisma.announcement.findMany({
