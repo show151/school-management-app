@@ -24,7 +24,7 @@ export async function GET(request: Request) {
     prisma.announcementRead.findMany({ where: { userId }, select: { announcementId: true } }),
   ]);
 
-  const readIds = reads.map((r) => r.announcementId);
+  const readIds = reads.map((r: { announcementId: string }) => r.announcementId);
   return NextResponse.json({ announcements, readIds });
 }
 
