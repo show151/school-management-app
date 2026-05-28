@@ -31,4 +31,6 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 ## Deploy
 
-You can deploy this app using your preferred hosting provider. For local development, continue using the SQLite database configured in `.env`.
+This project now uses Supabase PostgreSQL for the database. Set `DATABASE_URL` to the Supabase connection string in `.env` or your hosting provider's environment variables.
+
+For local development, you can also point `DATABASE_URL` to a local PostgreSQL instance if you prefer to match production more closely.
