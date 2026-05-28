@@ -1,4 +1,6 @@
-import { PrismaClient } from "@prisma/client";
+import * as PrismaPkg from "@prisma/client";
+import type { PrismaClient as PrismaClientType } from "@prisma/client";
+const PrismaClientCtor = (PrismaPkg as any).PrismaClient ?? (PrismaPkg as any).default;
 import { PrismaPg } from "@prisma/adapter-pg";
 import { getRequiredEnv } from "@/lib/env";
 import { Pool } from "pg";
@@ -10,12 +12,12 @@ const pool = new Pool({
 const adapter = new PrismaPg(pool);
 
 const globalForPrisma = globalThis as unknown as {
-  prisma?: PrismaClient;
+  prisma?: PrismaClientType;
 };
 
-export const prisma =
+export const prisma: PrismaClientType =
   globalForPrisma.prisma ??
-  new PrismaClient({
+  new (PrismaClientCtor as any)({
     adapter,
   });
 

@@ -70,8 +70,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const recipients = users.map(u => ({ email: u.email, name: u.name }));
-    console.log('📬 Recipients:', recipients.map(r => r.email).join(', '));
+    const recipients = users.map((u: { email: string; name: string }) => ({ email: u.email, name: u.name }));
+    console.log('📬 Recipients:', recipients.map((r: { email: string }) => r.email).join(', '));
     let result;
 
     switch (body.type) {

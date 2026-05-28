@@ -57,7 +57,7 @@ export async function POST(request: Request) {
 
     // テスト情報を全ユーザーに作成
     await prisma.test.createMany({
-      data: users.map((user) => ({
+      data: users.map((user: { id: string }) => ({
         userId: user.id,
         subject: subject.trim(),
         period,

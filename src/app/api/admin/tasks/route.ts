@@ -25,7 +25,7 @@ export async function GET(request: Request) {
 
   const summaries = Array.from(
     tasks
-      .reduce((map, task) => {
+      .reduce((map: Map<string, AdminTaskSummary>, task: any) => {
         const batchId = task.adminBatchId || task.id;
         const current =
           map.get(batchId) ||
@@ -78,7 +78,7 @@ export async function POST(request: Request) {
     const adminBatchId = randomUUID();
 
     await prisma.task.createMany({
-      data: users.map((user) => ({
+      data: users.map((user: { id: string }) => ({
         userId: user.id,
         adminBatchId,
         subject: subject.trim(),
