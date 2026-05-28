@@ -13,6 +13,8 @@ type AdminTaskSummary = {
   completedCount: number;
 };
 
+type TaskRow = Awaited<ReturnType<typeof prisma.task.findMany>>[number];
+
 export async function GET(request: Request) {
   const adminSession = await getAdminSessionFromRequest(request);
   if (!adminSession) {
@@ -26,7 +28,7 @@ export async function GET(request: Request) {
 
   const summaries = Array.from(
     tasks
-      .reduce((map: Map<string, AdminTaskSummary>, task: any) => {
+      .reduce((map: Map<string, AdminTaskSummary>, task: TaskRow) => {
         const batchId = task.adminBatchId || task.id;
         const current =
           map.get(batchId) ||

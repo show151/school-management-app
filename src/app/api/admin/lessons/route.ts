@@ -23,8 +23,8 @@ export async function POST(request: Request) {
     const adminSession = await getAdminSessionFromRequest(request);
     if (!adminSession) return NextResponse.json({ error: "管理者認証が必要です。" }, { status: 401 });
 
-    const body = (await request.json()) as { dayOfWeek?: string; period?: number; subject?: string; userId?: string };
-    const { dayOfWeek, period, subject, userId } = body;
+    const body = (await request.json()) as { dayOfWeek?: string; period?: number; subject?: string };
+    const { dayOfWeek, period, subject } = body;
     if (!dayOfWeek || !period || !subject) {
       return NextResponse.json({ error: "必須フィールドが不足しています。" }, { status: 400 });
     }

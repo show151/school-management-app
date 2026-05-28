@@ -38,7 +38,11 @@ export async function GET(request: Request) {
       task.subject,
       task.dueDate,
     );
-    ok ? sent++ : failed++;
+    if (ok) {
+      sent += 1;
+    } else {
+      failed += 1;
+    }
   }
 
   console.log(`📧 Task reminder cron: sent=${sent}, failed=${failed}`);

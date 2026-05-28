@@ -1,13 +1,9 @@
-import * as PrismaPkg from "@prisma/client";
-// Some generated @prisma/client distributions expose different module shapes
-// so we use a runtime lookup and keep a local relaxed type to avoid
-// build-time type resolution errors in environments where the type export
-// is not present in the package's d.ts surface.
-const PrismaClientCtor = (PrismaPkg as any).PrismaClient ?? (PrismaPkg as any).default;
-type PrismaClientType = any;
+import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { getRequiredEnv } from "@/lib/env";
 import { Pool } from "pg";
+import { getRequiredEnv } from "@/lib/env";
+
+type PrismaClientWithAdapter = PrismaClient;
 
 const pool = new Pool({
   connectionString: getRequiredEnv("DATABASE_URL"),
@@ -16,14 +12,11 @@ const pool = new Pool({
 const adapter = new PrismaPg(pool);
 
 const globalForPrisma = globalThis as unknown as {
-  prisma?: PrismaClientType;
+  prisma?: PrismaClientWithAdapter;
 };
 
-export const prisma: PrismaClientType =
-  globalForPrisma.prisma ??
-  new (PrismaClientCtor as any)({
-    adapter,
-  });
+export const prisma: PrismaClientWithAdapter =
+  globalForPrisma.prisma ?? new PrismaClient({ adapter });
 
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;

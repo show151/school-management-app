@@ -16,7 +16,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   try {
     const secret = new TextEncoder().encode(getRequiredEnv('JWT_SECRET'));
     const { payload } = await jwtVerify(adminToken, secret);
-    const email = (payload as any).email as string | undefined;
+    const email = typeof payload.email === 'string' ? payload.email : undefined;
     if (!email) return redirect('/');
 
     // Confirm admin exists in DB (or matches env fallback)
@@ -24,7 +24,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     const isEnvAdmin = process.env.ADMIN_EMAIL === email && process.env.ADMIN_PASSWORD;
     if (!dbUser && !isEnvAdmin) return redirect('/');
     if (dbUser && !dbUser.isAdmin) return redirect('/');
-  } catch (err) {
+  } catch {
     return redirect('/');
   }
 

@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-export async function POST(request: Request) {
+export async function POST() {
   // 本番環境では実行を許可しない
   if (process.env.NODE_ENV === 'production') {
     return NextResponse.json(

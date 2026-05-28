@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 type Lesson = { id: string; dayOfWeek: string; period: number; subject: string };
@@ -27,15 +27,6 @@ export default function AdminLessonsPage() {
   const [loading, setLoading] = useState(true);
   const [dragSubject, setDragSubject] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState<string | null>(null);
-  const colorMap = useRef<Record<string, (typeof COLORS)[0]>>({});
-
-  const getColor = (subject: string) => {
-    if (!colorMap.current[subject]) {
-      const idx = Object.keys(colorMap.current).length % COLORS.length;
-      colorMap.current[subject] = COLORS[idx];
-    }
-    return colorMap.current[subject];
-  };
 
   useEffect(() => {
     let mounted = true;
@@ -52,6 +43,21 @@ export default function AdminLessonsPage() {
 
   const getLesson = (day: string, period: number) =>
     lessons.find((l) => l.dayOfWeek === day && l.period === period);
+
+  const subjectColorMap: Record<string, (typeof COLORS)[0]> = {};
+  let colorIndex = 0;
+  for (const subject of subjects) {
+    if (!subjectColorMap[subject.name]) {
+      subjectColorMap[subject.name] = COLORS[colorIndex % COLORS.length];
+      colorIndex += 1;
+    }
+  }
+  for (const lesson of lessons) {
+    if (!subjectColorMap[lesson.subject]) {
+      subjectColorMap[lesson.subject] = COLORS[colorIndex % COLORS.length];
+      colorIndex += 1;
+    }
+  }
 
   const handleDrop = async (day: string, period: number) => {
     setDragOver(null);
@@ -123,7 +129,7 @@ export default function AdminLessonsPage() {
               ) : (
                 <div className="flex flex-row lg:flex-col flex-wrap gap-2">
                   {subjects.map((s) => {
-                    const c = getColor(s.name);
+                    const c = subjectColorMap[s.name] ?? COLORS[0];
                     return (
                       <div
                         key={s.id}
@@ -167,7 +173,7 @@ export default function AdminLessonsPage() {
                       const lesson = getLesson(day, period);
                       const cellKey = `${day}-${period}`;
                       const isOver = dragOver === cellKey;
-                      const c = lesson ? getColor(lesson.subject) : null;
+                      const c = lesson ? subjectColorMap[lesson.subject] ?? COLORS[0] : null;
                       return (
                         <td
                           key={day}

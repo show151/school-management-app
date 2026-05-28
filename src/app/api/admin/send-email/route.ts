@@ -7,8 +7,6 @@ import {
   sendBulkAnnouncementEmail,
 } from '@/lib/email';
 
-const JWT_SECRET = process.env.JWT_SECRET || '';
-
 interface SendEmailRequest {
   type: 'task' | 'test' | 'announcement';
   userIds: string[];

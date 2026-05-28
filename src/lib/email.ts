@@ -356,14 +356,6 @@ export async function sendBulkTaskNotificationEmail(
   taskTitle: string,
   dueDate: Date
 ): Promise<{ success: number; failed: number; errors: string[] }> {
-  const dueDateStr = dueDate.toLocaleDateString('ja-JP', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-
   let successCount = 0;
   let failedCount = 0;
   const errors: string[] = [];
