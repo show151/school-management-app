@@ -39,7 +39,8 @@ export default function AdminLoginPage() {
 
       if (!res.ok) throw new Error(data.error || "ログインに失敗しました。");
 
-      router.push("/admin");
+      // Force a full-page navigation so server-rendered Header sees the new admin cookie
+      window.location.href = "/admin";
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "ログインに失敗しました。");
     } finally {
