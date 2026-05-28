@@ -14,7 +14,7 @@ export default function AdminSubjectsPage() {
 
   const reload = async () => {
     const res = await fetch("/api/admin/subjects", { credentials: "same-origin" });
-    if (!res.ok) { router.push("/admin/login"); return; }
+    if (!res.ok) { router.push("/"); return; }
     setSubjects((await res.json()) as Subject[]);
     setLoading(false);
   };
@@ -24,7 +24,7 @@ export default function AdminSubjectsPage() {
     fetch("/api/admin/subjects", { credentials: "same-origin" })
       .then((res) => { if (!res.ok) throw new Error(); return res.json() as Promise<Subject[]>; })
       .then((data) => { if (isMounted) setSubjects(data); })
-      .catch(() => router.push("/admin/login"))
+      .catch(() => router.push("/"))
       .finally(() => { if (isMounted) setLoading(false); });
     return () => { isMounted = false; };
   }, [router]);

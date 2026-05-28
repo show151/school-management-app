@@ -7,7 +7,8 @@ export default function AdminPage() {
 
   const handleLogout = async () => {
     await fetch("/api/admin/auth/logout", { method: "POST", credentials: "same-origin" });
-    router.push("/admin/login");
+    // Force full reload so server-side header reflects logged-out state
+    window.location.href = "/";
   };
 
   return (

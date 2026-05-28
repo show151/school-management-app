@@ -9,7 +9,15 @@ export async function POST() {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 0, // 0秒にすることで削除
+      maxAge: 0,
+      path: '/',
+    });
+    // 管理者用トークンも念のため削除
+    response.cookies.set('admin_token', '', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 0,
       path: '/',
     });
 

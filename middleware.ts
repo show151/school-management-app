@@ -16,7 +16,7 @@ export async function middleware(request: NextRequest) {
   const userToken = request.cookies.get('auth_token')?.value;
   const adminToken = request.cookies.get('admin_token')?.value;
   const userLoginUrl = new URL('/', request.url);
-  const adminLoginUrl = new URL('/admin/login', request.url);
+  const adminLoginUrl = new URL('/', request.url);
   const pathname = request.nextUrl.pathname;
 
   const isAdminPath =

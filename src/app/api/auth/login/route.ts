@@ -88,7 +88,7 @@ export async function POST(request: Request) {
 
     const response = NextResponse.json({
       message: 'ログインに成功しました。',
-      user: { email: user.email },
+      user: { email: user.email, isAdmin: !!user.isAdmin },
     });
 
     // 🔒 クッキーにJWTを安全に保存 (HttpOnly, Secure, SameSite)
@@ -99,6 +99,23 @@ export async function POST(request: Request) {
       maxAge: 3600, // 1時間（JWTの有効期限と合わせる）
       path: '/',
     });
+
+    // 管理者アカウントの場合は admin_token も発行しておく（ヘッダーのサーバサイド判定で使用）
+    if (user.isAdmin) {
+      const adminSecret = new TextEncoder().encode(JWT_SECRET);
+      const adminToken = await new SignJWT({ role: 'admin', email: user.email })
+        .setProtectedHeader({ alg: 'HS256' })
+        .setIssuedAt()
+        .setExpirationTime('8h')
+        .sign(adminSecret);
+      response.cookies.set('admin_token', adminToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 60 * 60 * 8,
+        path: '/',
+      });
+    }
 
     return response;
   } catch (error) {

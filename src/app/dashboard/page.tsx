@@ -67,8 +67,9 @@ export default function DashboardPage() {
   }, [router]);
 
   const handleLogout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
-    router.push("/");
+    await fetch("/api/auth/logout", { method: "POST", credentials: "same-origin" });
+    // Force a full reload so server-rendered Header sees cookie changes
+    window.location.href = "/";
   };
 
   const handleToggleTask = async (id: string, isCompleted: boolean) => {

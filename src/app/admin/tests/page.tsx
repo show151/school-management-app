@@ -31,7 +31,7 @@ export default function AdminTestsPage() {
       .then(({ nextTests, nextUsers }) => {
         if (isMounted) { setTests(nextTests); setUsers(nextUsers); }
       })
-      .catch(() => router.push("/admin/login"))
+      .catch(() => router.push("/"))
       .finally(() => { if (isMounted) setLoading(false); });
     return () => { isMounted = false; };
   }, [router]);

@@ -11,5 +11,14 @@ export async function POST() {
     path: "/",
   });
 
+  // Also clear regular auth token to fully logout
+  response.cookies.set('auth_token', '', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    maxAge: 0,
+    path: '/',
+  });
+
   return response;
 }

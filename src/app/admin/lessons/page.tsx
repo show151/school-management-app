@@ -45,7 +45,7 @@ export default function AdminLessonsPage() {
         const [s, l] = await Promise.all([sRes.json(), lRes.json()]);
         if (mounted) { setSubjects(s); setLessons(l); }
       })
-      .catch(() => router.push("/admin/login"))
+      .catch(() => router.push("/"))
       .finally(() => { if (mounted) setLoading(false); });
     return () => { mounted = false; };
   }, [router]);

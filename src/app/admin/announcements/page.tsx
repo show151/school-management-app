@@ -20,7 +20,7 @@ export default function AdminAnnouncementsPage() {
 
   const reload = async () => {
     const res = await fetch("/api/admin/announcements", { credentials: "same-origin" });
-    if (!res.ok) { router.push("/admin/login"); return; }
+    if (!res.ok) { router.push("/"); return; }
     setAnnouncements((await res.json()) as Announcement[]);
     setLoading(false);
   };
@@ -38,7 +38,7 @@ export default function AdminAnnouncementsPage() {
           setUsers(usersData as User[]);
         }
       })
-      .catch(() => router.push("/admin/login"))
+      .catch(() => router.push("/"))
       .finally(() => { if (isMounted) setLoading(false); });
     return () => { isMounted = false; };
   }, [router]);

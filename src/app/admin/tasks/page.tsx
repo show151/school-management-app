@@ -27,7 +27,7 @@ export default function AdminTasksPage() {
       if (!res.ok) throw new Error();
       setTasks((await res.json()) as Task[]);
     } catch {
-      router.push("/admin/login");
+      router.push("/");
     } finally {
       setLoading(false);
     }
@@ -51,7 +51,7 @@ export default function AdminTasksPage() {
       .then(({ nextTasks, nextSubjects, nextUsers }) => {
         if (isMounted) { setTasks(nextTasks); setSubjects(nextSubjects); setUsers(nextUsers); }
       })
-      .catch(() => router.push("/admin/login"))
+      .catch(() => router.push("/"))
       .finally(() => { if (isMounted) setLoading(false); });
     return () => { isMounted = false; };
   }, [router]);

@@ -38,11 +38,12 @@ export default function AuthPage() {
     try {
       const res = await fetch(endpoint, {
         method: "POST",
+        credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(isLogin ? { email, password } : { name, studentNumber: studentNumber ? Number(studentNumber) : null, email, password }),
       });
 
-      const data = (await res.json()) as { error?: string };
+      const data = (await res.json()) as { error?: string; user?: { email?: string; isAdmin?: boolean } };
 
       if (!res.ok) {
         throw new Error(data.error || "エラーが発生しました。");
@@ -50,7 +51,12 @@ export default function AuthPage() {
 
       if (isLogin) {
         setMessage("ログインに成功しました！移動します...");
-        // ログイン成功したらメイン画面（ダッシュボード）へ移動
+        // 管理者アカウントでも最初はダッシュボードへ（フルリロードして Header を更新）
+        if (data.user?.isAdmin) {
+          window.location.href = "/dashboard";
+          return;
+        }
+        // 通常ユーザーはダッシュボードへ
         setTimeout(() => {
           router.push("/dashboard");
         }, 1000);

@@ -21,9 +21,7 @@ export default function Header({ isAdmin }: HeaderProps) {
             ダッシュボード
           </a>
           {isAdmin && (
-            <a href="/admin" className="text-[var(--admin)] hover:opacity-80 transition-opacity">
-              管理
-            </a>
+            <a href="/admin" className="text-[var(--admin)] hover:opacity-80 transition-opacity">管理</a>
           )}
         </nav>
 
