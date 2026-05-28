@@ -6,7 +6,7 @@ export default function AdminPage() {
   const router = useRouter();
 
   const handleLogout = async () => {
-    await fetch("/api/admin/auth/logout", { method: "POST" });
+    await fetch("/api/admin/auth/logout", { method: "POST", credentials: "same-origin" });
     router.push("/admin/login");
   };
 

@@ -23,7 +23,7 @@ export default function AdminTestsPage() {
 
   useEffect(() => {
     let isMounted = true;
-    Promise.all([fetch("/api/admin/tests"), fetch("/api/admin/users")])
+    Promise.all([fetch("/api/admin/tests", { credentials: "same-origin" }), fetch("/api/admin/users", { credentials: "same-origin" })])
       .then(async ([testsRes, usersRes]) => {
         if (!testsRes.ok || !usersRes.ok) throw new Error();
         return { nextTests: (await testsRes.json()) as Test[], nextUsers: (await usersRes.json()) as User[] };
@@ -47,6 +47,7 @@ export default function AdminTestsPage() {
 
     const res = await fetch("/api/admin/tests", {
       method: "POST",
+      credentials: "same-origin",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ subject, period: parseInt(period), range, testDate }),
     });
@@ -55,7 +56,7 @@ export default function AdminTestsPage() {
     if (selectedUserIds.length > 0) {
       const emailRes = await fetch("/api/admin/send-email", {
         method: "POST",
-        credentials: "include",
+        credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ type: "test", userIds: selectedUserIds, payload: { subject, testDate, range } }),
       });
@@ -66,7 +67,7 @@ export default function AdminTestsPage() {
     }
 
     setSubject(""); setPeriod(""); setRange(""); setTestDate(""); setSelectedUserIds([]);
-    const testsRes = await fetch("/api/admin/tests");
+    const testsRes = await fetch("/api/admin/tests", { credentials: "same-origin" });
     if (testsRes.ok) setTests(await testsRes.json());
   };
 
@@ -74,6 +75,7 @@ export default function AdminTestsPage() {
     if (!confirm("このテスト情報を削除してもよろしいですか？")) return;
     const res = await fetch("/api/admin/tests", {
       method: "DELETE",
+      credentials: "same-origin",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
     });

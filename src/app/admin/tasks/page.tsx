@@ -23,7 +23,7 @@ export default function AdminTasksPage() {
 
   const fetchTasks = useCallback(async () => {
     try {
-      const res = await fetch("/api/admin/tasks");
+      const res = await fetch("/api/admin/tasks", { credentials: "same-origin" });
       if (!res.ok) throw new Error();
       setTasks((await res.json()) as Task[]);
     } catch {
@@ -35,7 +35,11 @@ export default function AdminTasksPage() {
 
   useEffect(() => {
     let isMounted = true;
-    Promise.all([fetch("/api/admin/tasks"), fetch("/api/admin/subjects"), fetch("/api/admin/users")])
+    Promise.all([
+      fetch("/api/admin/tasks", { credentials: "same-origin" }),
+      fetch("/api/admin/subjects", { credentials: "same-origin" }),
+      fetch("/api/admin/users", { credentials: "same-origin" }),
+    ])
       .then(async ([tasksRes, subjectsRes, usersRes]) => {
         if (!tasksRes.ok || !subjectsRes.ok || !usersRes.ok) throw new Error();
         return {
@@ -62,6 +66,7 @@ export default function AdminTasksPage() {
 
     const res = await fetch("/api/admin/tasks", {
       method: "POST",
+      credentials: "same-origin",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ subject, title, dueDate }),
     });
@@ -70,7 +75,7 @@ export default function AdminTasksPage() {
     if (selectedUserIds.length > 0) {
       const emailRes = await fetch("/api/admin/send-email", {
         method: "POST",
-        credentials: "include",
+        credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ type: "task", userIds: selectedUserIds, payload: { taskTitle: title, dueDate } }),
       });
@@ -88,6 +93,7 @@ export default function AdminTasksPage() {
     if (!confirm("この課題を削除してもよろしいですか？")) return;
     const res = await fetch("/api/admin/tasks", {
       method: "DELETE",
+      credentials: "same-origin",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ batchId }),
     });

@@ -13,7 +13,7 @@ export default function AdminSubjectsPage() {
   const [nameError, setNameError] = useState("");
 
   const reload = async () => {
-    const res = await fetch("/api/admin/subjects");
+    const res = await fetch("/api/admin/subjects", { credentials: "same-origin" });
     if (!res.ok) { router.push("/admin/login"); return; }
     setSubjects((await res.json()) as Subject[]);
     setLoading(false);
@@ -21,7 +21,7 @@ export default function AdminSubjectsPage() {
 
   useEffect(() => {
     let isMounted = true;
-    fetch("/api/admin/subjects")
+    fetch("/api/admin/subjects", { credentials: "same-origin" })
       .then((res) => { if (!res.ok) throw new Error(); return res.json() as Promise<Subject[]>; })
       .then((data) => { if (isMounted) setSubjects(data); })
       .catch(() => router.push("/admin/login"))
@@ -35,6 +35,7 @@ export default function AdminSubjectsPage() {
     if (!name.trim()) { setNameError("教科名を入力してください。"); return; }
     const res = await fetch("/api/admin/subjects", {
       method: "POST",
+      credentials: "same-origin",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name }),
     });
@@ -47,6 +48,7 @@ export default function AdminSubjectsPage() {
     if (!confirm("この教科を削除しますか？")) return;
     const res = await fetch("/api/admin/subjects", {
       method: "DELETE",
+      credentials: "same-origin",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
     });

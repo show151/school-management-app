@@ -39,7 +39,7 @@ export default function AdminLessonsPage() {
 
   useEffect(() => {
     let mounted = true;
-    Promise.all([fetch("/api/admin/subjects"), fetch("/api/admin/lessons")])
+    Promise.all([fetch("/api/admin/subjects", { credentials: "same-origin" }), fetch("/api/admin/lessons", { credentials: "same-origin" })])
       .then(async ([sRes, lRes]) => {
         if (!sRes.ok) throw new Error("unauth");
         const [s, l] = await Promise.all([sRes.json(), lRes.json()]);
@@ -61,6 +61,7 @@ export default function AdminLessonsPage() {
     if (existing) {
       await fetch("/api/admin/lessons", {
         method: "DELETE",
+        credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: existing.id }),
       });
@@ -68,6 +69,7 @@ export default function AdminLessonsPage() {
 
     const res = await fetch("/api/admin/lessons", {
       method: "POST",
+      credentials: "same-origin",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ dayOfWeek: day, period, subject: dragSubject }),
     });
@@ -90,6 +92,7 @@ export default function AdminLessonsPage() {
     if (!existing) return;
     const res = await fetch("/api/admin/lessons", {
       method: "DELETE",
+      credentials: "same-origin",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: existing.id }),
     });

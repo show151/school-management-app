@@ -12,7 +12,7 @@ export default function AdminUsersPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/admin/users")
+    fetch("/api/admin/users", { credentials: "same-origin" })
       .then((res) => {
         if (!res.ok) throw new Error("ユーザー情報の取得に失敗しました。");
         return res.json();

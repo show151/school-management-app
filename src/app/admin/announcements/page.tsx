@@ -19,7 +19,7 @@ export default function AdminAnnouncementsPage() {
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
 
   const reload = async () => {
-    const res = await fetch("/api/admin/announcements");
+    const res = await fetch("/api/admin/announcements", { credentials: "same-origin" });
     if (!res.ok) { router.push("/admin/login"); return; }
     setAnnouncements((await res.json()) as Announcement[]);
     setLoading(false);
@@ -27,7 +27,7 @@ export default function AdminAnnouncementsPage() {
 
   useEffect(() => {
     let isMounted = true;
-    Promise.all([fetch("/api/admin/announcements"), fetch("/api/admin/users")])
+    Promise.all([fetch("/api/admin/announcements", { credentials: "same-origin" }), fetch("/api/admin/users", { credentials: "same-origin" })])
       .then((res) => {
         if (!res[0].ok || !res[1].ok) throw new Error();
         return Promise.all([res[0].json(), res[1].json()]);
@@ -52,6 +52,7 @@ export default function AdminAnnouncementsPage() {
 
     const res = await fetch("/api/admin/announcements", {
       method: "POST",
+      credentials: "same-origin",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title, body, date }),
     });
@@ -60,7 +61,7 @@ export default function AdminAnnouncementsPage() {
     if (selectedUserIds.length > 0) {
       const emailRes = await fetch("/api/admin/send-email", {
         method: "POST",
-        credentials: "include",
+        credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ type: "announcement", userIds: selectedUserIds, payload: { title, body } }),
       });
@@ -78,6 +79,7 @@ export default function AdminAnnouncementsPage() {
     if (!confirm("この連絡を削除しますか？")) return;
     const res = await fetch("/api/admin/announcements", {
       method: "DELETE",
+      credentials: "same-origin",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
     });
