@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "prisma:seed": "node -r ts-node/register prisma/seed.ts",
+    "prebuild": "npx prisma generate",
+    "postinstall": "npx prisma generate",
     "lint": "eslint"
   },
   "dependencies": {
