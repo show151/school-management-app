@@ -5,7 +5,7 @@
   --background: #f0f7ff; /* 薄いスカイブルー背景 */
   --card: #ffffff;
   --foreground: #0f172a; /* slate-900 */
-  --muted: #475569; /* slate-600 → コントラスト比改善 */
+  --muted: #334155; /* slate-700: コントラストを改善（濃くする） */
   --border: #cbd5e1; /* slate-300 */
 
   /* プライマリ（インディゴ系・目に優しい） */
@@ -80,6 +80,23 @@ p, li, td, th {
     background-color: var(--card);
     border: 1px solid var(--border);
     box-shadow: 0 8px 32px rgba(79, 70, 229, 0.10), 0 2px 8px rgba(0,0,0,0.04);
+  }
+
+  /* Improve label readability inside the login card */
+  .login-card label {
+    color: var(--foreground);
+    font-weight: 600;
+  }
+  /* Make inputs inside the login card extra bold and high-contrast */
+  .login-card input,
+  .login-card textarea,
+  .login-card select {
+    /* Follow theme variable for login inputs */
+    color: var(--foreground) !important;
+    font-family: inherit !important;
+    font-weight: 400 !important;
+    -webkit-font-smoothing: antialiased !important;
+    -moz-osx-font-smoothing: grayscale !important;
   }
 
   /* Info / Announcement bar */
@@ -166,9 +183,46 @@ p, li, td, th {
   select,
   textarea {
     @apply w-full rounded-xl border px-3 py-2 text-sm placeholder-slate-400 transition-colors;
-    border-color: var(--border);
-    color: var(--foreground);
-    background-color: var(--card);
+    border-color: var(--border) !important;
+    color: var(--foreground) !important;
+    background-color: var(--card) !important;
+    font-weight: 400;
+    font-family: inherit;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-text-fill-color: var(--foreground) !important; /* for Chrome autofill/appearance */
+    caret-color: var(--primary);
+  }
+  /* Use a darker placeholder color to improve contrast */
+  input::placeholder, textarea::placeholder {
+    color: var(--muted) !important;
+    opacity: 1;
+  }
+  /* Ensure autofill text is visible and not washed out */
+  input:-webkit-autofill,
+  input:-webkit-autofill:focus,
+  textarea:-webkit-autofill,
+  textarea:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--foreground) !important;
+    box-shadow: 0 0 0px 1000px var(--card) inset !important;
+  }
+
+  /* Ensure selects and option text are also bold and high-contrast */
+  select, option {
+    color: var(--foreground) !important;
+  }
+  /* Normalize number inputs: remove native spin buttons and ensure styling matches text inputs */
+  input[type="number"] {
+    -moz-appearance: textfield;
+    -webkit-appearance: textfield;
+    appearance: textfield;
+    color: var(--foreground) !important;
+    font-weight: inherit;
+  }
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
   }
   input:focus, select:focus, textarea:focus {
     outline: none;

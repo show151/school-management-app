@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 type Test = { id: string; subject: string; period: number; range: string; testDate: string };
-type User = { id: string; name: string; email: string; createdAt: string };
+type User = { id: string; studentNumber?: number | null; name: string; email: string; createdAt: string };
 
 export default function AdminTestsPage() {
   const router = useRouter();
@@ -14,6 +14,9 @@ export default function AdminTestsPage() {
   const [period, setPeriod] = useState("");
   const [range, setRange] = useState("");
   const [testDate, setTestDate] = useState("");
+  const [note, setNote] = useState("");
+  const [studentNumberFrom, setStudentNumberFrom] = useState("");
+  const [studentNumberTo, setStudentNumberTo] = useState("");
   const [loading, setLoading] = useState(true);
   const [subjectError, setSubjectError] = useState("");
   const [periodError, setPeriodError] = useState("");
@@ -53,12 +56,18 @@ export default function AdminTestsPage() {
     });
     if (!res.ok) { alert("追加に失敗しました。"); return; }
 
-    if (selectedUserIds.length > 0) {
+    if (selectedUserIds.length > 0 || studentNumberFrom || studentNumberTo) {
       const emailRes = await fetch("/api/admin/send-email", {
         method: "POST",
         credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "test", userIds: selectedUserIds, payload: { subject, testDate, range } }),
+        body: JSON.stringify({
+          type: "test",
+          userIds: selectedUserIds,
+          studentNumberFrom: studentNumberFrom ? Number(studentNumberFrom) : undefined,
+          studentNumberTo: studentNumberTo ? Number(studentNumberTo) : undefined,
+          payload: { subject, testDate, range, note },
+        }),
       });
       if (!emailRes.ok) {
         const error = await emailRes.json().catch(() => ({ error: "Unknown error" }));
@@ -122,6 +131,18 @@ export default function AdminTestsPage() {
                 <label className="mb-1 block text-xs font-medium text-[var(--muted)]">テスト日時</label>
                 <input type="datetime-local" value={testDate} onChange={(e) => setTestDate(e.target.value)} />
                 {testDateError && <small className="text-xs text-red-600 mt-1 block">{testDateError}</small>}
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-[var(--muted)]">特記事項（任意・Markdown可）</label>
+                <textarea value={note} onChange={(e) => setNote(e.target.value)} className="min-h-16" placeholder="例: 持ち物: 筆記用具\n備考: 追加の注意" />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-medium text-[var(--muted)]">出席番号範囲（任意）</label>
+                <div className="flex gap-2">
+                  <input type="number" min="1" value={studentNumberFrom} onChange={(e) => setStudentNumberFrom(e.target.value)} placeholder="From" className="w-1/2" />
+                  <input type="number" min="1" value={studentNumberTo} onChange={(e) => setStudentNumberTo(e.target.value)} placeholder="To" className="w-1/2" />
+                </div>
               </div>
 
               <div>

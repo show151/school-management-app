@@ -16,6 +16,7 @@ interface SendEmailRequest {
     subject?: string;
     testDate?: string;
     range?: string;
+    note?: string;
     title?: string;
     body?: string;
   };
@@ -46,18 +47,42 @@ export async function POST(request: Request) {
     }
 
     // ユーザー情報を取得
-    console.log('🔍 Looking for users with IDs:', body.userIds);
-    const users = await prisma.user.findMany({
-      where: {
-        id: { in: body.userIds },
-        emailVerified: true, // 検証済みユーザーのみ
-      },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-      },
-    });
+    let users;
+    // If a student number range is provided, use it to select users
+    const bodyAny: any = body as any;
+    if (typeof bodyAny.studentNumberFrom !== 'undefined' || typeof bodyAny.studentNumberTo !== 'undefined') {
+      const from = typeof bodyAny.studentNumberFrom !== 'undefined' ? Number(bodyAny.studentNumberFrom) : undefined;
+      const to = typeof bodyAny.studentNumberTo !== 'undefined' ? Number(bodyAny.studentNumberTo) : undefined;
+      const whereClause: any = { emailVerified: true };
+      if (typeof from === 'number' && typeof to === 'number') {
+        whereClause.studentNumber = { gte: from, lte: to };
+      } else if (typeof from === 'number') {
+        whereClause.studentNumber = { gte: from };
+      } else if (typeof to === 'number') {
+        whereClause.studentNumber = { lte: to };
+      }
+      console.log('🔍 Looking for users by studentNumber range:', { from, to });
+      users = await prisma.user.findMany({ where: whereClause, select: { id: true, email: true, name: true } });
+    } else if (Array.isArray(body.userIds) && body.userIds.includes('ALL')) {
+      console.log('🔍 Sending to ALL verified users');
+      users = await prisma.user.findMany({
+        where: { emailVerified: true },
+        select: { id: true, email: true, name: true },
+      });
+    } else {
+      console.log('🔍 Looking for users with IDs:', body.userIds);
+      users = await prisma.user.findMany({
+        where: {
+          id: { in: body.userIds },
+          emailVerified: true, // 検証済みユーザーのみ
+        },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+        },
+      });
+    }
 
     console.log('✅ Found users:', users.length);
     if (users.length === 0) {
@@ -105,7 +130,8 @@ export async function POST(request: Request) {
           recipients,
           body.payload.subject,
           new Date(body.payload.testDate),
-          body.payload.range
+          body.payload.range,
+          body.payload.note ?? undefined
         );
         break;
 

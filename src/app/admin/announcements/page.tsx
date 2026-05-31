@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { markdownToHtml } from '@/lib/markdown';
 import { useRouter } from "next/navigation";
 
 type Announcement = { id: string; title: string; body: string; date: string };
-type User = { id: string; name: string; email: string; createdAt: string };
+type User = { id: string; studentNumber?: number | null; name: string; email: string; createdAt: string };
 
 export default function AdminAnnouncementsPage() {
   const router = useRouter();
@@ -12,6 +13,12 @@ export default function AdminAnnouncementsPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  const [sendType, setSendType] = useState<'announcement' | 'test'>('announcement');
+  const [testRange, setTestRange] = useState('');
+  const [testDateInput, setTestDateInput] = useState('');
+  const [testNote, setTestNote] = useState('');
+  const [studentNumberFrom, setStudentNumberFrom] = useState('');
+  const [studentNumberTo, setStudentNumberTo] = useState('');
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [loading, setLoading] = useState(true);
   const [titleError, setTitleError] = useState("");
@@ -46,28 +53,65 @@ export default function AdminAnnouncementsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setTitleError(""); setBodyError("");
-    if (!title.trim()) setTitleError("件名を入力してください。");
-    if (!body.trim()) setBodyError("本文を入力してください。");
-    if (!title.trim() || !body.trim()) return;
+    if (sendType === 'announcement') {
+      if (!title.trim()) setTitleError("件名を入力してください。");
+      if (!body.trim()) setBodyError("本文を入力してください。");
+      if (!title.trim() || !body.trim()) return;
+    } else {
+      // test
+      if (!title.trim()) setTitleError("教科名を入力してください。");
+      if (!testRange.trim()) setBodyError("範囲を入力してください。");
+      if (!testDateInput) setBodyError("テスト日時を入力してください。");
+      if (!title.trim() || !testRange.trim() || !testDateInput) return;
+    }
 
-    const res = await fetch("/api/admin/announcements", {
-      method: "POST",
-      credentials: "same-origin",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, body, date }),
-    });
-    if (!res.ok) { alert("連絡の登録に失敗しました。"); return; }
-
-    if (selectedUserIds.length > 0) {
-      const emailRes = await fetch("/api/admin/send-email", {
+    if (sendType === 'announcement') {
+      const res = await fetch("/api/admin/announcements", {
         method: "POST",
         credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "announcement", userIds: selectedUserIds, payload: { title, body } }),
+        body: JSON.stringify({ title, body, date }),
       });
-      if (!emailRes.ok) {
-        const error = await emailRes.json().catch(() => ({ error: "Unknown error" }));
-        alert(`メール送信に失敗しました: ${error.error}`);
+      if (!res.ok) { alert("連絡の登録に失敗しました。"); return; }
+    }
+
+    if (selectedUserIds.length > 0 || studentNumberFrom || studentNumberTo) {
+      const userIdsPayload = selectedUserIds;
+      if (sendType === 'announcement') {
+        const emailRes = await fetch("/api/admin/send-email", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: "announcement",
+            userIds: userIdsPayload,
+            studentNumberFrom: studentNumberFrom ? Number(studentNumberFrom) : undefined,
+            studentNumberTo: studentNumberTo ? Number(studentNumberTo) : undefined,
+            payload: { title, body },
+          }),
+        });
+        if (!emailRes.ok) {
+          const error = await emailRes.json().catch(() => ({ error: "Unknown error" }));
+          alert(`メール送信に失敗しました: ${error.error}`);
+        }
+      } else {
+        // test
+        const emailRes = await fetch("/api/admin/send-email", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: "test",
+            userIds: userIdsPayload,
+            studentNumberFrom: studentNumberFrom ? Number(studentNumberFrom) : undefined,
+            studentNumberTo: studentNumberTo ? Number(studentNumberTo) : undefined,
+            payload: { subject: title, testDate: testDateInput, range: testRange, note: testNote },
+          }),
+        });
+        if (!emailRes.ok) {
+          const error = await emailRes.json().catch(() => ({ error: "Unknown error" }));
+          alert(`テスト連絡のメール送信に失敗しました: ${error.error}`);
+        }
       }
     }
 
@@ -114,15 +158,57 @@ export default function AdminAnnouncementsPage() {
                 <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-[var(--muted)]">件名</label>
-                <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="例: 明日の持ち物" />
+                <label className="mb-1 block text-xs font-medium text-[var(--muted)]">送信種別</label>
+                <select value={sendType} onChange={(e) => setSendType(e.target.value as any)} className="mt-1 block w-full rounded px-3 py-2 bg-[var(--card)] border-[var(--border)] text-[var(--foreground)]">
+                  <option value="announcement">お知らせ</option>
+                  <option value="test">テスト連絡</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-medium text-[var(--muted)]">件名 / 教科</label>
+                <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={sendType === 'announcement' ? '例: 明日の持ち物' : '例: 数学'} />
                 {titleError && <small className="text-xs text-red-600 mt-1 block">{titleError}</small>}
               </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-[var(--muted)]">本文</label>
-                <textarea value={body} onChange={(e) => setBody(e.target.value)} className="min-h-20" placeholder="連絡内容を入力" />
-                {bodyError && <small className="text-xs text-red-600 mt-1 block">{bodyError}</small>}
-              </div>
+
+              {sendType === 'announcement' ? (
+                <>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-[var(--muted)]">本文</label>
+                    <textarea value={body} onChange={(e) => setBody(e.target.value)} className="min-h-20" placeholder="連絡内容を入力" />
+                    {bodyError && <small className="text-xs text-red-600 mt-1 block">{bodyError}</small>}
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-[var(--muted)]">出席番号範囲（任意）</label>
+                    <div className="flex gap-2">
+                      <input type="number" min="1" value={studentNumberFrom} onChange={(e) => setStudentNumberFrom(e.target.value)} placeholder="From" className="w-1/2" />
+                      <input type="number" min="1" value={studentNumberTo} onChange={(e) => setStudentNumberTo(e.target.value)} placeholder="To" className="w-1/2" />
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-[var(--muted)]">範囲</label>
+                    <input value={testRange} onChange={(e) => setTestRange(e.target.value)} placeholder="例: 第1章～第3章" />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-[var(--muted)]">特記事項（任意・Markdown可）</label>
+                    <textarea value={testNote} onChange={(e) => setTestNote(e.target.value)} className="min-h-16" placeholder="例: 持ち物: 筆記用具\n備考: 追加の注意" />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-[var(--muted)]">テスト日時</label>
+                    <input type="datetime-local" value={testDateInput} onChange={(e) => setTestDateInput(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-[var(--muted)]">出席番号範囲（任意）</label>
+                    <div className="flex gap-2">
+                      <input type="number" min="1" value={studentNumberFrom} onChange={(e) => setStudentNumberFrom(e.target.value)} placeholder="From" className="w-1/2" />
+                      <input type="number" min="1" value={studentNumberTo} onChange={(e) => setStudentNumberTo(e.target.value)} placeholder="To" className="w-1/2" />
+                    </div>
+                  </div>
+                </>
+              )}
 
               <div>
                 <label className="mb-1 block text-xs font-medium text-[var(--muted)]">
@@ -134,14 +220,16 @@ export default function AdminAnnouncementsPage() {
                     <p className="text-xs text-[var(--muted)]">ユーザーが登録されていません</p>
                   ) : (
                     users.map((user) => (
-                      <label key={user.id} className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 hover:bg-[var(--admin-50)]">
+                      <label key={user.id} className={`flex cursor-pointer items-center gap-2 rounded px-1 py-1 hover:bg-[var(--admin-50)]`}>
                         <input type="checkbox" checked={selectedUserIds.includes(user.id)} onChange={() => toggleUserSelection(user.id)} className="cursor-pointer" />
-                        <p className="text-xs font-medium text-[var(--foreground)]">{user.name}</p>
+                        <p className="text-xs font-medium text-[var(--foreground)]">{user.studentNumber ? `(${user.studentNumber}) ` : ''}{user.name}</p>
                       </label>
                     ))
                   )}
                 </div>
               </div>
+
+              {/* 全員へ送信オプションは不要のため削除 */}
 
               <div className="space-y-2 pt-2">
                 <button type="button" onClick={() => setSelectedUserIds(users.map(u => u.id))} className="w-full admin-outline">すべて選択</button>
@@ -162,7 +250,7 @@ export default function AdminAnnouncementsPage() {
                       <div className="flex-1">
                         <p className="text-xs text-[var(--muted)]">{new Date(announcement.date).toLocaleDateString()}</p>
                         <h3 className="mt-1 text-sm font-bold text-[var(--foreground)]">{announcement.title}</h3>
-                        <p className="mt-1 line-clamp-2 text-xs text-[var(--muted)]">{announcement.body}</p>
+                        <div className="mt-1 line-clamp-2 text-xs text-[var(--muted)]" dangerouslySetInnerHTML={{ __html: markdownToHtml(announcement.body) }} />
                       </div>
                       <button onClick={() => handleDelete(announcement.id)} className="text-xs font-medium text-red-500 hover:text-red-700">削除</button>
                     </div>

@@ -7,6 +7,7 @@ export default function RegisterPage() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [studentNumber, setStudentNumber] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [nameError, setNameError] = useState("");
@@ -23,10 +24,10 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/register", {
+        const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), email: email.trim(), password }),
+        body: JSON.stringify({ name: name.trim(), email: email.trim(), password, studentNumber: studentNumber ? Number(studentNumber) : null }),
       });
 
       if (res.ok) {
@@ -55,12 +56,24 @@ export default function RegisterPage() {
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="mt-1 block w-full rounded-xl border border-slate-200 px-3 py-2 text-[var(--foreground)] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)]"
+            className="mt-1 block w-full rounded-xl border px-3 py-2 bg-[var(--card)] border-[var(--border)] text-[var(--foreground)] placeholder:text-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)]"
             placeholder="山田 太郎"
             required
           />
           {nameError && <small className="text-xs text-red-600">{nameError}</small>}
         </div>
+
+          <div>
+            <label className="block text-sm font-medium">出席番号（任意）</label>
+            <input
+              type="number"
+              min="1"
+              value={studentNumber}
+              onChange={(e) => setStudentNumber(e.target.value)}
+              className="mt-1 block w-full rounded px-3 py-2 bg-[var(--card)] border-[var(--border)] text-[var(--foreground)] placeholder:text-[var(--muted)]"
+              placeholder="例: 15"
+            />
+          </div>
 
         <div>
           <label className="block text-sm font-medium">メールアドレス</label>
@@ -68,7 +81,7 @@ export default function RegisterPage() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="mt-1 block w-full border rounded px-3 py-2"
+            className="mt-1 block w-full rounded px-3 py-2 bg-[var(--card)] border-[var(--border)] text-[var(--foreground)] placeholder:text-[var(--muted)]"
             placeholder="user@example.com"
             required
           />
@@ -81,7 +94,7 @@ export default function RegisterPage() {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="mt-1 block w-full border rounded px-3 py-2"
+            className="mt-1 block w-full rounded px-3 py-2 bg-[var(--card)] border-[var(--border)] text-[var(--foreground)] placeholder:text-[var(--muted)]"
             placeholder="8文字以上の安全なパスワード"
             required
           />

@@ -1,510 +1,235 @@
 import { Resend } from 'resend';
 import { sanitizeInput } from '@/lib/security';
+import { markdownToHtml } from './markdown';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@school-management.com';
 const APP_URL = process.env.APP_URL || 'http://localhost:3000';
 
-/**
- * ユーザー登録確認メール送信
- */
+type Recipient = { email: string; name?: string | null };
+
+async function sendRawEmail(to: string, subject: string, html: string) {
+  try {
+    const res = await resend.emails.send({
+      from: FROM_EMAIL,
+      to,
+      subject,
+      html,
+    });
+    if ((res as any).error) {
+      console.warn('Resend rejected email:', (res as any).error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error('Error sending email via Resend:', err);
+    return false;
+  }
+}
+
 export async function sendVerificationEmail(
   email: string,
   name: string,
   verificationToken: string
 ): Promise<boolean> {
-  const verificationUrl = `${APP_URL}/auth/verify?token=${verificationToken}`;
+  const safeName = sanitizeInput(name);
+  const verificationUrl = `${APP_URL}/auth/verify?token=${encodeURIComponent(
+    verificationToken
+  )}`;
 
-  try {
-    const safeName = sanitizeInput(name);
-    console.log(`📧 Sending verification email to ${email}...`);
-    const result = await resend.emails.send({
-      from: FROM_EMAIL,
-      to: email,
-      subject: 'メールアドレスの確認',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2>メールアドレスの確認</h2>
-          <p>${safeName}さん、こんにちは！</p>
-          <p>スクール管理アプリへの登録ありがとうございます。</p>
-          <p>以下のリンクをクリックして、メールアドレスを確認してください：</p>
-          <a href="${verificationUrl}" style="display: inline-block; background-color: #4f46e5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0;">
-            メールアドレスを確認する
-          </a>
-          <p>または、下記のリンクをコピーしてブラウザに貼り付けてください：</p>
-          <p style="word-break: break-all; color: #666;">${verificationUrl}</p>
-          <p style="color: #999; font-size: 12px; margin-top: 40px;">
-            このメールに心当たりがない場合は、このメールを無視してください。
-          </p>
-        </div>
-      `,
-    });
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2>メールアドレスの確認</h2>
+      <p>${safeName}さん、こんにちは。</p>
+      <p>スクール管理アプリへの登録ありがとうございます。以下のリンクをクリックしてメールアドレスを確認してください。</p>
+      <p><a href="${verificationUrl}" style="display:inline-block;padding:12px 20px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:6px;">メールアドレスを確認する</a></p>
+      <p style="word-break:break-all;color:#666;">${verificationUrl}</p>
+    </div>
+  `;
 
-    if (result.error) {
-      console.warn('⚠️ Verification email rejected by Resend:', result.error);
-      return false;
-    }
-
-    console.log(`✅ Verification email sent successfully:`, result);
-    return true;
-  } catch (error) {
-    console.error('❌ Error sending verification email:', error);
-    if (error instanceof Error) {
-      console.error('Error details:', error.message);
-    }
-    return false;
-  }
+  return sendRawEmail(email, 'メールアドレスの確認', html);
 }
 
-/**
- * パスワードリセットメール送信
- */
 export async function sendPasswordResetEmail(
   email: string,
   name: string,
   resetToken: string
 ): Promise<boolean> {
-  const resetUrl = `${APP_URL}/auth/reset-password?token=${resetToken}`;
+  const safeName = sanitizeInput(name);
+  const resetUrl = `${APP_URL}/auth/reset-password?token=${encodeURIComponent(resetToken)}`;
 
-  try {
-    const safeName = sanitizeInput(name);
-    console.log(`📧 Sending password reset email to ${email}...`);
-    const result = await resend.emails.send({
-      from: FROM_EMAIL,
-      to: email,
-      subject: 'パスワードリセット',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2>パスワードリセット</h2>
-          <p>${safeName}さん</p>
-          <p>パスワードをリセットするためのリクエストを受け取りました。</p>
-          <p>以下のリンクをクリックして、新しいパスワードを設定してください：</p>
-          <a href="${resetUrl}" style="display: inline-block; background-color: #4f46e5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0;">
-            パスワードをリセット
-          </a>
-          <p style="color: #d32f2f; margin: 20px 0;">
-            <strong>注意：</strong> このリンクは24時間有効です。期限を過ぎた場合は、パスワードリセット画面から再度リクエストしてください。
-          </p>
-          <p>パスワードをリセットしていない場合は、このメールを無視してください。</p>
-          <p style="color: #999; font-size: 12px; margin-top: 40px;">
-            このメールは自動送信です。返信しないでください。
-          </p>
-        </div>
-      `,
-    });
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2>パスワードリセット</h2>
+      <p>${safeName}さん</p>
+      <p>パスワードリセットのリクエストを受け付けました。以下のリンクから新しいパスワードを設定してください（リンクは24時間有効です）。</p>
+      <p><a href="${resetUrl}" style="display:inline-block;padding:12px 20px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:6px;">パスワードをリセット</a></p>
+    </div>
+  `;
 
-    if (result.error) {
-      console.warn('⚠️ Password reset email rejected by Resend:', result.error);
-      return false;
-    }
-
-    console.log(`✅ Password reset email sent successfully:`, result);
-    return true;
-  } catch (error) {
-    console.error('❌ Error sending password reset email:', error);
-    if (error instanceof Error) {
-      console.error('Error details:', error.message);
-    }
-    return false;
-  }
+  return sendRawEmail(email, 'パスワードリセット', html);
 }
 
-/**
- * 管理者に新規ユーザー登録通知メール送信
- */
 export async function sendAdminNotificationEmail(
   adminEmail: string,
   userName: string,
   userEmail: string
 ): Promise<boolean> {
-  try {
-    const safeUserName = sanitizeInput(userName);
-    const safeUserEmail = sanitizeInput(userEmail);
-    console.log(`📧 Sending admin notification email to ${adminEmail}...`);
-    const result = await resend.emails.send({
-      from: FROM_EMAIL,
-      to: adminEmail,
-      subject: '[通知] 新規ユーザーが登録されました',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2>新規ユーザー登録通知</h2>
-          <p>新しいユーザーが登録されました。</p>
-          <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-            <tr style="background-color: #f5f5f5;">
-              <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">ユーザー名</td>
-              <td style="padding: 10px; border: 1px solid #ddd;">${safeUserName}</td>
-            </tr>
-            <tr>
-              <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">メールアドレス</td>
-              <td style="padding: 10px; border: 1px solid #ddd;">${safeUserEmail}</td>
-            </tr>
-            <tr style="background-color: #f5f5f5;">
-              <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">登録日時</td>
-              <td style="padding: 10px; border: 1px solid #ddd;">${new Date().toLocaleString('ja-JP')}</td>
-            </tr>
-          </table>
-          <p>
-            <a href="${APP_URL}/admin/users" style="display: inline-block; background-color: #4f46e5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px;">
-              管理画面でユーザー一覧を確認
-            </a>
-          </p>
-        </div>
-      `,
-    });
+  const safeUserName = sanitizeInput(userName);
+  const safeUserEmail = sanitizeInput(userEmail);
 
-    if (result.error) {
-      console.warn('⚠️ Admin notification email rejected by Resend:', result.error);
-      return false;
-    }
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2>新規ユーザー登録通知</h2>
+      <p>新しいユーザーが登録されました。</p>
+      <table style="width:100%;border-collapse:collapse;margin-top:12px;">
+        <tr><td style="padding:8px;border:1px solid #ddd;font-weight:600;">ユーザー名</td><td style="padding:8px;border:1px solid #ddd;">${safeUserName}</td></tr>
+        <tr><td style="padding:8px;border:1px solid #ddd;font-weight:600;">メール</td><td style="padding:8px;border:1px solid #ddd;">${safeUserEmail}</td></tr>
+        <tr><td style="padding:8px;border:1px solid #ddd;font-weight:600;">登録日時</td><td style="padding:8px;border:1px solid #ddd;">${new Date().toLocaleString('ja-JP')}</td></tr>
+      </table>
+      <p style="margin-top:16px;"><a href="${APP_URL}/admin/users" style="display:inline-block;padding:8px 14px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:6px;">管理画面で確認</a></p>
+    </div>
+  `;
 
-    console.log(`✅ Admin notification email sent successfully:`, result);
-    return true;
-  } catch (error) {
-    console.error('❌ Error sending admin notification email:', error);
-    if (error instanceof Error) {
-      console.error('Error details:', error.message);
-    }
-    return false;
-  }
+  return sendRawEmail(adminEmail, '[通知] 新規ユーザーが登録されました', html);
 }
 
-/**
- * タスク通知メール送信
- */
 export async function sendTaskNotificationEmail(
   email: string,
   name: string,
   taskTitle: string,
   dueDate: Date
 ): Promise<boolean> {
-  const dueDateStr = dueDate.toLocaleDateString('ja-JP', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  const safeName = sanitizeInput(name);
+  const safeTaskTitle = sanitizeInput(taskTitle);
+  const dueDateStr = dueDate.toLocaleString('ja-JP');
 
-  try {
-    const safeName = sanitizeInput(name);
-    const safeTaskTitle = sanitizeInput(taskTitle);
-    console.log(`📧 Sending task notification email to ${email}...`);
-    const result = await resend.emails.send({
-      from: FROM_EMAIL,
-      to: email,
-      subject: `新しい課題が配布されました: ${safeTaskTitle}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2>新しい課題が配布されました</h2>
-          <p>${safeName}さん</p>
-          <p>新しい課題が配布されました。以下の詳細をご確認ください。</p>
-          <div style="background-color: #f5f5f5; padding: 20px; border-radius: 6px; margin: 20px 0;">
-            <p><strong>課題：</strong> ${safeTaskTitle}</p>
-            <p><strong>締切日：</strong> ${dueDateStr}</p>
-          </div>
-          <p>
-            <a href="${APP_URL}/dashboard/tasks" style="display: inline-block; background-color: #4f46e5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px;">
-              ダッシュボードで確認
-            </a>
-          </p>
-          <p style="color: #d32f2f; margin: 20px 0;">
-            <strong>注意：</strong> 締切を過ぎないようにご注意ください。
-          </p>
-        </div>
-      `,
-    });
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2>新しい課題が配布されました</h2>
+      <p>${safeName}さん</p>
+      <div style="background:#f5f5f5;padding:12px;border-radius:6px;margin:12px 0;">
+        <p><strong>課題：</strong>${safeTaskTitle}</p>
+        <p><strong>締切：</strong>${dueDateStr}</p>
+      </div>
+      <p><a href="${APP_URL}/dashboard/tasks" style="display:inline-block;padding:8px 14px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:6px;">ダッシュボードで確認</a></p>
+    </div>
+  `;
 
-    if (result.error) {
-      console.warn('⚠️ Task notification email rejected by Resend:', result.error);
-      return false;
-    }
-
-    console.log(`✅ Task notification email sent successfully:`, result);
-    return true;
-  } catch (error) {
-    console.error('❌ Error sending task notification email:', error);
-    if (error instanceof Error) {
-      console.error('Error details:', error.message);
-    }
-    return false;
-  }
+  return sendRawEmail(email, `新しい課題が配布されました: ${safeTaskTitle}`, html);
 }
 
-/**
- * テスト通知メール送信
- */
+export async function sendTaskReminderEmail(
+  email: string,
+  name: string,
+  title: string,
+  subject: string,
+  dueDate: Date
+): Promise<boolean> {
+  const safeName = sanitizeInput(name);
+  const safeTitle = sanitizeInput(title);
+  const safeSubject = sanitizeInput(subject);
+  const dueDateStr = dueDate.toLocaleString('ja-JP');
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2>課題の締切が近づいています</h2>
+      <p>${safeName}さん</p>
+      <div style="background:#fff7e6;padding:12px;border-radius:6px;margin:12px 0;border:1px solid #f0e6cc;">
+        <p><strong>課題：</strong>${safeTitle}</p>
+        <p><strong>科目：</strong>${safeSubject}</p>
+        <p><strong>締切：</strong>${dueDateStr}</p>
+      </div>
+      <p><a href="${APP_URL}/dashboard/tasks" style="display:inline-block;padding:8px 14px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:6px;">確認する</a></p>
+    </div>
+  `;
+
+  return sendRawEmail(email, `締切リマインダー: ${safeTitle}`, html);
+}
+
 export async function sendTestNotificationEmail(
   email: string,
   name: string,
-  subject: string,
+  subjectName: string,
   testDate: Date,
-  range: string
+  range: string,
+  note?: string
 ): Promise<boolean> {
-  const testDateStr = testDate.toLocaleDateString('ja-JP', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  const safeName = sanitizeInput(name);
+  const safeSubject = sanitizeInput(subjectName);
+  const safeRange = sanitizeInput(range);
+  const testDateStr = testDate.toLocaleString('ja-JP');
 
-  try {
-    const safeName = sanitizeInput(name);
-    const safeSubject = sanitizeInput(subject);
-    const safeRange = sanitizeInput(range);
-    console.log(`📧 Sending test notification email to ${email}...`);
-    const result = await resend.emails.send({
-      from: FROM_EMAIL,
-      to: email,
-      subject: `新しいテストが追加されました: ${safeSubject}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2>新しいテストが追加されました</h2>
-          <p>${safeName}さん</p>
-          <p>新しいテスト情報が追加されました。以下の詳細をご確認ください。</p>
-          <div style="background-color: #f5f5f5; padding: 20px; border-radius: 6px; margin: 20px 0;">
-            <p><strong>教科：</strong> ${safeSubject}</p>
-            <p><strong>範囲：</strong> ${safeRange}</p>
-            <p><strong>テスト日時：</strong> ${testDateStr}</p>
-          </div>
-          <p>
-            <a href="${APP_URL}/dashboard/tasks" style="display: inline-block; background-color: #4f46e5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px;">
-              ダッシュボードで確認
-            </a>
-          </p>
-          <p style="color: #d32f2f; margin: 20px 0;">
-            <strong>注意：</strong> テスト対策をしっかり行いましょう。
-          </p>
-        </div>
-      `,
-    });
+  const noteHtml = note ? `<div style="background:#fff;padding:12px;border-radius:6px;margin:12px 0;border:1px solid #eee;"><strong>特記事項</strong><div style="margin-top:8px;">${markdownToHtml(note)}</div></div>` : '';
 
-    if (result.error) {
-      console.warn('⚠️ Test notification email rejected by Resend:', result.error);
-      return false;
-    }
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2>テスト情報が登録されました</h2>
+      <p>${safeName}さん</p>
+      <div style="background:#f5f5f5;padding:12px;border-radius:6px;margin:12px 0;">
+        <p><strong>教科：</strong>${safeSubject}</p>
+        <p><strong>範囲：</strong>${safeRange}</p>
+        <p><strong>日時：</strong>${testDateStr}</p>
+      </div>
+      ${noteHtml}
+      <p><a href="${APP_URL}/dashboard" style="display:inline-block;padding:8px 14px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:6px;">ダッシュボードで確認</a></p>
+    </div>
+  `;
 
-    console.log(`✅ Test notification email sent successfully:`, result);
-    return true;
-  } catch (error) {
-    console.error('❌ Error sending test notification email:', error);
-    if (error instanceof Error) {
-      console.error('Error details:', error.message);
-    }
-    return false;
-  }
+  return sendRawEmail(email, `テストのお知らせ: ${safeSubject}`, html);
 }
 
-/**
- * ユーザーへのお知らせメール送信
- */
 export async function sendAnnouncementEmail(
   email: string,
   name: string,
   title: string,
   body: string
 ): Promise<boolean> {
-  try {
-    const safeName = sanitizeInput(name);
-    const safeTitle = sanitizeInput(title);
-    const safeBody = sanitizeInput(body);
-    console.log(`📧 Sending announcement email to ${email}...`);
-    const result = await resend.emails.send({
-      from: FROM_EMAIL,
-      to: email,
-      subject: `お知らせ: ${safeTitle}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2>お知らせ</h2>
-          <p>${safeName}さん</p>
-          <h3>${safeTitle}</h3>
-          <div style="background-color: #f5f5f5; padding: 20px; border-radius: 6px; margin: 20px 0; line-height: 1.6;">
-            ${safeBody.replace(/\n/g, '<br>')}
-          </div>
-          <p>詳細はダッシュボードでご確認ください。</p>
-          <p>
-            <a href="${APP_URL}/dashboard" style="display: inline-block; background-color: #4f46e5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px;">
-              ダッシュボードを開く
-            </a>
-          </p>
-        </div>
-      `,
-    });
+  const safeName = sanitizeInput(name);
+  const safeTitle = sanitizeInput(title);
+  const bodyHtml = markdownToHtml(body);
 
-    if (result.error) {
-      console.warn('⚠️ Announcement email rejected by Resend:', result.error);
-      return false;
-    }
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2>お知らせ</h2>
+      <p>${safeName}さん</p>
+      <h3>${safeTitle}</h3>
+      <div style="background:#f5f5f5;padding:12px;border-radius:6px;margin:12px 0;line-height:1.6;">${bodyHtml}</div>
+      <p><a href="${APP_URL}/dashboard" style="display:inline-block;padding:8px 14px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:6px;">ダッシュボードを開く</a></p>
+    </div>
+  `;
 
-    console.log(`✅ Announcement email sent successfully:`, result);
-    return true;
-  } catch (error) {
-    console.error('❌ Error sending announcement email:', error);
-    if (error instanceof Error) {
-      console.error('Error details:', error.message);
-    }
-    return false;
-  }
+  return sendRawEmail(email, `お知らせ: ${safeTitle}`, html);
 }
 
-/**
- * 複数ユーザーへのタスク通知メール一括送信
- */
-export async function sendBulkTaskNotificationEmail(
-  recipients: Array<{ email: string; name: string }>,
-  taskTitle: string,
-  dueDate: Date
-): Promise<{ success: number; failed: number; errors: string[] }> {
-  let successCount = 0;
-  let failedCount = 0;
-  const errors: string[] = [];
-
-  console.log(`📧 Sending task notification to ${recipients.length} users...`);
-
-  for (const recipient of recipients) {
-    const success = await sendTaskNotificationEmail(
-      recipient.email,
-      recipient.name,
-      taskTitle,
-      dueDate
-    );
-    if (success) {
-      successCount++;
-    } else {
-      failedCount++;
-      errors.push(`${recipient.email}: Failed to send`);
-    }
+// Bulk senders return a summary of successes/failures
+export async function sendBulkTaskNotificationEmail(recipients: Recipient[], taskTitle: string, dueDate: Date) {
+  let success = 0;
+  let failed = 0;
+  for (const r of recipients) {
+    const ok = await sendTaskNotificationEmail(r.email, r.name ?? '', taskTitle, dueDate);
+    if (ok) success += 1; else failed += 1;
   }
-
-  console.log(
-    `✅ Task notification complete: ${successCount} succeeded, ${failedCount} failed`
-  );
-  return { success: successCount, failed: failedCount, errors };
+  return { success, failed };
 }
 
-/**
- * 複数ユーザーへのテスト通知メール一括送信
- */
-export async function sendBulkTestNotificationEmail(
-  recipients: Array<{ email: string; name: string }>,
-  subject: string,
-  testDate: Date,
-  range: string
-): Promise<{ success: number; failed: number; errors: string[] }> {
-  let successCount = 0;
-  let failedCount = 0;
-  const errors: string[] = [];
-
-  console.log(`📧 Sending test notification to ${recipients.length} users...`);
-
-  for (const recipient of recipients) {
-    const success = await sendTestNotificationEmail(
-      recipient.email,
-      recipient.name,
-      subject,
-      testDate,
-      range
-    );
-    if (success) {
-      successCount++;
-    } else {
-      failedCount++;
-      errors.push(`${recipient.email}: Failed to send`);
-    }
+export async function sendBulkTestNotificationEmail(recipients: Recipient[], subjectName: string, testDate: Date, range: string, note?: string) {
+  let success = 0;
+  let failed = 0;
+  for (const r of recipients) {
+    const ok = await sendTestNotificationEmail(r.email, r.name ?? '', subjectName, testDate, range, note);
+    if (ok) success += 1; else failed += 1;
   }
-
-  console.log(
-    `✅ Test notification complete: ${successCount} succeeded, ${failedCount} failed`
-  );
-  return { success: successCount, failed: failedCount, errors };
+  return { success, failed };
 }
 
-/**
- * 複数ユーザーへのお知らせメール一括送信
- */
-export async function sendBulkAnnouncementEmail(
-  recipients: Array<{ email: string; name: string }>,
-  title: string,
-  body: string
-): Promise<{ success: number; failed: number; errors: string[] }> {
-  let successCount = 0;
-  let failedCount = 0;
-  const errors: string[] = [];
-
-  console.log(`📧 Sending announcement to ${recipients.length} users...`);
-
-  for (const recipient of recipients) {
-    const success = await sendAnnouncementEmail(
-      recipient.email,
-      recipient.name,
-      title,
-      body
-    );
-    if (success) {
-      successCount++;
-    } else {
-      failedCount++;
-      errors.push(`${recipient.email}: Failed to send`);
-    }
+export async function sendBulkAnnouncementEmail(recipients: Recipient[], title: string, body: string) {
+  let success = 0;
+  let failed = 0;
+  for (const r of recipients) {
+    const ok = await sendAnnouncementEmail(r.email, r.name ?? '', title, body);
+    if (ok) success += 1; else failed += 1;
   }
-
-  console.log(
-    `✅ Announcement complete: ${successCount} succeeded, ${failedCount} failed`
-  );
-  return { success: successCount, failed: failedCount, errors };
-}
-
-/**
- * 課題締め切り1日前リマインダーメール送信
- */
-export async function sendTaskReminderEmail(
-  email: string,
-  name: string,
-  taskTitle: string,
-  subject: string,
-  dueDate: Date
-): Promise<boolean> {
-  const dueDateStr = dueDate.toLocaleDateString('ja-JP', {
-    year: 'numeric', month: '2-digit', day: '2-digit',
-  });
-
-  try {
-    const safeName = sanitizeInput(name);
-    const safeTitle = sanitizeInput(taskTitle);
-    const safeSubject = sanitizeInput(subject);
-    const result = await resend.emails.send({
-      from: FROM_EMAIL,
-      to: email,
-      subject: `【締め切り明日】${safeSubject}：${safeTitle}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #c2410c;">⚠️ 課題の締め切りは明日です</h2>
-          <p>${safeName}さん</p>
-          <p>以下の課題の締め切りが<strong>明日（${dueDateStr}）</strong>に迫っています。</p>
-          <div style="background-color: #fff7ed; border-left: 4px solid #f97316; padding: 16px; border-radius: 6px; margin: 20px 0;">
-            <p style="margin:0"><strong>教科：</strong> ${safeSubject}</p>
-            <p style="margin:8px 0 0"><strong>課題：</strong> ${safeTitle}</p>
-            <p style="margin:8px 0 0"><strong>締切日：</strong> ${dueDateStr}</p>
-          </div>
-          <p>
-            <a href="${APP_URL}/dashboard" style="display: inline-block; background-color: #4f46e5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px;">
-              ダッシュボードで確認
-            </a>
-          </p>
-        </div>
-      `,
-    });
-
-    if (result.error) {
-      console.warn('⚠️ Task reminder email rejected by Resend:', result.error);
-      return false;
-    }
-
-    console.log(`✅ Task reminder sent to ${email}:`, result);
-    return true;
-  } catch (error) {
-    console.error(`❌ Failed to send task reminder to ${email}:`, error);
-    return false;
-  }
+  return { success, failed };
 }

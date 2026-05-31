@@ -23,7 +23,7 @@ export default function SettingsPage() {
         if (!res.ok) return;
         const data = await res.json();
         if (mounted && data.user?.name) setName(data.user.name);
-      } catch (e) {
+      } catch {
         // ignore
       }
     })();

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 type Task = { batchId: string; subject: string; title: string; dueDate: string; assignedCount: number; completedCount: number };
 type Subject = { id: string; name: string };
-type User = { id: string; name: string; email: string; createdAt: string };
+type User = { id: string; studentNumber?: number | null; name: string; email: string; createdAt: string };
 
 export default function AdminTasksPage() {
   const router = useRouter();
@@ -15,6 +15,12 @@ export default function AdminTasksPage() {
   const [subject, setSubject] = useState("");
   const [title, setTitle] = useState("");
   const [dueDate, setDueDate] = useState("");
+  const [sendAsTest, setSendAsTest] = useState(false);
+  const [testRange, setTestRange] = useState("");
+  const [testDateInput, setTestDateInput] = useState("");
+  const [testNote, setTestNote] = useState("");
+  const [studentNumberFrom, setStudentNumberFrom] = useState('');
+  const [studentNumberTo, setStudentNumberTo] = useState('');
   const [loading, setLoading] = useState(true);
   const [subjectError, setSubjectError] = useState("");
   const [titleError, setTitleError] = useState("");
@@ -72,16 +78,42 @@ export default function AdminTasksPage() {
     });
     if (!res.ok) { alert("追加に失敗しました。"); return; }
 
-    if (selectedUserIds.length > 0) {
-      const emailRes = await fetch("/api/admin/send-email", {
-        method: "POST",
-        credentials: "same-origin",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "task", userIds: selectedUserIds, payload: { taskTitle: title, dueDate } }),
-      });
-      if (!emailRes.ok) {
-        const error = await emailRes.json().catch(() => ({ error: "Unknown error" }));
-        alert(`メール送信に失敗しました: ${error.error}`);
+    if (selectedUserIds.length > 0 || studentNumberFrom || studentNumberTo) {
+      const userIdsPayload = selectedUserIds;
+      if (sendAsTest) {
+        const emailRes = await fetch("/api/admin/send-email", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: "test",
+            userIds: userIdsPayload,
+            studentNumberFrom: studentNumberFrom ? Number(studentNumberFrom) : undefined,
+            studentNumberTo: studentNumberTo ? Number(studentNumberTo) : undefined,
+            payload: { subject: title || subject, testDate: testDateInput, range: testRange, note: testNote },
+          }),
+        });
+        if (!emailRes.ok) {
+          const error = await emailRes.json().catch(() => ({ error: "Unknown error" }));
+          alert(`メール送信に失敗しました: ${error.error}`);
+        }
+      } else {
+        const emailRes = await fetch("/api/admin/send-email", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: "task",
+            userIds: userIdsPayload,
+            studentNumberFrom: studentNumberFrom ? Number(studentNumberFrom) : undefined,
+            studentNumberTo: studentNumberTo ? Number(studentNumberTo) : undefined,
+            payload: { taskTitle: title, dueDate },
+          }),
+        });
+        if (!emailRes.ok) {
+          const error = await emailRes.json().catch(() => ({ error: "Unknown error" }));
+          alert(`メール送信に失敗しました: ${error.error}`);
+        }
       }
     }
 
@@ -141,6 +173,41 @@ export default function AdminTasksPage() {
               </div>
 
               <div>
+                <label className="inline-flex items-center gap-2">
+                  <input type="checkbox" checked={sendAsTest} onChange={(e) => setSendAsTest(e.target.checked)} />
+                  <span className="text-sm text-[var(--muted)]">テスト連絡として送信</span>
+                </label>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-medium text-[var(--muted)]">出席番号範囲（任意）</label>
+                <div className="flex gap-2">
+                  <input type="number" min="1" value={studentNumberFrom} onChange={(e) => setStudentNumberFrom(e.target.value)} placeholder="From" className="w-1/2" />
+                  <input type="number" min="1" value={studentNumberTo} onChange={(e) => setStudentNumberTo(e.target.value)} placeholder="To" className="w-1/2" />
+                </div>
+              </div>
+
+              {sendAsTest && (
+                <>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-[var(--muted)]">範囲</label>
+                    <input type="text" placeholder="例: 第1章～第3章" value={testRange} onChange={(e) => setTestRange(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-[var(--muted)]">テスト日時</label>
+                    <input type="datetime-local" value={testDateInput} onChange={(e) => setTestDateInput(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-[var(--muted)]">出席番号範囲（任意）</label>
+                    <div className="flex gap-2">
+                      <input type="number" min="1" value={studentNumberFrom} onChange={(e) => setStudentNumberFrom(e.target.value)} placeholder="From" className="w-1/2" />
+                      <input type="number" min="1" value={studentNumberTo} onChange={(e) => setStudentNumberTo(e.target.value)} placeholder="To" className="w-1/2" />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <div>
                 <label className="mb-1 block text-xs font-medium text-[var(--muted)]">
                   送信するユーザー
                   {selectedUserIds.length > 0 && <span className="ml-2 admin-pill">{selectedUserIds.length}人</span>}
@@ -152,7 +219,7 @@ export default function AdminTasksPage() {
                     users.map((user) => (
                       <label key={user.id} className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 hover:bg-[var(--admin-50)]">
                         <input type="checkbox" checked={selectedUserIds.includes(user.id)} onChange={() => toggleUserSelection(user.id)} className="cursor-pointer" />
-                        <p className="text-xs font-medium text-[var(--foreground)]">{user.name}</p>
+                        <p className="text-xs font-medium text-[var(--foreground)]">{user.studentNumber ? `(${user.studentNumber}) ` : ''}{user.name}</p>
                       </label>
                     ))
                   )}

@@ -103,7 +103,8 @@ export default function AuthPage() {
                   required={!isLogin}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="appearance-none rounded-lg relative block w-full bg-white px-3 py-2 border border-gray-300 placeholder-gray-500 text-[var(--foreground)] focus:outline-none focus:ring-[var(--primary)] focus:border-[var(--primary)] text-sm"
+                  className="appearance-none rounded-lg relative block w-full bg-[var(--card)] px-3 py-2 border border-[var(--border)] focus:outline-none focus:ring-[var(--primary)] focus:border-[var(--primary)] text-sm"
+                  style={{ color: 'var(--foreground)' }}
                   placeholder="太郎"
                 />
                 {nameError && <small className="text-xs text-red-600">{nameError}</small>}
@@ -119,6 +120,8 @@ export default function AuthPage() {
                   value={studentNumber}
                   onChange={(e) => setStudentNumber(e.target.value)}
                   placeholder="例: 15"
+                  className="appearance-none rounded-lg relative block w-full bg-[var(--card)] px-3 py-2 border border-[var(--border)] focus:outline-none focus:ring-[var(--primary)] focus:border-[var(--primary)] text-sm"
+                  style={{ color: 'var(--foreground)' }}
                 />
                 {studentNumberError && <small className="text-xs text-red-600">{studentNumberError}</small>}
               </div>
@@ -126,27 +129,29 @@ export default function AuthPage() {
 
             <div>
               <label className="block text-sm font-medium text-[var(--foreground)] mb-1">メールアドレス</label>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="appearance-none rounded-lg relative block w-full bg-white px-3 py-2 border border-gray-300 placeholder-gray-500 text-[var(--foreground)] focus:outline-none focus:ring-[var(--primary)] focus:border-[var(--primary)] text-sm"
-                placeholder="you@example.com"
-              />
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="appearance-none rounded-lg relative block w-full bg-[var(--card)] px-3 py-2 border border-[var(--border)] focus:outline-none focus:ring-[var(--primary)] focus:border-[var(--primary)] text-sm"
+                  style={{ color: 'var(--foreground)' }}
+                  placeholder="you@example.com"
+                />
               {emailError && <small className="text-xs text-red-600">{emailError}</small>}
             </div>
 
             <div>
               <label className="block text-sm font-medium text-[var(--foreground)] mb-1">パスワード</label>
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="appearance-none rounded-lg relative block w-full bg-white px-3 py-2 border border-gray-300 placeholder-gray-500 text-[var(--foreground)] focus:outline-none focus:ring-[var(--primary)] focus:border-[var(--primary)] text-sm"
-                placeholder="••••••••"
-              />
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="appearance-none rounded-lg relative block w-full bg-[var(--card)] px-3 py-2 border border-[var(--border)] focus:outline-none focus:ring-[var(--primary)] focus:border-[var(--primary)] text-sm"
+                  style={{ color: 'var(--foreground)' }}
+                  placeholder="••••••••"
+                />
               {passwordError && <small className="text-xs text-red-600">{passwordError}</small>}
               {!isLogin && (
                 <p className="mt-1 text-xs text-[var(--muted)]">※ 大文字、小文字、数字、記号を含む8文字以上が必要です。</p>
