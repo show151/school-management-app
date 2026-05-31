@@ -21,7 +21,7 @@ export async function GET(request: Request) {
   const userId = await getUserId(request);
   if (!userId) return NextResponse.json({ error: '認証が必要です。' }, { status: 401 });
 
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, name: true, email: true } });
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, name: true, email: true, studentNumber: true } });
   if (!user) return NextResponse.json({ error: 'ユーザーが見つかりません。' }, { status: 404 });
 
   return NextResponse.json({ user });
@@ -32,14 +32,38 @@ export async function PATCH(request: Request) {
   if (!userId) return NextResponse.json({ error: '認証が必要です。' }, { status: 401 });
 
   const body = await request.json().catch(() => ({}));
-  const { name } = body as { name?: string };
-  if (typeof name !== 'string') return NextResponse.json({ error: '名前を入力してください。' }, { status: 400 });
-  if (!validateName(name)) return NextResponse.json({ error: '名前が無効です。' }, { status: 400 });
+  const { name, studentNumber } = body as { name?: string; studentNumber?: number | null | string };
+  const data: { name?: string; studentNumber?: number | null } = {};
+
+  if (typeof name !== 'undefined') {
+    if (typeof name !== 'string') return NextResponse.json({ error: '名前を入力してください。' }, { status: 400 });
+    if (!validateName(name)) return NextResponse.json({ error: '名前が無効です。' }, { status: 400 });
+    data.name = name;
+  }
+
+  if (typeof studentNumber !== 'undefined') {
+    if (studentNumber === '' || studentNumber === null) {
+      data.studentNumber = null;
+    } else {
+      const parsed = typeof studentNumber === 'string' ? Number(studentNumber) : studentNumber;
+      if (!Number.isInteger(parsed) || parsed < 1) {
+        return NextResponse.json({ error: '出席番号は1以上の整数で入力してください。' }, { status: 400 });
+      }
+      data.studentNumber = parsed;
+    }
+  }
+
+  if (Object.keys(data).length === 0) {
+    return NextResponse.json({ error: '更新内容がありません。' }, { status: 400 });
+  }
 
   try {
-    const updated = await prisma.user.update({ where: { id: userId }, data: { name } });
-    return NextResponse.json({ user: { id: updated.id, name: updated.name, email: updated.email } });
+    const updated = await prisma.user.update({ where: { id: userId }, data });
+    return NextResponse.json({ user: { id: updated.id, name: updated.name, email: updated.email, studentNumber: updated.studentNumber } });
   } catch (err) {
+    if (err && typeof err === 'object' && 'code' in err && (err as { code?: string }).code === 'P2002') {
+      return NextResponse.json({ error: 'この出席番号はすでに使われています。' }, { status: 409 });
+    }
     console.error('User update error', err);
     return NextResponse.json({ error: '更新に失敗しました。' }, { status: 500 });
   }

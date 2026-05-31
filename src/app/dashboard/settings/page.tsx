@@ -14,6 +14,9 @@ export default function SettingsPage() {
   const [name, setName] = useState("");
   const [nameLoading, setNameLoading] = useState(false);
   const [nameMessage, setNameMessage] = useState("");
+  const [studentNumber, setStudentNumber] = useState("");
+  const [studentNumberLoading, setStudentNumberLoading] = useState(false);
+  const [studentNumberMessage, setStudentNumberMessage] = useState("");
 
   useEffect(() => {
     let mounted = true;
@@ -22,7 +25,10 @@ export default function SettingsPage() {
         const res = await fetch('/api/user');
         if (!res.ok) return;
         const data = await res.json();
-        if (mounted && data.user?.name) setName(data.user.name);
+        if (mounted && data.user) {
+          if (data.user.name) setName(data.user.name);
+          setStudentNumber(data.user.studentNumber === null || typeof data.user.studentNumber === 'undefined' ? '' : String(data.user.studentNumber));
+        }
       } catch {
         // ignore
       }
@@ -69,6 +75,38 @@ export default function SettingsPage() {
     } finally { setNameLoading(false); }
   };
 
+  const handleStudentNumberSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setStudentNumberMessage("");
+
+    if (studentNumber && !/^\d+$/.test(studentNumber)) {
+      setStudentNumberMessage('出席番号は1以上の整数で入力してください。');
+      return;
+    }
+
+    setStudentNumberLoading(true);
+    try {
+      const res = await fetch('/api/user', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ studentNumber: studentNumber === '' ? null : Number(studentNumber) }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setStudentNumberMessage(data.error || '更新に失敗しました。');
+        return;
+      }
+      setStudentNumberMessage('出席番号を更新しました。');
+      if (data.user?.studentNumber === null || typeof data.user?.studentNumber === 'undefined') {
+        setStudentNumber('');
+      } else {
+        setStudentNumber(String(data.user.studentNumber));
+      }
+    } finally {
+      setStudentNumberLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[var(--background)]">
       <main className="container-responsive py-6 space-y-6">
@@ -86,6 +124,19 @@ export default function SettingsPage() {
             </div>
             <button type="submit" disabled={nameLoading} className="w-full btn-primary disabled:opacity-50">
               {nameLoading ? '保存中...' : '名前を保存する'}
+            </button>
+          </form>
+
+          <h2 className="text-lg font-semibold text-[var(--foreground)] mb-4">出席番号</h2>
+          <form onSubmit={handleStudentNumberSave} className="space-y-4 mb-6">
+            {studentNumberMessage && <div className="p-3 rounded-xl bg-green-50 border border-green-200 text-sm text-green-700">{studentNumberMessage}</div>}
+            <div>
+              <label className="block text-sm font-medium text-[var(--foreground)] mb-1">出席番号</label>
+              <input type="number" min="1" value={studentNumber} onChange={(e) => setStudentNumber(e.target.value)} placeholder="未設定" />
+              <p className="mt-1 text-xs text-[var(--muted)]">空欄にすると未設定に戻せます。</p>
+            </div>
+            <button type="submit" disabled={studentNumberLoading} className="w-full btn-primary disabled:opacity-50">
+              {studentNumberLoading ? '保存中...' : '出席番号を保存する'}
             </button>
           </form>
 
