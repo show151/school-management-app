@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export default function SettingsPage() {
@@ -11,6 +11,24 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [name, setName] = useState("");
+  const [nameLoading, setNameLoading] = useState(false);
+  const [nameMessage, setNameMessage] = useState("");
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await fetch('/api/user');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (mounted && data.user?.name) setName(data.user.name);
+      } catch (e) {
+        // ignore
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,6 +52,23 @@ export default function SettingsPage() {
     }
   };
 
+  const handleNameSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setNameMessage("");
+    if (!name || name.trim().length === 0) { setNameMessage('名前を入力してください。'); return; }
+    setNameLoading(true);
+    try {
+      const res = await fetch('/api/user', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setNameMessage(data.error || '更新に失敗しました。'); return; }
+      setNameMessage('名前を更新しました。');
+    } finally { setNameLoading(false); }
+  };
+
   return (
     <div className="min-h-screen bg-[var(--background)]">
       <main className="container-responsive py-6 space-y-6">
@@ -42,7 +77,19 @@ export default function SettingsPage() {
         </div>
 
         <div className="card max-w-md">
-          <h1 className="text-xl font-bold text-[var(--foreground)] mb-6">パスワード変更</h1>
+          <h1 className="text-xl font-bold text-[var(--foreground)] mb-6">プロフィール</h1>
+          <form onSubmit={handleNameSave} className="space-y-4 mb-6">
+            {nameMessage && <div className="p-3 rounded-xl bg-green-50 border border-green-200 text-sm text-green-700">{nameMessage}</div>}
+            <div>
+              <label className="block text-sm font-medium text-[var(--foreground)] mb-1">表示名</label>
+              <input type="text" value={name} onChange={(e) => setName(e.target.value)} required />
+            </div>
+            <button type="submit" disabled={nameLoading} className="w-full btn-primary disabled:opacity-50">
+              {nameLoading ? '保存中...' : '名前を保存する'}
+            </button>
+          </form>
+
+          <h2 className="text-lg font-semibold text-[var(--foreground)] mb-4">パスワード変更</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-sm text-red-700">{error}</div>}
             {success && <div className="p-3 rounded-xl bg-green-50 border border-green-200 text-sm text-green-700">{success}</div>}
