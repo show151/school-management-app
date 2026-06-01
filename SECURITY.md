@@ -139,16 +139,29 @@ IP アドレスベースのレート制限を実装し、`REDIS_URL` がある�
 - [x] エラーメッセージの最小化
 
 ### デプロイ前
-- [ ] `NODE_ENV=production` 設定
-- [ ] `.env` ファイルが `.gitignore` に含まれている
-- [ ] HTTPS が有効
-- [ ] `JWT_SECRET` を強力な値に設定
-- [ ] `ADMIN_PASSWORD` を強力な値に設定
-- [ ] データベースバックアップ設定
-- [ ] ログ監視設定
+- [x] `NODE_ENV=production` を設定する（Cookie の `secure` と HSTS の有効化条件）
+- [ ] 配信基盤側で HTTPS/TLS を有効にする
+- [x] `.env` ファイルが `.gitignore` に含まれている
+- [x] `JWT_SECRET` を強力な値に設定する
+- [x] `DATABASE_URL` を本番用 DB に設定する
+- [x] `RESEND_API_KEY` と `FROM_EMAIL` を設定する
+- [x] `APP_URL` を本番サイト URL に設定する
+- [x] `CRON_SECRET` を GitHub Actions の secret と一致させる
+- [x] `ADMIN_PASSWORD` を強力な値に設定する（env ベース管理者を使う場合）
+- [x] データベースバックアップのエクスポート機能
+- [x] ログ監視設定
 - [ ] インシデント対応計画
 - [ ] `REDIS_URL` の設定（レート制限強化を使う場合）
-- [ ] `ADMIN_IP_WHITELIST` の設定（管理者を特定 IP に制限する場合）
+- [x] `ADMIN_IP_WHITELIST` の設定（管理者を特定 IP に制限する場合）
+
+### 12. 💾 バックアップ
+
+管理者メニューから、登録データを JSON 形式でエクスポートできます。
+
+- API: `src/app/api/admin/backup/route.ts`
+- 取得対象: `User`, `AuditLog`, `Lesson`, `Task`, `Test`, `Subject`, `Announcement`, `AnnouncementRead`
+- 形式: `application/json` のダウンロードファイル
+- 権限制御: 管理者ログイン済みのみ
 
 ## 参考リンク
 
