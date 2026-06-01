@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { AnnouncementBody } from "@/components/AnnouncementBody";
 
 type Task = { id: string; subject: string; title: string; dueDate: string; isCompleted: boolean };
 type Lesson = { id: string; dayOfWeek: string; period: number; subject: string };
@@ -146,7 +147,7 @@ export default function DashboardPage() {
                 <span className="text-xs" style={{ color: "var(--muted)" }}>{new Date(a.date).toLocaleDateString()}</span>
               </div>
               <p className="text-sm font-bold" style={{ color: "var(--foreground)" }}>{a.title}</p>
-              <p className="text-sm mt-1" style={{ color: "var(--foreground)" }}>{a.body}</p>
+              <AnnouncementBody body={a.body} className="mt-1" />
             </div>
             <button
               onClick={() => handleMarkRead(a.id)}
@@ -349,12 +350,12 @@ export default function DashboardPage() {
                     className="rounded-2xl p-3 border transition-opacity"
                     style={{ borderColor: "var(--border)", backgroundColor: isRead ? "var(--background)" : "var(--primary-50)" }}>
                     <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1">
+                      <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           {!isRead && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: "var(--accent)" }} />}
                           <h3 className="text-sm font-semibold text-[var(--foreground)]">{a.title}</h3>
                         </div>
-                        <p className="mt-1 whitespace-pre-wrap text-sm" style={{ color: isRead ? "var(--muted)" : "var(--foreground)" }}>{a.body}</p>
+                        <AnnouncementBody body={a.body} muted={isRead} className="mt-1" />
                       </div>
                       <div className="flex flex-col items-end gap-1 shrink-0">
                         <span className="text-xs text-[var(--muted)]">{new Date(a.date).toLocaleDateString()}</span>

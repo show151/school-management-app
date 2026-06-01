@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { AnnouncementBody } from "@/components/AnnouncementBody";
 
 type Announcement = { id: string; title: string; body: string; date: string };
 
@@ -107,7 +108,7 @@ export default function AnnouncementsPage() {
                         <span className="text-xs" style={{ color: "var(--muted)" }}>{new Date(a.date).toLocaleDateString()}</span>
                       </div>
                       <h2 className="text-sm font-bold text-[var(--foreground)]">{a.title}</h2>
-                      <p className="mt-1 whitespace-pre-wrap text-sm text-[var(--foreground)]">{a.body}</p>
+                      <AnnouncementBody body={a.body} className="mt-1" />
                     </div>
                     {!isRead && (
                       <button onClick={() => handleMarkRead(a.id)}

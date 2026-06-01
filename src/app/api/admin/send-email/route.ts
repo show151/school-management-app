@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { getAdminSessionFromRequest } from '@/lib/admin-auth';
 import {
@@ -10,6 +11,8 @@ import {
 interface SendEmailRequest {
   type: 'task' | 'test' | 'announcement';
   userIds: string[];
+  studentNumberFrom?: number;
+  studentNumberTo?: number;
   payload: {
     taskTitle?: string;
     dueDate?: string;
@@ -49,11 +52,10 @@ export async function POST(request: Request) {
     // ユーザー情報を取得
     let users;
     // If a student number range is provided, use it to select users
-    const bodyAny: any = body as any;
-    if (typeof bodyAny.studentNumberFrom !== 'undefined' || typeof bodyAny.studentNumberTo !== 'undefined') {
-      const from = typeof bodyAny.studentNumberFrom !== 'undefined' ? Number(bodyAny.studentNumberFrom) : undefined;
-      const to = typeof bodyAny.studentNumberTo !== 'undefined' ? Number(bodyAny.studentNumberTo) : undefined;
-      const whereClause: any = { emailVerified: true };
+    if (typeof body.studentNumberFrom !== 'undefined' || typeof body.studentNumberTo !== 'undefined') {
+      const from = typeof body.studentNumberFrom !== 'undefined' ? Number(body.studentNumberFrom) : undefined;
+      const to = typeof body.studentNumberTo !== 'undefined' ? Number(body.studentNumberTo) : undefined;
+      const whereClause: Prisma.UserWhereInput = { emailVerified: true };
       if (typeof from === 'number' && typeof to === 'number') {
         whereClause.studentNumber = { gte: from, lte: to };
       } else if (typeof from === 'number') {

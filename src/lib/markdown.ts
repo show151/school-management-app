@@ -34,7 +34,7 @@ export function markdownToHtml(md: string): string {
   s = s.replace(/^[-\*]\s+(.+)$/gm, '<li class="ml-5 list-disc break-all">$1</li>');
 
   // Wrap consecutive <li> into <ul>
-  s = s.replace(/(?:<li>[\s\S]*?<\/li>\n*)+/g, (match) => {
+  s = s.replace(/(?:<li\b[^>]*>[\s\S]*?<\/li>\n*)+/g, (match) => {
     return `<ul class="my-3 space-y-1 px-1 max-w-full overflow-hidden">\n${match}</ul>\n`;
   });
 

@@ -96,7 +96,7 @@ export function validateUrl(url: string): boolean {
     const urlObj = new URL(trimmedUrl);
     const scheme = urlObj.protocol.slice(0, -1).toLowerCase(); // 末尾のコロンを除去し、小文字に変換
     return allowedSchemes.includes(scheme);
-  } catch (e) {
+  } catch {
     // URLパースエラー（不正な形式のURL）
     return false;
   }

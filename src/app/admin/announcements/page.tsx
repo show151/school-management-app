@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 type Announcement = { id: string; title: string; body: string; date: string };
 type User = { id: string; studentNumber?: number | null; name: string; email: string; createdAt: string };
+type SendType = 'announcement' | 'test';
 
 export default function AdminAnnouncementsPage() {
   const router = useRouter();
@@ -13,7 +14,7 @@ export default function AdminAnnouncementsPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
-  const [sendType, setSendType] = useState<'announcement' | 'test'>('announcement');
+  const [sendType, setSendType] = useState<SendType>('announcement');
   const [testRange, setTestRange] = useState('');
   const [testDateInput, setTestDateInput] = useState('');
   const [testNote, setTestNote] = useState('');
@@ -159,7 +160,7 @@ export default function AdminAnnouncementsPage() {
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium text-[var(--muted)]">送信種別</label>
-                <select value={sendType} onChange={(e) => setSendType(e.target.value as any)} className="mt-1 block w-full rounded px-3 py-2 bg-[var(--card)] border-[var(--border)] text-[var(--foreground)]">
+                <select value={sendType} onChange={(e) => setSendType(e.target.value === 'test' ? 'test' : 'announcement')} className="mt-1 block w-full rounded px-3 py-2 bg-[var(--card)] border-[var(--border)] text-[var(--foreground)]">
                   <option value="announcement">お知らせ</option>
                   <option value="test">テスト連絡</option>
                 </select>

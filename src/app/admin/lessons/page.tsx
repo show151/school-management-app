@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 type Lesson = { id: string; dayOfWeek: string; period: number; subject: string };
@@ -27,15 +27,17 @@ export default function AdminLessonsPage() {
   const [loading, setLoading] = useState(true);
   const [dragSubject, setDragSubject] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState<string | null>(null);
-  const colorMap = useRef<Record<string, (typeof COLORS)[0]>>({});
+  const colorMap = useMemo(() => {
+    const nextMap: Record<string, (typeof COLORS)[0]> = {};
+    [...subjects.map((subject) => subject.name), ...lessons.map((lesson) => lesson.subject)].forEach((subject) => {
+      if (!nextMap[subject]) {
+        nextMap[subject] = COLORS[Object.keys(nextMap).length % COLORS.length];
+      }
+    });
+    return nextMap;
+  }, [lessons, subjects]);
 
-  const getColor = (subject: string) => {
-    if (!colorMap.current[subject]) {
-      const idx = Object.keys(colorMap.current).length % COLORS.length;
-      colorMap.current[subject] = COLORS[idx];
-    }
-    return colorMap.current[subject];
-  };
+  const getColor = (subject: string) => colorMap[subject] ?? COLORS[0];
 
   useEffect(() => {
     let mounted = true;
@@ -44,8 +46,6 @@ export default function AdminLessonsPage() {
         if (!sRes.ok) throw new Error("unauth");
         const [s, l] = await Promise.all([sRes.json(), lRes.json()]);
         if (mounted) {
-          // 教科の色を先に確定
-          (s as SubjectItem[]).forEach((sub: SubjectItem) => getColor(sub.name));
           setSubjects(s);
           setLessons(l);
         }

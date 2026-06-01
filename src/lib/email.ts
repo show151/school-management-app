@@ -17,8 +17,8 @@ async function sendRawEmail(to: string, subject: string, html: string) {
       subject,
       html,
     });
-    if ((res as any).error) {
-      console.warn('Resend rejected email:', (res as any).error);
+    if (res.error) {
+      console.warn('Resend rejected email:', res.error);
       return false;
     }
     return true;

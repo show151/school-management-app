@@ -7,14 +7,12 @@ import { Suspense } from "react";
 function VerifyContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
-  const [message, setMessage] = useState("");
+  const token = searchParams.get("token");
+  const [status, setStatus] = useState<"loading" | "success" | "error">(() => token ? "loading" : "error");
+  const [message, setMessage] = useState(() => token ? "" : "確認トークンが見つかりません。");
 
   useEffect(() => {
-    const token = searchParams.get("token");
     if (!token) {
-      setStatus("error");
-      setMessage("確認トークンが見つかりません。");
       return;
     }
 
@@ -33,7 +31,7 @@ function VerifyContent() {
         setStatus("error");
         setMessage("サーバーエラーが発生しました。");
       });
-  }, [searchParams]);
+  }, [token]);
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-[var(--background)] px-4">

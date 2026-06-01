@@ -198,6 +198,10 @@ export default function AdminTasksPage() {
                     <input type="datetime-local" value={testDateInput} onChange={(e) => setTestDateInput(e.target.value)} />
                   </div>
                   <div>
+                    <label className="mb-1 block text-xs font-medium text-[var(--muted)]">特記事項（任意・Markdown可）</label>
+                    <textarea value={testNote} onChange={(e) => setTestNote(e.target.value)} className="min-h-16" placeholder="例: 持ち物: 筆記用具" />
+                  </div>
+                  <div>
                     <label className="mb-1 block text-xs font-medium text-[var(--muted)]">出席番号範囲（任意）</label>
                     <div className="flex gap-2">
                       <input type="number" min="1" value={studentNumberFrom} onChange={(e) => setStudentNumberFrom(e.target.value)} placeholder="From" className="w-1/2" />
