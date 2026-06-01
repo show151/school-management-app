@@ -2,6 +2,31 @@ import { NextResponse } from "next/server";
 import { getAdminSessionFromRequest } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
 
+export async function DELETE(request: Request) {
+  const adminSession = await getAdminSessionFromRequest(request);
+  if (!adminSession) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const body = await request.json().catch(() => ({}));
+    const id = typeof body?.id === "string" ? body.id : "";
+
+    if (!id) {
+      return NextResponse.json({ error: "id is required" }, { status: 400 });
+    }
+
+    await prisma.user.delete({ where: { id } });
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    if (error && typeof error === "object" && "code" in error && (error as { code?: string }).code === "P2025") {
+      return NextResponse.json({ error: "ユーザーが見つかりません。" }, { status: 404 });
+    }
+
+    return NextResponse.json({ error: "ユーザーの削除に失敗しました。" }, { status: 500 });
+  }
+}
+
 export async function PATCH(request: Request) {
   const adminSession = await getAdminSessionFromRequest(request);
   if (!adminSession) {

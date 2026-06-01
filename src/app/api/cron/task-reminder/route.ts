@@ -4,8 +4,9 @@ import { sendTaskReminderEmail } from '@/lib/email';
 
 export async function GET(request: Request) {
   // CRON_SECRET で不正アクセスを防ぐ
-  const secret = new URL(request.url).searchParams.get('secret');
-  if (secret !== process.env.CRON_SECRET) {
+  const url = new URL(request.url);
+  const secret = url.searchParams.get('secret') ?? request.headers.get('x-cron-secret');
+  if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

@@ -39,6 +39,32 @@ export default function AdminUsersPage() {
     setStudentNumberDraft("");
   };
 
+  const deleteUser = async (user: User) => {
+    if (!confirm(`${user.name}を削除しますか？この操作は元に戻せません。`)) return;
+
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "DELETE",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: user.id }),
+      });
+
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({}));
+        throw new Error(payload.error || "ユーザーの削除に失敗しました。");
+      }
+
+      setUsers((prev) => prev.filter((item) => item.id !== user.id));
+      if (editingUserId === user.id) {
+        cancelEdit();
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "エラーが発生しました。");
+    }
+  };
+
   const saveStudentNumber = async (userId: string) => {
     setSavingUserId(userId);
     setError(null);
@@ -138,12 +164,20 @@ export default function AdminUsersPage() {
                                 </button>
                               </div>
                             ) : (
-                              <button
-                                onClick={() => startEdit(user)}
-                                className="text-xs font-medium text-[var(--admin-600)] hover:underline"
-                              >
-                                変更
-                              </button>
+                              <div className="flex items-center gap-3">
+                                <button
+                                  onClick={() => startEdit(user)}
+                                  className="text-xs font-medium text-[var(--admin-600)] hover:underline"
+                                >
+                                  変更
+                                </button>
+                                <button
+                                  onClick={() => deleteUser(user)}
+                                  className="text-xs font-medium text-red-600 hover:underline"
+                                >
+                                  削除
+                                </button>
+                              </div>
                             )}
                           </td>
                         </tr>

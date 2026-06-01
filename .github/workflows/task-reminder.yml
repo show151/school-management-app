@@ -24,10 +24,10 @@ jobs:
             echo "CRON_SECRET repository secret is not set. Add CRON_SECRET with the same value as your app's CRON_SECRET"
             exit 1
           fi
-          URL="${SITE_URL%/}/api/cron/task-reminder?secret=${CRON_SECRET}"
+          URL="${SITE_URL%/}/api/cron/task-reminder"
           echo "Calling ${URL}"
           # Fail the job if the HTTP request fails or returns non-2xx
-          HTTP_RESPONSE=$(curl -sS -w "\n%{http_code}" "$URL")
+          HTTP_RESPONSE=$(curl -sS -w "\n%{http_code}" -H "X-Cron-Secret: ${CRON_SECRET}" "$URL")
           HTTP_BODY=$(echo "$HTTP_RESPONSE" | sed '$d')
           HTTP_CODE=$(echo "$HTTP_RESPONSE" | tail -n1)
           echo "HTTP $HTTP_CODE"
