@@ -78,7 +78,7 @@ export default function AuthPage() {
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-[var(--background)] px-4">
-      <div className="login-card">
+      <div className="login-card w-full max-w-md mx-auto">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-[var(--foreground)]">
             {isLogin ? "高専管理アプリにログイン" : "新しくアカウントを作成"}
