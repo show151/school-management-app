@@ -1,4 +1,4 @@
-import { sanitizeInput } from './security';
+import { sanitizeInput, validateUrl } from './security';
 
 // Very small Markdown -> HTML converter (supports headings, bold, italic, code, links, lists)
 export function markdownToHtml(md: string): string {
@@ -61,7 +61,8 @@ export function markdownToHtml(md: string): string {
 function sanitizeHref(href: string): string {
   // Basic href sanitizer: allow http(s) and mailto only
   const trimmed = href.trim();
-  if (/^(https?:|mailto:)/i.test(trimmed)) return sanitizeInput(trimmed);
-  // otherwise return empty string to avoid JS: URLs
+  // 新しい validateUrl 関数を使用して、許可されたプロトコルのみを許可
+  if (validateUrl(trimmed)) return sanitizeInput(trimmed);
+  // それ以外の場合は、JavaScript: URLなどの危険なプロトコルを避けるために '#' を返す
   return '#';
 }

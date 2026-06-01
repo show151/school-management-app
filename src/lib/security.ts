@@ -54,3 +54,46 @@ export function sanitizeInput(input: string): string {
 export function generateRateLimitKey(ip: string, endpoint: string): string {
   return `${ip}:${endpoint}`;
 }
+
+/**
+ * URLが有効かつ安全かチェックする（アプリリンク対応版）
+ * 許可されたプロトコルのみを許可し、悪意のあるプロトコル（javascript:など）を拒否します。
+ * @param url チェックするURL文字列
+ * @returns URLが安全であれば true、そうでなければ false
+ */
+export function validateUrl(url: string): boolean {
+  if (!url) return false;
+
+  const trimmedUrl = url.trim();
+
+  // 悪意のあるプロトコルを明示的に拒否
+  if (/^(javascript|data|file):/i.test(trimmedUrl)) {
+    return false;
+  }
+
+  // 許可するプロトコルのリスト（小文字で定義）
+  const allowedSchemes = [
+    'http',
+    'https',
+    'mailto',
+    'tel',
+    'zoommtg', // Zoomミーティング
+    'slack',   // Slackアプリ
+    'intent',  // Android App Links
+    'ms-word', // Microsoft Officeアプリ
+    'ms-excel',
+    'ms-powerpoint',
+    'ms-teams',
+    // 必要に応じて他の安全なカスタムスキームを追加
+  ];
+
+  // URLをパースしてプロトコルをチェック
+  try {
+    const urlObj = new URL(trimmedUrl);
+    const scheme = urlObj.protocol.slice(0, -1).toLowerCase(); // 末尾のコロンを除去し、小文字に変換
+    return allowedSchemes.includes(scheme);
+  } catch (e) {
+    // URLパースエラー（不正な形式のURL）
+    return false;
+  }
+}
