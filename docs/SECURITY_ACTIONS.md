@@ -8,6 +8,7 @@
 - Hardened email templates by sanitizing user inputs before embedding in HTML.
 - Added Redis-backed rate limiter (`src/lib/redis-rate-limit.ts`) and used it as fallback when `REDIS_URL` is set.
 - Removed automatic `setInterval` in memory rate limiter to avoid serverless side-effects.
+- Added `CRON_SECRET` protection for the task reminder endpoint; set the same value in the deployed app environment and GitHub Actions secrets.
 
 ## Recommended next steps
 
@@ -16,3 +17,4 @@
 3. Create an admin user:
    - Use `node scripts/create-admin.js --email admin@example.com --password secret` or set `ADMIN_EMAIL`/`ADMIN_PASSWORD` and run the script.
 4. If you plan to run in distributed environment, set `REDIS_URL` and ensure Redis is available.
+5. Set `CRON_SECRET` in the deployed app environment and in the repository secret used by `.github/workflows/task-reminder.yml`.

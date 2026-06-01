@@ -6,7 +6,11 @@ export async function GET(request: Request) {
   // CRON_SECRET で不正アクセスを防ぐ
   const url = new URL(request.url);
   const secret = url.searchParams.get('secret') ?? request.headers.get('x-cron-secret');
-  if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
+  if (!process.env.CRON_SECRET) {
+    return NextResponse.json({ error: 'Cron secret is not configured.' }, { status: 500 });
+  }
+
+  if (secret !== process.env.CRON_SECRET) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -30,6 +34,11 @@ export async function GET(request: Request) {
 
   let sent = 0;
   let failed = 0;
+
+  if (tasks.length === 0) {
+    console.log('📧 Task reminder cron: no pending tasks found');
+    return NextResponse.json({ sent, failed, total: 0 });
+  }
 
   for (const task of tasks) {
     const ok = await sendTaskReminderEmail(
