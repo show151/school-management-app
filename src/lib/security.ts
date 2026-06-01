@@ -80,10 +80,7 @@ export function validateUrl(url: string): boolean {
     'zoommtg', // Zoomミーティング
     'slack',   // Slackアプリ
     'intent',  // Android App Links
-    'ms-word', // Microsoft Officeアプリ
-    'ms-excel',
-    'ms-powerpoint',
-    'ms-teams',
+    'msteams', // Teams デスクトップアプリ用
     // 必要に応じて他の安全なカスタムスキームを追加
   ];
 
