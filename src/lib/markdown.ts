@@ -11,6 +11,12 @@ export function markdownToHtml(md: string): string {
     return `<pre><code>${code.replace(/</g, '&lt;')}</code></pre>`;
   });
 
+  // URLの自動リンク化 (http, https, または許可されたアプリリンク)
+  // Markdown形式以外の生URLを検知して <a> タグに変換します
+  s = s.replace(/(^|\s)(https?:\/\/[^\s<"']+|(?:zoommtg|slack|msteams|ms-teams):\/\/[^\s<"']+)(?![^<]*>|[^\]]*\])/gi, (m, space, url) => {
+    return `${space}<a href="${sanitizeHref(url)}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+  });
+
   // Inline code `code`
   s = s.replace(/`([^`]+)`/g, (_m, code) => `<code>${code}</code>`);
 
@@ -61,8 +67,10 @@ export function markdownToHtml(md: string): string {
 function sanitizeHref(href: string): string {
   // Basic href sanitizer: allow http(s) and mailto only
   const trimmed = href.trim();
-  // 新しい validateUrl 関数を使用して、許可されたプロトコルのみを許可
-  if (validateUrl(trimmed)) return sanitizeInput(trimmed);
+  // すでに markdownToHtml の冒頭で sanitizeInput が実行されているため、
+  // ここで再度 sanitizeInput を呼ぶと & 等が二重にエスケープされるのを防ぎます。
+  // validateUrl で安全性を確認し、問題なければそのまま返します。
+  if (validateUrl(trimmed)) return trimmed;
   // それ以外の場合は、JavaScript: URLなどの危険なプロトコルを避けるために '#' を返す
   return '#';
 }
