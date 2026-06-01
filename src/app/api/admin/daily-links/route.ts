@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminSessionFromRequest } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
+import { validateUrl } from "@/lib/security";
 
 type DailyLinkInput = {
   id?: string;
@@ -23,15 +24,6 @@ function isMissingDailyLinkTableError(error: unknown) {
   return error instanceof Error && error.message.includes("TableDoesNotExist");
 }
 
-function validateHttpUrl(value: string) {
-  try {
-    const url = new URL(value);
-    return url.protocol === "http:" || url.protocol === "https:";
-  } catch {
-    return false;
-  }
-}
-
 function normalizeInput(body: DailyLinkInput) {
   const label = body.label?.trim() ?? "";
   const description = body.description?.trim() || null;
@@ -40,7 +32,7 @@ function normalizeInput(body: DailyLinkInput) {
 
   if (!label) return { error: "リンク名を入力してください。" };
   if (!href) return { error: "URLを入力してください。" };
-  if (!validateHttpUrl(href)) return { error: "URLは http または https で始まる形式で入力してください。" };
+  if (!validateUrl(href)) return { error: "有効なURLまたはアプリリンクを入力してください。" };
 
   return { data: { label, description, href, sortOrder } };
 }
