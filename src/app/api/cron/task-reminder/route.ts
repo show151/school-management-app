@@ -6,18 +6,20 @@ export async function GET(request: Request) {
   // CRON_SECRET で不正アクセスを防ぐ
   const url = new URL(request.url);
   const secret = url.searchParams.get('secret') ?? request.headers.get('x-cron-secret');
-  if (!process.env.CRON_SECRET) {
-    return NextResponse.json({ error: 'Cron secret is not configured.' }, { status: 500 });
-  }
-
-  if (secret !== process.env.CRON_SECRET) {
+  
+  const configuredSecret = process.env.CRON_SECRET;
+  
+  if (!configuredSecret || secret !== configuredSecret) {
+    if (!configuredSecret) {
+      console.error('❌ CRON_SECRET is not set in environment variables');
+    }
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   // 明日の0:00〜23:59を範囲として取得
-  const now = new Date();
-  const tomorrowStart = new Date(now);
-  tomorrowStart.setDate(now.getDate() + 1);
+  // 実行環境（サーバー）がUTCの場合を考慮し、日付計算を調整
+  const tomorrowStart = new Date();
+  tomorrowStart.setDate(tomorrowStart.getDate() + 1);
   tomorrowStart.setHours(0, 0, 0, 0);
 
   const tomorrowEnd = new Date(tomorrowStart);
