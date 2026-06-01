@@ -177,6 +177,7 @@ p, li, td, th {
   input[type="text"],
   input[type="email"],
   input[type="password"],
+  input[type="url"],
   input[type="date"],
   input[type="number"],
   input[type="datetime-local"],

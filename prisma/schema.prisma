@@ -103,3 +103,14 @@ model AnnouncementRead {
   announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
   @@unique([userId, announcementId])
 }
+
+// 8. 普段使うリンク
+model DailyLink {
+  id          String   @id @default(uuid())
+  label       String
+  description String?
+  href        String
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

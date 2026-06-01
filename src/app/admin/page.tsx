@@ -56,6 +56,10 @@ export default function AdminPage() {
             <span className="block text-base font-semibold text-foreground">教科登録</span>
             <span className="mt-1 block text-sm text-(--muted)">課題登録で使う教科名を管理します。</span>
           </button>
+          <button onClick={() => router.push("/admin/daily-links")} className="card text-left transition hover:border-(--admin-600) hover:bg-(--admin-50)">
+            <span className="block text-base font-semibold text-foreground">リンク管理</span>
+            <span className="mt-1 block text-sm text-(--muted)">通常ユーザーのダッシュボードに表示するリンクを管理します。</span>
+          </button>
           <button onClick={() => router.push("/admin/lessons")} className="card text-left transition hover:border-(--admin-600) hover:bg-(--admin-50)">
             <span className="block text-base font-semibold text-foreground">時間割管理</span>
             <span className="mt-1 block text-sm text-(--muted)">生徒の時間割を登録・編集します（1〜4限）。</span>

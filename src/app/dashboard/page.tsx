@@ -7,6 +7,7 @@ type Task = { id: string; subject: string; title: string; dueDate: string; isCom
 type Lesson = { id: string; dayOfWeek: string; period: number; subject: string };
 type Announcement = { id: string; title: string; body: string; date: string };
 type Test = { id: string; subject: string; period: number; range: string; testDate: string };
+type DailyLink = { id: string; label: string; description: string | null; href: string; sortOrder: number };
 
 type DashboardData = {
   tasks: Task[];
@@ -14,17 +15,11 @@ type DashboardData = {
   lessons?: Lesson[];
   tests?: Test[];
   readIds?: string[];
+  dailyLinks?: DailyLink[];
 };
 
 const DAYS = ["月", "火", "水", "木", "金"];
 const PERIODS = [1, 2, 3, 4];
-
-const DAILY_LINKS = [
-  { label: "Google Classroom", description: "授業資料・提出", href: "https://classroom.google.com/" },
-  { label: "Microsoft Teams", description: "連絡・オンライン授業", href: "https://teams.microsoft.com/" },
-  { label: "Google Drive", description: "資料保管", href: "https://drive.google.com/" },
-  { label: "Gmail", description: "メール確認", href: "https://mail.google.com/" },
-];
 
 const COLORS = [
   { bg: "#dbeafe", text: "#1d4ed8", border: "#93c5fd" },
@@ -55,7 +50,7 @@ function UrgencyBadge({ daysUntil }: { daysUntil: number }) {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [data, setData] = useState<DashboardData>({ tasks: [], announcements: [], lessons: [], tests: [], readIds: [] });
+  const [data, setData] = useState<DashboardData>({ tasks: [], announcements: [], lessons: [], tests: [], readIds: [], dailyLinks: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [readIds, setReadIds] = useState<Set<string>>(new Set());
@@ -170,9 +165,9 @@ export default function DashboardPage() {
             <span className="text-xs text-[var(--muted)]">よく開くページ</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {DAILY_LINKS.map((link) => (
+            {(data.dailyLinks ?? []).map((link) => (
               <a
-                key={link.href}
+                key={link.id}
                 href={link.href}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -180,9 +175,12 @@ export default function DashboardPage() {
                 style={{ borderColor: "var(--border)", backgroundColor: "var(--card)" }}
               >
                 <p className="text-sm font-semibold text-[var(--foreground)]">{link.label}</p>
-                <p className="mt-1 text-xs text-[var(--muted)]">{link.description}</p>
+                {link.description && <p className="mt-1 text-xs text-[var(--muted)]">{link.description}</p>}
               </a>
             ))}
+            {(data.dailyLinks ?? []).length === 0 && (
+              <p className="text-sm text-[var(--muted)]">管理者がリンクを登録すると、ここに表示されます。</p>
+            )}
           </div>
         </div>
 

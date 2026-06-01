@@ -50,17 +50,18 @@ export async function GET(request: Request) {
       } catch { /* ignore */ }
     }
 
-    const [tasks, announcements, lessons, tests, reads] = await Promise.all([
+    const [tasks, announcements, lessons, tests, reads, dailyLinks] = await Promise.all([
       prisma.task.findMany({ where: { userId }, orderBy: { dueDate: 'asc' }, take: 3 }),
       prisma.announcement.findMany({ orderBy: [{ date: 'desc' }, { createdAt: 'desc' }], take: 3 }),
       prisma.lesson.findMany({ orderBy: [{ dayOfWeek: 'asc' }, { period: 'asc' }] }),
       prisma.test.findMany({ where: { userId }, orderBy: { testDate: 'asc' }, take: 3 }),
       prisma.announcementRead.findMany({ where: { userId }, select: { announcementId: true } }),
+      prisma.dailyLink.findMany({ orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }] }),
     ]);
 
     const readIds = reads.map((r: { announcementId: string }) => r.announcementId);
 
-    return NextResponse.json({ tasks, announcements, lessons, tests, readIds, isAdmin });
+    return NextResponse.json({ tasks, announcements, lessons, tests, readIds, isAdmin, dailyLinks });
   } catch (error) {
     console.error('Dashboard Data Fetch Error:', error);
     return NextResponse.json({ error: 'データの取得に失敗しました。' }, { status: 500 });
