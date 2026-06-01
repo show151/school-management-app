@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 type Lesson = { id: string; dayOfWeek: string; period: number; subject: string };
@@ -27,55 +27,51 @@ export default function AdminLessonsPage() {
   const [loading, setLoading] = useState(true);
   const [dragSubject, setDragSubject] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState<string | null>(null);
+  const colorMap = useRef<Record<string, (typeof COLORS)[0]>>({});
+
+  const getColor = (subject: string) => {
+    if (!colorMap.current[subject]) {
+      const idx = Object.keys(colorMap.current).length % COLORS.length;
+      colorMap.current[subject] = COLORS[idx];
+    }
+    return colorMap.current[subject];
+  };
 
   useEffect(() => {
     let mounted = true;
-    Promise.all([fetch("/api/admin/subjects", { credentials: "same-origin" }), fetch("/api/admin/lessons", { credentials: "same-origin" })])
+    Promise.all([fetch("/api/admin/subjects"), fetch("/api/admin/lessons")])
       .then(async ([sRes, lRes]) => {
         if (!sRes.ok) throw new Error("unauth");
         const [s, l] = await Promise.all([sRes.json(), lRes.json()]);
-        if (mounted) { setSubjects(s); setLessons(l); }
+        if (mounted) {
+          // 教科の色を先に確定
+          (s as SubjectItem[]).forEach((sub: SubjectItem) => getColor(sub.name));
+          setSubjects(s);
+          setLessons(l);
+        }
       })
-      .catch(() => router.push("/"))
+      .catch(() => router.push("/admin/login"))
       .finally(() => { if (mounted) setLoading(false); });
     return () => { mounted = false; };
   }, [router]);
 
-  const getLesson = (day: string, period: number) =>
-    lessons.find((l) => l.dayOfWeek === day && l.period === period);
-
-  const subjectColorMap: Record<string, (typeof COLORS)[0]> = {};
-  let colorIndex = 0;
-  for (const subject of subjects) {
-    if (!subjectColorMap[subject.name]) {
-      subjectColorMap[subject.name] = COLORS[colorIndex % COLORS.length];
-      colorIndex += 1;
-    }
-  }
-  for (const lesson of lessons) {
-    if (!subjectColorMap[lesson.subject]) {
-      subjectColorMap[lesson.subject] = COLORS[colorIndex % COLORS.length];
-      colorIndex += 1;
-    }
-  }
+  // 同じ day/period の全レッスンを返す
+  const getLessons = (day: string, period: number) =>
+    lessons.filter((l) => l.dayOfWeek === day && l.period === period);
 
   const handleDrop = async (day: string, period: number) => {
     setDragOver(null);
     if (!dragSubject) return;
 
-    const existing = getLesson(day, period);
-    if (existing) {
-      await fetch("/api/admin/lessons", {
-        method: "DELETE",
-        credentials: "same-origin",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: existing.id }),
-      });
+    // 同じセルに同じ教科が既にあれば追加しない
+    const existing = getLessons(day, period);
+    if (existing.some((l) => l.subject === dragSubject)) {
+      setDragSubject(null);
+      return;
     }
 
     const res = await fetch("/api/admin/lessons", {
       method: "POST",
-      credentials: "same-origin",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ dayOfWeek: day, period, subject: dragSubject }),
     });
@@ -85,25 +81,18 @@ export default function AdminLessonsPage() {
       return;
     }
     const newLesson = await res.json();
-
-    setLessons((prev) => {
-      const filtered = existing ? prev.filter((l) => l.id !== existing.id) : prev;
-      return [...filtered, newLesson];
-    });
+    setLessons((prev) => [...prev, newLesson]);
     setDragSubject(null);
   };
 
-  const handleCellClick = async (day: string, period: number) => {
-    const existing = getLesson(day, period);
-    if (!existing) return;
+  const handleDelete = async (id: string) => {
     const res = await fetch("/api/admin/lessons", {
       method: "DELETE",
-      credentials: "same-origin",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: existing.id }),
+      body: JSON.stringify({ id }),
     });
     if (!res.ok) { alert("削除に失敗しました"); return; }
-    setLessons((prev) => prev.filter((l) => l.id !== existing.id));
+    setLessons((prev) => prev.filter((l) => l.id !== id));
   };
 
   if (loading) return <div className="p-8 text-center text-[var(--muted)]">読み込み中...</div>;
@@ -119,24 +108,25 @@ export default function AdminLessonsPage() {
         </div>
 
         <div className="flex flex-col lg:flex-row gap-6">
-          {/* 左: 教科カード */}
-          <div className="lg:w-48 shrink-0">
-            <div className="card">
-              <h2 className="text-sm font-bold text-[var(--foreground)] mb-3">教科</h2>
-              <p className="text-xs text-[var(--muted)] mb-3">ドラッグしてグリッドに配置</p>
+
+          {/* 左: 教科パネル（スクロール可） */}
+          <div className="lg:w-48 shrink-0 flex flex-col" style={{ maxHeight: "calc(100vh - 160px)" }}>
+            <div className="card flex flex-col min-h-0 h-full">
+              <h2 className="text-sm font-bold text-[var(--foreground)] mb-1 shrink-0">教科</h2>
+              <p className="text-xs text-[var(--muted)] mb-3 shrink-0">ドラッグしてセルに追加</p>
               {subjects.length === 0 ? (
                 <p className="text-xs text-[var(--muted)]">教科が登録されていません</p>
               ) : (
-                <div className="flex flex-row lg:flex-col flex-wrap gap-2">
+                <div className="overflow-y-auto flex-1 flex flex-col gap-2 pr-1">
                   {subjects.map((s) => {
-                    const c = subjectColorMap[s.name] ?? COLORS[0];
+                    const c = getColor(s.name);
                     return (
                       <div
                         key={s.id}
                         draggable
                         onDragStart={() => setDragSubject(s.name)}
                         onDragEnd={() => setDragSubject(null)}
-                        className="cursor-grab active:cursor-grabbing rounded-xl px-3 py-2 text-sm font-semibold select-none border"
+                        className="cursor-grab active:cursor-grabbing rounded-xl px-3 py-2 text-sm font-semibold select-none border shrink-0"
                         style={{ backgroundColor: c.bg, color: c.text, borderColor: c.border }}
                       >
                         {s.name}
@@ -152,9 +142,9 @@ export default function AdminLessonsPage() {
           <div className="flex-1 card overflow-x-auto">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-sm font-bold text-[var(--foreground)]">時間割グリッド</h2>
-              <p className="text-xs text-[var(--muted)]">セルをクリックで削除</p>
+              <p className="text-xs text-[var(--muted)]">×ボタンで個別削除</p>
             </div>
-            <table className="w-full table-fixed text-sm min-w-[400px]">
+            <table className="w-full table-fixed text-sm min-w-[480px]">
               <thead>
                 <tr style={{ backgroundColor: "var(--admin-50)" }}>
                   <th className="w-14 p-2 text-xs font-semibold text-[var(--admin-600)] rounded-tl-xl">時限</th>
@@ -170,10 +160,9 @@ export default function AdminLessonsPage() {
                   <tr key={period} className="border-t" style={{ borderColor: "var(--border)" }}>
                     <td className="p-2 text-xs font-semibold text-center text-[var(--muted)]">{period}限</td>
                     {DAYS.map((day) => {
-                      const lesson = getLesson(day, period);
+                      const cellLessons = getLessons(day, period);
                       const cellKey = `${day}-${period}`;
                       const isOver = dragOver === cellKey;
-                      const c = lesson ? subjectColorMap[lesson.subject] ?? COLORS[0] : null;
                       return (
                         <td
                           key={day}
@@ -183,22 +172,38 @@ export default function AdminLessonsPage() {
                           onDrop={() => handleDrop(day, period)}
                         >
                           <div
-                            onClick={() => handleCellClick(day, period)}
-                            className="rounded-xl min-h-[52px] flex items-center justify-center transition-colors border"
+                            className="rounded-xl min-h-[52px] p-1 flex flex-col gap-1 transition-colors border"
                             style={{
-                              backgroundColor: isOver ? "var(--admin-50)" : lesson && c ? c.bg : "transparent",
-                              borderColor: isOver ? "var(--admin-600)" : lesson && c ? c.border : "var(--border)",
-                              borderStyle: isOver || lesson ? "solid" : "dashed",
-                              cursor: lesson ? "pointer" : "default",
+                              backgroundColor: isOver ? "var(--admin-50)" : "transparent",
+                              borderColor: isOver ? "var(--admin-600)" : "var(--border)",
+                              borderStyle: isOver || cellLessons.length > 0 ? "solid" : "dashed",
                             }}
                           >
-                            {lesson ? (
-                              <span className="text-xs font-semibold px-1 text-center" style={{ color: c!.text }}>
-                                {lesson.subject}
-                              </span>
-                            ) : (
-                              <span className="text-xs text-[var(--muted)] opacity-40">+</span>
+                            {cellLessons.length === 0 && (
+                              <span className="text-xs text-[var(--muted)] opacity-40 m-auto">+</span>
                             )}
+                            {cellLessons.map((lesson) => {
+                              const c = getColor(lesson.subject);
+                              return (
+                                <div
+                                  key={lesson.id}
+                                  className="flex items-center justify-between gap-1 rounded-lg px-1.5 py-1 border"
+                                  style={{ backgroundColor: c.bg, borderColor: c.border }}
+                                >
+                                  <span className="text-xs font-semibold truncate" style={{ color: c.text }}>
+                                    {lesson.subject}
+                                  </span>
+                                  <button
+                                    onClick={() => handleDelete(lesson.id)}
+                                    className="shrink-0 text-xs leading-none rounded hover:opacity-70 transition-opacity"
+                                    style={{ color: c.text }}
+                                    aria-label={`${lesson.subject}を削除`}
+                                  >
+                                    ×
+                                  </button>
+                                </div>
+                              );
+                            })}
                           </div>
                         </td>
                       );

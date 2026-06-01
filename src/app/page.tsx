@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 export default function AuthPage() {
@@ -155,6 +156,16 @@ export default function AuthPage() {
               {passwordError && <small className="text-xs text-red-600">{passwordError}</small>}
               {!isLogin && (
                 <p className="mt-1 text-xs text-[var(--muted)]">※ 大文字、小文字、数字、記号を含む8文字以上が必要です。</p>
+              )}
+              {isLogin && (
+                <div className="mt-2 text-right">
+                  <Link
+                    href="/auth/forgot-password"
+                    className="text-sm font-medium text-[var(--primary)] hover:text-[var(--primary-700)] transition duration-150"
+                  >
+                    パスワードを忘れた方はこちら
+                  </Link>
+                </div>
               )}
             </div>
           </div>

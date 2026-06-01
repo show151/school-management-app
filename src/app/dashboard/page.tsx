@@ -19,6 +19,13 @@ type DashboardData = {
 const DAYS = ["月", "火", "水", "木", "金"];
 const PERIODS = [1, 2, 3, 4];
 
+const DAILY_LINKS = [
+  { label: "Google Classroom", description: "授業資料・提出", href: "https://classroom.google.com/" },
+  { label: "Microsoft Teams", description: "連絡・オンライン授業", href: "https://teams.microsoft.com/" },
+  { label: "Google Drive", description: "資料保管", href: "https://drive.google.com/" },
+  { label: "Gmail", description: "メール確認", href: "https://mail.google.com/" },
+];
+
 const COLORS = [
   { bg: "#dbeafe", text: "#1d4ed8", border: "#93c5fd" },
   { bg: "#dcfce7", text: "#15803d", border: "#86efac" },
@@ -156,6 +163,29 @@ export default function DashboardPage() {
           </div>
         ))}
 
+        {/* 普段使うリンク */}
+        <div className="card">
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <h2 className="text-lg font-bold text-[var(--foreground)]">普段使うリンク</h2>
+            <span className="text-xs text-[var(--muted)]">よく開くページ</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {DAILY_LINKS.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-2xl border p-3 transition-colors hover:bg-[var(--primary-50)]"
+                style={{ borderColor: "var(--border)", backgroundColor: "var(--card)" }}
+              >
+                <p className="text-sm font-semibold text-[var(--foreground)]">{link.label}</p>
+                <p className="mt-1 text-xs text-[var(--muted)]">{link.description}</p>
+              </a>
+            ))}
+          </div>
+        </div>
+
         {/* 時間割（全幅・今日ハイライト） */}
         <div className="card overflow-x-auto">
           <h2 className="text-lg font-bold text-[var(--foreground)] mb-4">時間割</h2>
@@ -179,19 +209,25 @@ export default function DashboardPage() {
                 <tr key={period} className="border-t" style={{ borderColor: "var(--border)" }}>
                   <td className="py-2 px-3 text-xs font-semibold text-center text-[var(--muted)]">{period}限</td>
                   {DAYS.map((day) => {
-                    const lesson = data.lessons?.find((l) => l.dayOfWeek === day && l.period === period);
+                    const dayLessons = data.lessons?.filter((l) => l.dayOfWeek === day && l.period === period) ?? [];
                     const isToday = day === todayDay;
-                    const c = lesson ? subjectColorMap[lesson.subject] : null;
                     return (
                       <td key={day} className="py-1.5 px-1.5" style={isToday ? { backgroundColor: "rgba(79,70,229,0.04)" } : {}}>
-                        {lesson && c ? (
-                          <div className="rounded-xl py-2 px-2 text-xs font-semibold text-center border"
-                            style={{ backgroundColor: c.bg, color: c.text, borderColor: c.border }}>
-                            {lesson.subject}
-                          </div>
-                        ) : (
-                          <div className="rounded-xl py-2 px-2 text-xs text-center text-[var(--muted)] opacity-30">—</div>
-                        )}
+                        <div className="flex flex-col gap-1 min-h-[36px]">
+                          {dayLessons.length === 0 ? (
+                            <div className="rounded-xl py-2 px-2 text-xs text-center text-[var(--muted)] opacity-30">—</div>
+                          ) : (
+                            dayLessons.map((lesson) => {
+                              const c = subjectColorMap[lesson.subject];
+                              return c ? (
+                                <div key={lesson.id} className="rounded-xl py-1.5 px-2 text-xs font-semibold text-center border"
+                                  style={{ backgroundColor: c.bg, color: c.text, borderColor: c.border }}>
+                                  {lesson.subject}
+                                </div>
+                              ) : null;
+                            })
+                          )}
+                        </div>
                       </td>
                     );
                   })}
