@@ -79,7 +79,7 @@ export default function AuthPage() {
       <div className="login-card">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-[var(--foreground)]">
-            {isLogin ? "スクール管理アプリにログイン" : "新しくアカウントを作成"}
+            {isLogin ? "高専管理アプリにログイン" : "新しくアカウントを作成"}
           </h2>
           <p className="mt-2 text-center text-sm text-[var(--muted)]">
             課題やテストの提出遅れをゼロに

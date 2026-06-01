@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "スクール管理アプリ",
+  title: "高専管理アプリ",
   description: "課題・時間割・連絡を一元管理",
 };
 

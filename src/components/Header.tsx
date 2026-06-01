@@ -13,7 +13,7 @@ export default function Header({ isAdmin }: HeaderProps) {
     <header className="py-4 border-b" style={{ borderColor: "var(--border)" }}>
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold" style={{ color: "var(--primary)" }}>
-          📚 スクール管理アプリ
+          📚 高専管理アプリ
         </h1>
 
         <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
