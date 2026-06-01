@@ -71,6 +71,11 @@ export function validateUrl(url: string): boolean {
     return false;
   }
 
+  // 相対パス、アンカー、クエリパラメータ、プロトコル相対パスを許可
+  if (/^(\/|#|\?|\.\/|\.\.\/|\/\/)/.test(trimmedUrl)) {
+    return true;
+  }
+
   // 許可するプロトコルのリスト（小文字で定義）
   const allowedSchemes = [
     'http',
