@@ -13,7 +13,7 @@ export function markdownToHtml(md: string): string {
 
   // URLの自動リンク化 (http, https, または許可されたアプリリンク)
   // Markdown形式以外の生URLを検知して <a> タグに変換します
-  s = s.replace(/(^|\s)(https?:\/\/[^\s<"']+|(?:zoommtg|slack|msteams|ms-teams):\/\/[^\s<"']+)(?![^<]*>|[^\]]*\])/gi, (m, space, url) => {
+  s = s.replace(/(^|\s)(https?:\/\/[^\s<"']+|[a-z0-9+.-]+:\/\/[^\s<"']+)(?![^<]*>|[^\]]*\])/gi, (m, space, url) => {
     return `${space}<a href="${sanitizeHref(url)}" target="_blank" rel="noopener noreferrer">${url}</a>`;
   });
 
