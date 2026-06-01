@@ -5,6 +5,29 @@ import { getRequiredEnv } from '@/lib/env';
 
 const JWT_SECRET = getRequiredEnv('JWT_SECRET');
 
+async function getDailyLinks() {
+  try {
+    return await prisma.dailyLink.findMany({
+      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+    });
+  } catch (error) {
+    if (
+      error &&
+      typeof error === 'object' &&
+      'code' in error &&
+      (error as { code?: string }).code === 'P2021'
+    ) {
+      return [];
+    }
+
+    if (error instanceof Error && error.message.includes('TableDoesNotExist')) {
+      return [];
+    }
+
+    throw error;
+  }
+}
+
 async function getUserId(request: Request): Promise<string | null> {
   const cookieHeader = request.headers.get('cookie') || '';
   const token = cookieHeader.split('; ').find((r) => r.startsWith('auth_token='))?.split('=')[1];
@@ -56,7 +79,7 @@ export async function GET(request: Request) {
       prisma.lesson.findMany({ orderBy: [{ dayOfWeek: 'asc' }, { period: 'asc' }] }),
       prisma.test.findMany({ where: { userId }, orderBy: { testDate: 'asc' }, take: 3 }),
       prisma.announcementRead.findMany({ where: { userId }, select: { announcementId: true } }),
-      prisma.dailyLink.findMany({ orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }] }),
+      getDailyLinks(),
     ]);
 
     const readIds = reads.map((r: { announcementId: string }) => r.announcementId);
