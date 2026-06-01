@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title>ユーザー管理と出席番号編集</title>
+  <desc>管理画面のユーザー一覧で、出席番号を後から編集・削除できることを示す README 用画像。</desc>
+  <rect width="1200" height="675" fill="#f8fafc"/>
+  <rect x="70" y="60" width="1060" height="555" rx="32" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+  <text x="110" y="120" fill="#0f172a" font-family="Inter, Arial, sans-serif" font-size="34" font-weight="700">ユーザー管理</text>
+  <text x="110" y="160" fill="#475569" font-family="Inter, Arial, sans-serif" font-size="18">出席番号は登録後も設定・変更できます。</text>
+  <rect x="110" y="200" width="980" height="66" rx="16" fill="#e2e8f0"/>
+  <text x="135" y="242" fill="#1e293b" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="700">出席番号</text>
+  <text x="320" y="242" fill="#1e293b" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="700">名前</text>
+  <text x="520" y="242" fill="#1e293b" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="700">メール</text>
+  <text x="860" y="242" fill="#1e293b" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="700">操作</text>
+  <rect x="110" y="280" width="980" height="86" rx="16" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="135" y="332" fill="#1d4ed8" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="700">15</text>
+  <text x="320" y="332" fill="#1e293b" font-family="Inter, Arial, sans-serif" font-size="18">山田 太郎</text>
+  <text x="520" y="332" fill="#475569" font-family="Inter, Arial, sans-serif" font-size="18">taro@example.com</text>
+  <text x="860" y="332" fill="#1d4ed8" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="700">変更 / 削除</text>
+  <rect x="110" y="390" width="470" height="170" rx="24" fill="#dcfce7"/>
+  <text x="140" y="444" fill="#15803d" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="700">セキュアな更新</text>
+  <text x="140" y="488" fill="#1e293b" font-family="Inter, Arial, sans-serif" font-size="18">・認証済み管理者のみ</text>
+  <text x="140" y="528" fill="#1e293b" font-family="Inter, Arial, sans-serif" font-size="18">・出席番号の重複を防止</text>
+  <rect x="620" y="390" width="470" height="170" rx="24" fill="#fee2e2"/>
+  <text x="650" y="444" fill="#b91c1c" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="700">削除機能</text>
+  <text x="650" y="488" fill="#1e293b" font-family="Inter, Arial, sans-serif" font-size="18">・即時一覧反映</text>
+  <text x="650" y="528" fill="#1e293b" font-family="Inter, Arial, sans-serif" font-size="18">・確認ダイアログ付き</text>
+</svg>

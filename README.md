@@ -1,36 +1,196 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# スクール管理アプリ
 
-## Getting Started
+- アプリサイト: [https://www.kosen-management.jp](https://www.kosen-management.jp)
+- 制作時間: 30時間30分
 
-First, run the development server:
+課題・時間割・連絡・テスト情報をまとめて管理する Next.js アプリです。生徒はダッシュボードで日々の情報を確認でき、管理者はユーザー・教科・課題・テスト・連絡を一元的に運用できます。
+
+この README は、評価時に最初に読まれることを意識して、実装済みの機能とセキュリティ設計を先にまとめています。
+
+## まず見てほしいポイント
+
+- 生徒向けダッシュボードで、課題の完了チェック、締切の残り日数、時間割、未読連絡、テスト予定を確認できます。
+- 管理者は、ユーザー管理、教科登録、時間割、課題、テスト、日々の連絡をまとめて操作できます。
+- 連絡文は Markdown 対応で、メール送信時には安全な HTML に変換されます。
+- 出席番号を使って、登録後に設定したり、通知対象を絞り込んだりできます。
+- 認証、Cookie、CSP、レート制限、cron secret など、セキュアな設計を重視しています。
+
+## 画像
+
+README 用に、機能の概要が分かる図を用意しています。
+
+### 1. 全体像
+
+![スクール管理アプリの全体像](public/readme/hero.svg)
+
+### 2. 生徒ダッシュボード
+
+![ダッシュボードの概念図](public/readme/dashboard.svg)
+
+### 3. 日々の連絡・テスト連絡
+
+![管理者の連絡送信](public/readme/admin-announcements.svg)
+
+### 4. ユーザー管理と出席番号編集
+
+![ユーザー管理](public/readme/admin-users.svg)
+
+### 5. セキュリティ設計
+
+![セキュリティ構成](public/readme/security.svg)
+
+## 主な機能
+
+### 生徒向け
+
+- ログイン / 新規登録
+- 出席番号の登録
+- ダッシュボードで以下を一覧表示
+  - 時間割
+  - 課題一覧
+  - 完了状態の切り替え
+  - 未読連絡の確認と既読化
+  - テスト予定
+- 設定画面で表示名と出席番号を後から変更可能
+
+### 管理者向け
+
+- ユーザー管理
+  - 登録済みユーザーの一覧表示
+  - 出席番号の後から編集
+  - ユーザー削除
+- 教科登録
+- 時間割管理
+- 課題管理
+  - 課題の登録と削除
+  - 生徒への通知送信
+- テスト管理
+  - テスト日程、範囲、特記事項を登録
+  - 特記事項は Markdown 対応
+  - 出席番号範囲を指定した通知送信
+- 日々の連絡
+  - お知らせ登録
+  - Markdown 対応の本文をメール送信
+  - テスト連絡の送信にも対応
+
+### 通知の特徴
+
+- 対象ユーザーを個別選択できます。
+- 出席番号の From / To を指定して通知対象を絞れます。
+- テスト連絡では特記事項を含めて通知できます。
+- 課題の締切が近いユーザーには cron でリマインドを送れます。
+
+## セキュリティ設計
+
+このアプリは、なるべく「ガチガチに」安全側へ寄せています。
+
+- パスワードは bcrypt でハッシュ化して保存しています。
+- 認証トークンは HttpOnly Cookie に保存しています。
+- Cookie は `secure`, `sameSite: 'strict'`, `path: '/'` を設定しています。
+- JWT は `jose` で署名・検証しています。
+- 管理画面は `admin_token` で保護しています。
+- middleware でログイン期限切れトークンを検知し、Cookie を削除しています。
+- Next.js の `next.config.ts` で以下のヘッダーを設定しています。
+  - Content-Security-Policy
+  - X-Frame-Options
+  - X-Content-Type-Options
+  - X-XSS-Protection
+  - Referrer-Policy
+  - Permissions-Policy
+  - Strict-Transport-Security
+- ログインと登録にはレート制限を入れています。
+- 入力値は `src/lib/security.ts` のバリデーションで検証しています。
+- メール本文は Markdown を HTML 化する前にサニタイズしています。
+- cron の task reminder は `CRON_SECRET` を使って保護しています。
+- 管理者 API は認証済みの admin のみが触れる前提です。
+
+## 技術スタック
+
+- Next.js 16 (App Router)
+- React 19
+- TypeScript
+- Prisma
+- PostgreSQL
+- Tailwind CSS v4
+- bcrypt
+- jose
+- Resend
+- Redis 対応のレート制限
+
+## ディレクトリの見どころ
+
+- `src/app/page.tsx` : ログイン / 新規登録
+- `src/app/dashboard/page.tsx` : 生徒ダッシュボード
+- `src/app/dashboard/settings/page.tsx` : 表示名・出席番号の設定
+- `src/app/admin/page.tsx` : 管理メニュー
+- `src/app/admin/users/page.tsx` : ユーザー管理
+- `src/app/admin/announcements/page.tsx` : 日々の連絡
+- `src/app/admin/tasks/page.tsx` : 課題管理
+- `src/app/admin/tests/page.tsx` : テスト管理
+- `src/app/api/auth/*` : 認証 API
+- `src/app/api/admin/*` : 管理者 API
+- `src/app/api/cron/task-reminder/route.ts` : 課題リマインド cron
+- `src/lib/email.ts` : メール送信
+- `src/lib/markdown.ts` : Markdown → HTML 変換
+- `src/lib/security.ts` : 入力検証とサニタイズ
+
+## 開発方法
+
+### 必要条件
+
+- Node.js
+- PostgreSQL
+
+### インストール
+
+```bash
+npm install
+```
+
+### 開発サーバー
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 本番ビルド
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run build
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Lint
 
-## Learn More
+```bash
+npm run lint
+```
 
-To learn more about Next.js, take a look at the following resources:
+## 環境変数
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+最低限、以下を設定してください。
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+DATABASE_URL="postgresql://..."
+JWT_SECRET="your_jwt_secret_here"
+ADMIN_EMAIL="admin@example.com"
+ADMIN_PASSWORD="change-me"
+RESEND_API_KEY=""
+FROM_EMAIL="onboarding@example.com"
+APP_URL="http://localhost:3000"
+CRON_SECRET="your_shared_cron_secret"
+```
 
-## Deploy
+## 実装メモ
 
-This project now uses Supabase PostgreSQL for the database. Set `DATABASE_URL` to the Supabase connection string in `.env` or your hosting provider's environment variables.
+- 出席番号は新規登録時に入力でき、あとから設定画面でも変更できます。
+- 管理者は、必要に応じてユーザーごとの出席番号を調整できます。
+- 課題・テスト・連絡の送信は、個別選択または出席番号範囲で絞り込めます。
+- お知らせ本文は Markdown に対応しており、メールでは安全な HTML として配信されます。
 
-For local development, you can also point `DATABASE_URL` to a local PostgreSQL instance if you prefer to match production more closely.
+## 確認済み
+
+- `npm run build` でビルド確認済み
+
+## ライセンス
+
+必要に応じて追記してください。

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title>管理者の連絡送信</title>
+  <desc>Markdown 対応のお知らせとテスト連絡の入力イメージを示す README 用画像。</desc>
+  <rect width="1200" height="675" fill="#fff7ed"/>
+  <rect x="70" y="60" width="1060" height="555" rx="32" fill="#ffffff" stroke="#fed7aa" stroke-width="2"/>
+  <text x="110" y="120" fill="#9a3412" font-family="Inter, Arial, sans-serif" font-size="34" font-weight="700">管理者: 日々の連絡 / テスト連絡</text>
+  <rect x="110" y="160" width="390" height="390" rx="24" fill="#fef3c7"/>
+  <text x="140" y="214" fill="#b45309" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="700">入力フォーム</text>
+  <text x="140" y="260" fill="#1e293b" font-family="Inter, Arial, sans-serif" font-size="18">・件名 / 教科</text>
+  <text x="140" y="300" fill="#1e293b" font-family="Inter, Arial, sans-serif" font-size="18">・本文 / 範囲</text>
+  <text x="140" y="340" fill="#1e293b" font-family="Inter, Arial, sans-serif" font-size="18">・特記事項（Markdown 可）</text>
+  <text x="140" y="380" fill="#1e293b" font-family="Inter, Arial, sans-serif" font-size="18">・出席番号範囲</text>
+  <text x="140" y="420" fill="#1e293b" font-family="Inter, Arial, sans-serif" font-size="18">・対象ユーザーの選択</text>
+  <rect x="550" y="160" width="520" height="180" rx="24" fill="#dbeafe"/>
+  <text x="580" y="214" fill="#1d4ed8" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="700">送信先の絞り込み</text>
+  <text x="580" y="258" fill="#1e293b" font-family="Inter, Arial, sans-serif" font-size="18">出席番号範囲を指定すると、対象学年やクラス単位での通知が可能です。</text>
+  <rect x="550" y="370" width="520" height="180" rx="24" fill="#dcfce7"/>
+  <text x="580" y="424" fill="#15803d" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="700">Markdown → 安全な HTML</text>
+  <text x="580" y="468" fill="#1e293b" font-family="Inter, Arial, sans-serif" font-size="18">連絡本文はメール送信時に変換し、読みやすい体裁で配信します。</text>
+</svg>

@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title>セキュリティ構成</title>
+  <desc>README 用のセキュリティ図。bcrypt、HttpOnly Cookie、CSP、レート制限、cron secret を示す。</desc>
+  <rect width="1200" height="675" fill="#0f172a"/>
+  <text x="80" y="100" fill="#ffffff" font-family="Inter, Arial, sans-serif" font-size="36" font-weight="700">セキュリティ設計</text>
+  <text x="80" y="145" fill="#cbd5e1" font-family="Inter, Arial, sans-serif" font-size="18">README に明記すべき、実装済みの防御策を一覧化</text>
+  <g transform="translate(80 190)">
+    <rect x="0" y="0" width="500" height="150" rx="24" fill="#1e293b" stroke="#334155"/>
+    <text x="28" y="48" fill="#93c5fd" font-family="Inter, Arial, sans-serif" font-size="26" font-weight="700">認証</text>
+    <text x="28" y="88" fill="#e2e8f0" font-family="Inter, Arial, sans-serif" font-size="18">bcrypt でパスワードをハッシュ化して保存</text>
+    <text x="28" y="120" fill="#e2e8f0" font-family="Inter, Arial, sans-serif" font-size="18">JWT を HttpOnly / Secure / SameSite=Strict で Cookie 保存</text>
+  </g>
+  <g transform="translate(620 190)">
+    <rect x="0" y="0" width="500" height="150" rx="24" fill="#1e293b" stroke="#334155"/>
+    <text x="28" y="48" fill="#86efac" font-family="Inter, Arial, sans-serif" font-size="26" font-weight="700">防御</text>
+    <text x="28" y="88" fill="#e2e8f0" font-family="Inter, Arial, sans-serif" font-size="18">CSP / X-Frame-Options / nosniff / Referrer-Policy</text>
+    <text x="28" y="120" fill="#e2e8f0" font-family="Inter, Arial, sans-serif" font-size="18">ログイン・登録にレート制限を適用</text>
+  </g>
+  <g transform="translate(80 375)">
+    <rect x="0" y="0" width="500" height="150" rx="24" fill="#1e293b" stroke="#334155"/>
+    <text x="28" y="48" fill="#fcd34d" font-family="Inter, Arial, sans-serif" font-size="26" font-weight="700">管理者保護</text>
+    <text x="28" y="88" fill="#e2e8f0" font-family="Inter, Arial, sans-serif" font-size="18">admin_token で管理画面と admin API を分離</text>
+    <text x="28" y="120" fill="#e2e8f0" font-family="Inter, Arial, sans-serif" font-size="18">middleware で期限切れトークンを即時破棄</text>
+  </g>
+  <g transform="translate(620 375)">
+    <rect x="0" y="0" width="500" height="150" rx="24" fill="#1e293b" stroke="#334155"/>
+    <text x="28" y="48" fill="#f9a8d4" font-family="Inter, Arial, sans-serif" font-size="26" font-weight="700">cron 保護</text>
+    <text x="28" y="88" fill="#e2e8f0" font-family="Inter, Arial, sans-serif" font-size="18">GitHub Actions から X-Cron-Secret を送信</text>
+    <text x="28" y="120" fill="#e2e8f0" font-family="Inter, Arial, sans-serif" font-size="18">アプリ側で CRON_SECRET を厳密照合</text>
+  </g>
+</svg>

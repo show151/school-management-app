@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title>スクール管理アプリ ヒーロー</title>
+  <desc>ログインからダッシュボード、管理画面、通知までをまとめた README 用の説明画像。</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.08"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="675" fill="url(#bg)"/>
+  <circle cx="1050" cy="120" r="120" fill="#38bdf8" fill-opacity="0.18"/>
+  <circle cx="180" cy="560" r="160" fill="#a78bfa" fill-opacity="0.14"/>
+  <rect x="80" y="70" width="1040" height="535" rx="36" fill="url(#panel)" stroke="#ffffff" stroke-opacity="0.16"/>
+  <text x="120" y="160" fill="#ffffff" font-family="Inter, Arial, sans-serif" font-size="62" font-weight="700">スクール管理アプリ</text>
+  <text x="120" y="214" fill="#cbd5e1" font-family="Inter, Arial, sans-serif" font-size="24">課題・時間割・連絡・テスト通知を一元管理</text>
+  <g transform="translate(120 270)">
+    <rect x="0" y="0" width="250" height="120" rx="22" fill="#dbeafe"/>
+    <text x="24" y="46" fill="#1d4ed8" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="700">ログイン</text>
+    <text x="24" y="80" fill="#1e293b" font-family="Inter, Arial, sans-serif" font-size="18">bcrypt + HttpOnly Cookie</text>
+  </g>
+  <g transform="translate(410 270)">
+    <rect x="0" y="0" width="250" height="120" rx="22" fill="#dcfce7"/>
+    <text x="24" y="46" fill="#15803d" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="700">ダッシュボード</text>
+    <text x="24" y="80" fill="#1e293b" font-family="Inter, Arial, sans-serif" font-size="18">課題 / 時間割 / 連絡</text>
+  </g>
+  <g transform="translate(700 270)">
+    <rect x="0" y="0" width="250" height="120" rx="22" fill="#fef3c7"/>
+    <text x="24" y="46" fill="#b45309" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="700">管理画面</text>
+    <text x="24" y="80" fill="#1e293b" font-family="Inter, Arial, sans-serif" font-size="18">ユーザー / 教科 / テスト</text>
+  </g>
+  <g transform="translate(120 430)">
+    <rect x="0" y="0" width="830" height="100" rx="22" fill="#0f172a" fill-opacity="0.45" stroke="#94a3b8" stroke-opacity="0.35"/>
+    <text x="28" y="42" fill="#e2e8f0" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="700">README に載せている主な強み</text>
+    <text x="28" y="74" fill="#cbd5e1" font-family="Inter, Arial, sans-serif" font-size="18">Markdown 対応の連絡 / 出席番号管理 / 出席番号範囲送信 / cron リマインド / CSP</text>
+  </g>
+</svg>

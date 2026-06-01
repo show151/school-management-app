@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title>ダッシュボード概念図</title>
+  <desc>生徒向けダッシュボードの主要機能を示す README 用画像。</desc>
+  <rect width="1200" height="675" fill="#f8fafc"/>
+  <rect x="70" y="60" width="1060" height="555" rx="32" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+  <rect x="110" y="110" width="240" height="460" rx="24" fill="#0f172a"/>
+  <text x="150" y="170" fill="#ffffff" font-family="Inter, Arial, sans-serif" font-size="32" font-weight="700">ダッシュボード</text>
+  <text x="150" y="220" fill="#cbd5e1" font-family="Inter, Arial, sans-serif" font-size="20">・課題</text>
+  <text x="150" y="265" fill="#cbd5e1" font-family="Inter, Arial, sans-serif" font-size="20">・時間割</text>
+  <text x="150" y="310" fill="#cbd5e1" font-family="Inter, Arial, sans-serif" font-size="20">・連絡</text>
+  <text x="150" y="355" fill="#cbd5e1" font-family="Inter, Arial, sans-serif" font-size="20">・テスト</text>
+  <rect x="410" y="110" width="650" height="140" rx="24" fill="#dbeafe"/>
+  <text x="440" y="160" fill="#1d4ed8" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="700">未読連絡を最上段に表示</text>
+  <text x="440" y="204" fill="#1e293b" font-family="Inter, Arial, sans-serif" font-size="18">既読管理でダッシュボードを整理しやすくしています。</text>
+  <rect x="410" y="280" width="310" height="290" rx="24" fill="#dcfce7"/>
+  <text x="440" y="330" fill="#15803d" font-family="Inter, Arial, sans-serif" font-size="26" font-weight="700">課題カード</text>
+  <text x="440" y="376" fill="#1e293b" font-family="Inter, Arial, sans-serif" font-size="18">・完了チェック</text>
+  <text x="440" y="416" fill="#1e293b" font-family="Inter, Arial, sans-serif" font-size="18">・締切の残り日数</text>
+  <text x="440" y="456" fill="#1e293b" font-family="Inter, Arial, sans-serif" font-size="18">・進捗バー</text>
+  <rect x="750" y="280" width="310" height="290" rx="24" fill="#fef3c7"/>
+  <text x="780" y="330" fill="#b45309" font-family="Inter, Arial, sans-serif" font-size="26" font-weight="700">時間割とテスト</text>
+  <text x="780" y="376" fill="#1e293b" font-family="Inter, Arial, sans-serif" font-size="18">・曜日 / 時限表示</text>
+  <text x="780" y="416" fill="#1e293b" font-family="Inter, Arial, sans-serif" font-size="18">・教科の色分け</text>
+  <text x="780" y="456" fill="#1e293b" font-family="Inter, Arial, sans-serif" font-size="18">・テスト予定の一覧</text>
+</svg>
