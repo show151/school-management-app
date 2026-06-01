@@ -143,7 +143,7 @@ export default function AdminAnnouncementsPage() {
   return (
     <div className="min-h-screen bg-[var(--background)] admin-theme">
       <div className="container-responsive py-6 space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <button onClick={() => router.push("/admin")} className="text-sm font-medium admin-link md:hidden">
             管理メニューへ戻る
           </button>
@@ -247,13 +247,13 @@ export default function AdminAnnouncementsPage() {
               <div className="space-y-2">
                 {announcements.map((announcement) => (
                   <article key={announcement.id} className="rounded-xl border p-3" style={{ borderColor: "var(--border)" }}>
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="min-w-0 flex-1">
                         <p className="text-xs text-[var(--muted)]">{new Date(announcement.date).toLocaleDateString()}</p>
                         <h3 className="mt-1 text-sm font-bold text-[var(--foreground)]">{announcement.title}</h3>
                         <div className="mt-1 line-clamp-2 text-xs text-[var(--muted)]" dangerouslySetInnerHTML={{ __html: markdownToHtml(announcement.body) }} />
                       </div>
-                      <button onClick={() => handleDelete(announcement.id)} className="text-xs font-medium text-red-500 hover:text-red-700">削除</button>
+                      <button onClick={() => handleDelete(announcement.id)} className="self-start text-xs font-medium text-red-500 hover:text-red-700 sm:self-auto">削除</button>
                     </div>
                   </article>
                 ))}

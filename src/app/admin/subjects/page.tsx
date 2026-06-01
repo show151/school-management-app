@@ -61,7 +61,7 @@ export default function AdminSubjectsPage() {
   return (
     <div className="min-h-screen bg-[var(--background)] admin-theme">
       <div className="container-responsive py-6 space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <button onClick={() => router.push("/admin")} className="text-sm font-medium admin-link md:hidden">
             管理メニューへ戻る
           </button>
@@ -70,7 +70,7 @@ export default function AdminSubjectsPage() {
 
         <form onSubmit={handleSubmit} className="card">
           <label className="mb-1 block text-sm font-medium text-[var(--foreground)]">教科名</label>
-          <div className="flex gap-2 mt-1">
+          <div className="flex flex-col gap-2 mt-1 sm:flex-row">
             <input value={name} onChange={(e) => setName(e.target.value)} className="flex-1" placeholder="例: 数学" />
             <button className="admin-btn px-4">登録</button>
           </div>
@@ -84,9 +84,9 @@ export default function AdminSubjectsPage() {
           ) : (
             <div className="space-y-2">
               {subjects.map((subject) => (
-                <div key={subject.id} className="flex items-center justify-between rounded-xl border p-3" style={{ borderColor: "var(--border)" }}>
-                  <span className="text-sm font-medium text-[var(--foreground)]">{subject.name}</span>
-                  <button onClick={() => handleDelete(subject.id)} className="text-xs font-medium text-red-500 hover:text-red-700">削除</button>
+                <div key={subject.id} className="flex flex-col gap-2 rounded-xl border p-3 sm:flex-row sm:items-center sm:justify-between" style={{ borderColor: "var(--border)" }}>
+                  <span className="min-w-0 text-sm font-medium text-[var(--foreground)]">{subject.name}</span>
+                  <button onClick={() => handleDelete(subject.id)} className="self-start text-xs font-medium text-red-500 hover:text-red-700 sm:self-auto">削除</button>
                 </div>
               ))}
             </div>

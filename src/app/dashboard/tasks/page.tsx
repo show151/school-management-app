@@ -64,12 +64,12 @@ export default function TasksPage() {
           </button>
         </div>
 
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div className="flex items-center gap-3">
+        <div className="flex items-start justify-between flex-wrap gap-3">
+          <div className="flex min-w-0 flex-wrap items-center gap-3">
             <h1 className="text-xl font-bold text-[var(--foreground)]">課題一覧</h1>
             <span className="text-sm text-[var(--muted)]">未完了 {tasks.filter(t => !t.isCompleted).length} / 全 {tasks.length}</span>
           </div>
-          <div className="flex rounded-xl border overflow-hidden text-sm" style={{ borderColor: "var(--border)" }}>
+          <div className="flex max-w-full rounded-xl border overflow-hidden text-sm" style={{ borderColor: "var(--border)" }}>
             {(["incomplete", "all", "completed"] as const).map((f) => (
               <button key={f} onClick={() => setFilter(f)}
                 className="px-3 py-1.5 font-medium transition-colors"

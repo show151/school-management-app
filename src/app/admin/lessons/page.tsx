@@ -100,7 +100,7 @@ export default function AdminLessonsPage() {
   return (
     <div className="min-h-screen bg-[var(--background)] admin-theme">
       <div className="container-responsive py-6 space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <button onClick={() => router.push("/admin")} className="text-sm font-medium admin-link md:hidden">
             管理メニューへ戻る
           </button>
@@ -110,7 +110,7 @@ export default function AdminLessonsPage() {
         <div className="flex flex-col lg:flex-row gap-6">
 
           {/* 左: 教科パネル（スクロール可） */}
-          <div className="lg:w-48 shrink-0 flex flex-col" style={{ maxHeight: "calc(100vh - 160px)" }}>
+          <div className="flex flex-col lg:w-48 lg:shrink-0">
             <div className="card flex flex-col min-h-0 h-full">
               <h2 className="text-sm font-bold text-[var(--foreground)] mb-1 shrink-0">教科</h2>
               <p className="text-xs text-[var(--muted)] mb-3 shrink-0">ドラッグしてセルに追加</p>
@@ -140,7 +140,7 @@ export default function AdminLessonsPage() {
 
           {/* 右: 時間割グリッド */}
           <div className="flex-1 card overflow-x-auto">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
               <h2 className="text-sm font-bold text-[var(--foreground)]">時間割グリッド</h2>
               <p className="text-xs text-[var(--muted)]">×ボタンで個別削除</p>
             </div>

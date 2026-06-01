@@ -103,7 +103,7 @@ export default function AdminTestsPage() {
   return (
     <div className="min-h-screen bg-[var(--background)] admin-theme">
       <div className="container-responsive py-6 space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <button onClick={() => router.push("/admin")} className="text-sm font-medium admin-link md:hidden">管理メニューへ戻る</button>
           <h1 className="text-2xl font-bold text-[var(--foreground)]">テスト情報管理</h1>
         </div>
@@ -178,13 +178,13 @@ export default function AdminTestsPage() {
             ) : (
               <div className="space-y-2">
                 {tests.map((test) => (
-                  <div key={test.id} className="flex items-start justify-between rounded-xl border p-3" style={{ borderColor: "var(--border)" }}>
-                    <div>
+                  <div key={test.id} className="flex flex-col gap-2 rounded-xl border p-3 sm:flex-row sm:items-start sm:justify-between" style={{ borderColor: "var(--border)" }}>
+                    <div className="min-w-0">
                       <p className="text-sm font-semibold text-[var(--foreground)]">【{test.subject}】{test.period}時限</p>
                       <p className="text-xs text-[var(--muted)]">範囲: {test.range}</p>
                       <p className="text-xs text-[var(--muted)]">日時: {new Date(test.testDate).toLocaleDateString()}</p>
                     </div>
-                    <button onClick={() => handleDeleteTest(test.id)} className="text-xs font-medium text-red-500 hover:text-red-700 ml-2 shrink-0">削除</button>
+                    <button onClick={() => handleDeleteTest(test.id)} className="self-start text-xs font-medium text-red-500 hover:text-red-700 sm:ml-2 sm:shrink-0">削除</button>
                   </div>
                 ))}
               </div>

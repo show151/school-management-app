@@ -117,9 +117,9 @@ export default function DashboardPage() {
       <main className="container-responsive py-6 space-y-6">
 
         {/* ヘッダー */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-xl font-bold text-[var(--foreground)]">ダッシュボード</h1>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => router.push("/dashboard/settings")}
               className="px-3 py-1.5 bg-[var(--card)] border text-[var(--muted)] text-sm font-medium rounded-xl shadow-sm transition hover:text-[var(--foreground)]"
@@ -139,7 +139,7 @@ export default function DashboardPage() {
 
         {/* お知らせバー（未読のみ） */}
         {data.announcements.filter((a) => !readIds.has(a.id)).slice(0, 1).map((a) => (
-          <div key={a.id} className="card flex items-start gap-4"
+          <div key={a.id} className="card flex flex-col items-start gap-3 sm:flex-row sm:gap-4"
             style={{ borderLeft: "4px solid var(--accent)", backgroundColor: "var(--accent-bg)" }}>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
@@ -241,7 +241,7 @@ export default function DashboardPage() {
 
           {/* 課題 */}
           <div className="card space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-lg font-bold text-[var(--foreground)]">課題の状況</h2>
               <div className="flex items-center gap-3">
                 <span className="text-sm text-[var(--muted)]">未完了 {incompleteTasks.length} / 全 {data.tasks.length}</span>
@@ -276,7 +276,7 @@ export default function DashboardPage() {
                         className="task-checkbox" aria-label={`完了: ${task.title}`} />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <p className={`text-sm font-semibold truncate ${task.isCompleted ? "text-[var(--muted)]" : "text-[var(--foreground)]"}`}>
+                          <p className={`text-sm font-semibold ${task.isCompleted ? "text-[var(--muted)]" : "text-[var(--foreground)]"}`}>
                             【{task.subject}】{task.title}
                           </p>
                           {!task.isCompleted && <UrgencyBadge daysUntil={days} />}
@@ -330,7 +330,7 @@ export default function DashboardPage() {
 
         {/* 連絡（既読管理） */}
         <div className="card">
-          <div className="flex items-center gap-3 mb-4">
+          <div className="flex flex-wrap items-center gap-3 mb-4">
             <h2 className="text-lg font-bold text-[var(--foreground)]">日々の連絡</h2>
             {unreadCount > 0 && (
               <span className="text-xs font-bold px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: "var(--accent)" }}>
@@ -349,7 +349,7 @@ export default function DashboardPage() {
                   <article key={a.id}
                     className="rounded-2xl p-3 border transition-opacity"
                     style={{ borderColor: "var(--border)", backgroundColor: isRead ? "var(--background)" : "var(--primary-50)" }}>
-                    <div className="flex items-start justify-between gap-3">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           {!isRead && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: "var(--accent)" }} />}
@@ -357,7 +357,7 @@ export default function DashboardPage() {
                         </div>
                         <AnnouncementBody body={a.body} muted={isRead} className="mt-1" />
                       </div>
-                      <div className="flex flex-col items-end gap-1 shrink-0">
+                      <div className="flex flex-row items-center gap-3 sm:flex-col sm:items-end sm:gap-1 sm:shrink-0">
                         <span className="text-xs text-[var(--muted)]">{new Date(a.date).toLocaleDateString()}</span>
                         {!isRead && (
                           <button onClick={() => handleMarkRead(a.id)}

@@ -144,7 +144,7 @@ export default function AdminTasksPage() {
   return (
     <div className="min-h-screen bg-[var(--background)] admin-theme">
       <div className="container-responsive py-6 space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <button onClick={() => router.push("/admin")} className="text-sm font-medium admin-link md:hidden">管理メニューへ戻る</button>
           <h1 className="text-2xl font-bold text-[var(--foreground)]">課題管理</h1>
         </div>
@@ -244,12 +244,12 @@ export default function AdminTasksPage() {
             ) : (
               <div className="space-y-2">
                 {tasks.map((task) => (
-                  <div key={task.batchId} className="flex items-center justify-between rounded-xl border p-3" style={{ borderColor: "var(--border)" }}>
-                    <div>
+                  <div key={task.batchId} className="flex flex-col gap-2 rounded-xl border p-3 sm:flex-row sm:items-center sm:justify-between" style={{ borderColor: "var(--border)" }}>
+                    <div className="min-w-0">
                       <p className="text-sm font-semibold text-[var(--foreground)]">【{task.subject}】{task.title}</p>
                       <p className="text-xs text-[var(--muted)]">締切: {new Date(task.dueDate).toLocaleDateString()} / 完了 {task.completedCount} / 配布 {task.assignedCount}</p>
                     </div>
-                    <button onClick={() => handleDeleteTask(task.batchId)} className="text-xs font-medium text-red-500 hover:text-red-700 ml-2 shrink-0">削除</button>
+                    <button onClick={() => handleDeleteTask(task.batchId)} className="self-start text-xs font-medium text-red-500 hover:text-red-700 sm:ml-2 sm:shrink-0">削除</button>
                   </div>
                 ))}
               </div>

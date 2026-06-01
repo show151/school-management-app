@@ -94,12 +94,12 @@ export default function AdminUsersPage() {
   return (
     <div className="min-h-screen bg-[var(--background)] admin-theme">
       <div className="container-responsive py-6 space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <button onClick={() => router.push("/admin")} className="text-sm font-medium admin-link md:hidden">
             ← 管理メニューに戻る
           </button>
           <h1 className="text-2xl font-bold text-[var(--foreground)]">ユーザー管理</h1>
-          <div className="w-32" />
+          <div className="hidden w-32 sm:block" />
         </div>
 
         {loading && <div className="card p-6 text-center text-[var(--muted)]">読み込み中...</div>}
@@ -114,7 +114,7 @@ export default function AdminUsersPage() {
           <>
             <div className="card overflow-hidden p-0">
               <div className="overflow-x-auto">
-                <table className="w-full divide-y" style={{ borderColor: "var(--border)" }}>
+                <table className="w-full min-w-[720px] divide-y" style={{ borderColor: "var(--border)" }}>
                   <thead style={{ backgroundColor: "var(--admin-50)" }}>
                     <tr>
                       <th className="px-4 py-3 text-left text-sm font-semibold text-[var(--admin-600)]">出席番号</th>
@@ -140,7 +140,7 @@ export default function AdminUsersPage() {
                           <td className="px-4 py-4 text-sm text-[var(--muted)]">{new Date(user.createdAt).toLocaleDateString("ja-JP")}</td>
                           <td className="px-4 py-4 text-sm">
                             {editingUserId === user.id ? (
-                              <div className="flex items-center gap-2">
+                              <div className="flex flex-wrap items-center gap-2">
                                 <input
                                   type="number"
                                   min="1"
@@ -164,7 +164,7 @@ export default function AdminUsersPage() {
                                 </button>
                               </div>
                             ) : (
-                              <div className="flex items-center gap-3">
+                              <div className="flex flex-wrap items-center gap-3">
                                 <button
                                   onClick={() => startEdit(user)}
                                   className="text-xs font-medium text-[var(--admin-600)] hover:underline"

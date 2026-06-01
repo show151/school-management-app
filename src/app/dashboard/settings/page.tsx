@@ -114,7 +114,7 @@ export default function SettingsPage() {
           <button onClick={() => router.push("/dashboard")} className="text-sm text-[var(--muted)] hover:text-[var(--foreground)]">← ダッシュボード</button>
         </div>
 
-        <div className="card max-w-md">
+        <div className="card w-full max-w-md">
           <h1 className="text-xl font-bold text-[var(--foreground)] mb-6">プロフィール</h1>
           <form onSubmit={handleNameSave} className="space-y-4 mb-6">
             {nameMessage && <div className="p-3 rounded-xl bg-green-50 border border-green-200 text-sm text-green-700">{nameMessage}</div>}

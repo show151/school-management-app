@@ -144,7 +144,7 @@ export default function AdminDailyLinksPage() {
   return (
     <div className="min-h-screen bg-[var(--background)] admin-theme">
       <div className="container-responsive py-6 space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <button onClick={() => router.push("/admin")} className="text-sm font-medium admin-link md:hidden">
             管理メニューへ戻る
           </button>
@@ -211,17 +211,17 @@ export default function AdminDailyLinksPage() {
             <div className="space-y-2">
               {links.map((link) => (
                 <div key={link.id} className="flex flex-col gap-3 rounded-xl border p-3 sm:flex-row sm:items-center sm:justify-between" style={{ borderColor: "var(--border)" }}>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex min-w-0 items-center gap-2">
                       <span className="text-xs text-[var(--muted)]">{link.sortOrder}</span>
-                      <a href={link.href} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-[var(--foreground)] hover:text-[var(--admin)]">
+                      <a href={link.href} target="_blank" rel="noopener noreferrer" className="min-w-0 text-sm font-semibold text-[var(--foreground)] hover:text-[var(--admin)]">
                         {link.label}
                       </a>
                     </div>
-                    <p className="mt-1 truncate text-xs text-[var(--muted)]">{link.href}</p>
+                    <p className="mt-1 text-xs text-[var(--muted)]">{link.href}</p>
                     {link.description && <p className="mt-1 text-xs text-[var(--muted)]">{link.description}</p>}
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex shrink-0 gap-2">
                     <button onClick={() => handleEdit(link)} className="admin-outline">
                       編集
                     </button>
