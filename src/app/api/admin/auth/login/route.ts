@@ -3,26 +3,31 @@ import { SignJWT } from 'jose';
 import { JWT_SECRET } from "@/lib/admin-auth";
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcrypt';
-import { checkRateLimit } from "@/lib/rate-limit";
+import { checkRateLimitWithRedisFallback } from "@/lib/rate-limit";
+import { getRequestMeta, recordAuditLog } from '@/lib/audit-log';
+
+type AdminLoginBody = {
+  email?: string;
+  password?: string;
+};
 
 export async function POST(request: Request) {
+  let body: AdminLoginBody = {};
   try {
     // 🔒 レート制限チェック（ブルートフォース攻撃対策）
     const ip = request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "unknown";
     const rateLimitKey = `${ip}:admin-login`;
     
     // 1時間に5回まで（通常ユーザーより厳しく）
-    if (!checkRateLimit(rateLimitKey, 5, 60 * 60 * 1000)) {
+    if (!(await checkRateLimitWithRedisFallback(rateLimitKey, 5, 60 * 60 * 1000))) {
       return NextResponse.json(
         { error: "ログインの試行回数が多すぎます。少し時間をおいてから再度お試しください。" },
         { status: 429 }
       );
     }
 
-    const { email, password } = (await request.json()) as {
-      email?: string;
-      password?: string;
-    };
+    body = (await request.json().catch(() => ({}))) as AdminLoginBody;
+    const { email, password } = body;
 
     // First try DB-based admin user
     const adminUser = await prisma.user.findUnique({ where: { email } });
@@ -40,6 +45,15 @@ export async function POST(request: Request) {
     }
 
     if (!isAdminAuthenticated) {
+      const { ipAddress, userAgent } = getRequestMeta(request);
+      await recordAuditLog({
+        actorType: 'admin',
+        email: email ?? null,
+        action: 'admin.auth.login',
+        result: 'failure',
+        ipAddress,
+        userAgent,
+      });
       return NextResponse.json(
         { error: "管理者情報が正しくありません。" },
         { status: 401 }
@@ -54,6 +68,17 @@ export async function POST(request: Request) {
       .sign(secret);
     const response = NextResponse.json({ message: "管理者ログインに成功しました。" });
 
+    const { ipAddress, userAgent } = getRequestMeta(request);
+    await recordAuditLog({
+      actorType: 'admin',
+      actorId: adminUser?.id ?? null,
+      email: email ?? null,
+      action: 'admin.auth.login',
+      result: 'success',
+      ipAddress,
+      userAgent,
+    });
+
     // 🔒 クッキーに安全に保存
     response.cookies.set("admin_token", token, {
       httpOnly: true,
@@ -65,6 +90,15 @@ export async function POST(request: Request) {
 
     return response;
   } catch {
+    const { ipAddress, userAgent } = getRequestMeta(request);
+    await recordAuditLog({
+      actorType: 'admin',
+      action: 'admin.auth.login',
+      result: 'failure',
+      ipAddress,
+      userAgent,
+      details: { email: body.email ?? null },
+    });
     return NextResponse.json(
       { error: "サーバーエラーが発生しました。" },
       { status: 500 }

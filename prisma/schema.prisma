@@ -25,6 +25,25 @@ model User {
   createdAt               DateTime @default(now())
 }
 
+// 1b. 監査ログ
+model AuditLog {
+  id        String   @id @default(uuid())
+  actorType String   // user, admin, system
+  actorId   String?
+  email     String?
+  action    String
+  resource  String?
+  result    String   // success, failure
+  ipAddress String?
+  userAgent String?
+  details   String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([action])
+  @@index([actorType])
+}
+
 // 2. 授業情報
 model Lesson {
   id        String   @id @default(uuid())

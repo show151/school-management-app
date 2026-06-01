@@ -2,26 +2,36 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcrypt';
 import { validateEmail, validatePassword, validateName } from '@/lib/security';
-import { checkRateLimit } from '@/lib/rate-limit';
+import { checkRateLimitWithRedisFallback } from '@/lib/rate-limit';
 import { sendVerificationEmail, sendAdminNotificationEmail } from '@/lib/email';
 import { generateToken, getTokenExpiry } from '@/lib/token';
+import { getRequestMeta, recordAuditLog } from '@/lib/audit-log';
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || null;
 
+type RegisterBody = {
+  name?: string;
+  email?: string;
+  password?: string;
+  studentNumber?: number | string | null;
+};
+
 export async function POST(request: Request) {
+  let body: RegisterBody = {};
   try {
     // レート制限チェック（IP アドレスベース）
     const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
     const rateLimitKey = `${ip}:register`;
     
     // 1時間に10回まで
-    if (!checkRateLimit(rateLimitKey, 10, 60 * 60 * 1000)) {
+    if (!(await checkRateLimitWithRedisFallback(rateLimitKey, 10, 60 * 60 * 1000))) {
       return NextResponse.json(
         { error: '登録の試行回数が多すぎます。少し時間をおいてから再度お試しください。' },
         { status: 429 }
       );
     }
 
-    const { name, email, password, studentNumber } = await request.json();
+    body = await request.json().catch(() => ({}));
+    const { name, email, password, studentNumber } = body;
 
     if (!name || !email || !password) {
       return NextResponse.json(
@@ -94,6 +104,18 @@ export async function POST(request: Request) {
       },
     });
 
+    const { ipAddress, userAgent } = getRequestMeta(request);
+    await recordAuditLog({
+      actorType: 'user',
+      actorId: user.id,
+      email,
+      action: 'user.register',
+      result: 'success',
+      ipAddress,
+      userAgent,
+      details: { studentNumber: studentNumber ? Number(studentNumber) : null },
+    });
+
     // 📧 メール認証メール送信
     const emailSent = await sendVerificationEmail(email, name, verificationToken);
 
@@ -117,6 +139,16 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     console.error('Register Error:', error);
+    const { ipAddress, userAgent } = getRequestMeta(request);
+    await recordAuditLog({
+      actorType: 'user',
+      action: 'user.register',
+      result: 'failure',
+      email: typeof body?.email === 'string' ? body.email : null,
+      ipAddress,
+      userAgent,
+      details: { error: error instanceof Error ? error.message : 'unknown' },
+    });
     return NextResponse.json(
       { error: 'サーバーエラーが発生しました。' },
       { status: 500 }

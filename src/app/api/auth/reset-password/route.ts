@@ -2,11 +2,14 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcrypt';
 import { validatePassword } from '@/lib/security';
-import { isTokenExpired } from '@/lib/token';
+import { isTokenExpired, hashToken } from '@/lib/token';
+import { getRequestMeta, recordAuditLog } from '@/lib/audit-log';
 
 export async function POST(request: Request) {
   try {
-    const { token, password } = await request.json();
+    const body = await request.json().catch(() => ({}));
+    const token = typeof body?.token === 'string' ? body.token : '';
+    const password = typeof body?.password === 'string' ? body.password : '';
 
     if (!token || !password) {
       return NextResponse.json(
@@ -24,9 +27,7 @@ export async function POST(request: Request) {
     }
 
     // トークンでユーザーを検索
-    const user = await prisma.user.findFirst({
-      where: { resetToken: token },
-    });
+    const user = await prisma.user.findFirst({ where: { resetToken: hashToken(token) } });
 
     if (!user) {
       return NextResponse.json(
@@ -56,12 +57,32 @@ export async function POST(request: Request) {
       },
     });
 
+    const { ipAddress, userAgent } = getRequestMeta(request);
+    await recordAuditLog({
+      actorType: 'user',
+      actorId: user.id,
+      email: user.email,
+      action: 'auth.password-reset.confirm',
+      result: 'success',
+      ipAddress,
+      userAgent,
+    });
+
     return NextResponse.json(
       { message: 'パスワードが正常にリセットされました。新しいパスワードでログインしてください。' },
       { status: 200 }
     );
   } catch (error) {
     console.error('Reset password error:', error);
+    const { ipAddress, userAgent } = getRequestMeta(request);
+    await recordAuditLog({
+      actorType: 'user',
+      action: 'auth.password-reset.confirm',
+      result: 'failure',
+      ipAddress,
+      userAgent,
+      details: { error: error instanceof Error ? error.message : 'unknown' },
+    });
     return NextResponse.json(
       { error: 'サーバーエラーが発生しました。' },
       { status: 500 }

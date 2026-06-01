@@ -12,16 +12,36 @@ const JWT_SECRET = new TextEncoder().encode(
   jwtSecret
 );
 
+function getRequestIp(request: NextRequest): string {
+  const forwarded = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+  return forwarded.split(',')[0]?.trim() || 'unknown';
+}
+
+function getAdminIpWhitelist(): Set<string> | null {
+  const raw = process.env.ADMIN_IP_WHITELIST;
+  if (!raw) return null;
+  const entries = raw.split(',').map((value) => value.trim()).filter(Boolean);
+  return entries.length > 0 ? new Set(entries) : null;
+}
+
 export async function middleware(request: NextRequest) {
   const userToken = request.cookies.get('auth_token')?.value;
   const adminToken = request.cookies.get('admin_token')?.value;
   const userLoginUrl = new URL('/', request.url);
   const adminLoginUrl = new URL('/', request.url);
   const pathname = request.nextUrl.pathname;
+  const adminIpWhitelist = getAdminIpWhitelist();
+  const clientIp = getRequestIp(request);
 
   const isAdminPath =
     (pathname.startsWith('/admin') && pathname !== '/admin/login') ||
     pathname.startsWith('/api/admin');
+
+  if (adminIpWhitelist && (pathname.startsWith('/admin') || pathname.startsWith('/api/admin'))) {
+    if (!adminIpWhitelist.has(clientIp)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+  }
 
   if (isAdminPath) {
     if (!adminToken) {

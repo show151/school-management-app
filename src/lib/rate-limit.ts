@@ -50,6 +50,22 @@ export function clearRateLimitMap(): void {
 }
 
 /**
+ * Redis が有効なら Redis、そうでなければインメモリでレート制限を行う
+ */
+export async function checkRateLimitWithRedisFallback(
+  key: string,
+  maxRequests: number = 5,
+  windowMs: number = 60 * 1000
+): Promise<boolean> {
+  if (process.env.REDIS_URL) {
+    const { redisRateLimit } = await import('./redis-rate-limit');
+    return redisRateLimit(key, maxRequests, Math.ceil(windowMs / 1000));
+  }
+
+  return checkRateLimit(key, maxRequests, windowMs);
+}
+
+/**
  * 古いエントリを定期的にクリーンアップ
  */
 export function cleanupExpiredEntries(): void {

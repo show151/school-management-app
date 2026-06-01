@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { jwtVerify } from 'jose';
 import { getRequiredEnv } from '@/lib/env';
 import { validateName } from '@/lib/security';
+import { getRequestMeta, recordAuditLog } from '@/lib/audit-log';
 
 const JWT_SECRET = getRequiredEnv('JWT_SECRET');
 
@@ -59,12 +60,33 @@ export async function PATCH(request: Request) {
 
   try {
     const updated = await prisma.user.update({ where: { id: userId }, data });
+    const { ipAddress, userAgent } = getRequestMeta(request);
+    await recordAuditLog({
+      actorType: 'user',
+      actorId: updated.id,
+      email: updated.email,
+      action: 'user.profile.update',
+      result: 'success',
+      ipAddress,
+      userAgent,
+      details: data,
+    });
     return NextResponse.json({ user: { id: updated.id, name: updated.name, email: updated.email, studentNumber: updated.studentNumber } });
   } catch (err) {
     if (err && typeof err === 'object' && 'code' in err && (err as { code?: string }).code === 'P2002') {
       return NextResponse.json({ error: 'この出席番号はすでに使われています。' }, { status: 409 });
     }
     console.error('User update error', err);
+    const { ipAddress, userAgent } = getRequestMeta(request);
+    await recordAuditLog({
+      actorType: 'user',
+      actorId: userId,
+      action: 'user.profile.update',
+      result: 'failure',
+      ipAddress,
+      userAgent,
+      details: { error: err instanceof Error ? err.message : 'unknown' },
+    });
     return NextResponse.json({ error: '更新に失敗しました。' }, { status: 500 });
   }
 }

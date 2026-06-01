@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { jwtVerify } from 'jose';
 import bcrypt from 'bcrypt';
 import { getRequiredEnv } from '@/lib/env';
+import { getRequestMeta, recordAuditLog } from '@/lib/audit-log';
 
 const JWT_SECRET = getRequiredEnv('JWT_SECRET');
 
@@ -36,6 +37,17 @@ export async function POST(request: Request) {
 
   const hashed = await bcrypt.hash(newPassword, 12);
   await prisma.user.update({ where: { id: userId }, data: { password: hashed } });
+
+    const { ipAddress, userAgent } = getRequestMeta(request);
+    await recordAuditLog({
+      actorType: 'user',
+      actorId: user.id,
+      email: user.email,
+      action: 'auth.password-change',
+      result: 'success',
+      ipAddress,
+      userAgent,
+    });
 
   return NextResponse.json({ message: 'パスワードを変更しました。' });
 }

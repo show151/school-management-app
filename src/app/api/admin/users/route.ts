@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminSessionFromRequest } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
+import { getRequestMeta, recordAuditLog } from '@/lib/audit-log';
 
 export async function DELETE(request: Request) {
   const adminSession = await getAdminSessionFromRequest(request);
@@ -17,11 +18,34 @@ export async function DELETE(request: Request) {
     }
 
     await prisma.user.delete({ where: { id } });
+    const { ipAddress, userAgent } = getRequestMeta(request);
+    await recordAuditLog({
+      actorType: 'admin',
+      actorId: adminSession.email,
+      email: adminSession.email,
+      action: 'admin.user.delete',
+      result: 'success',
+      ipAddress,
+      userAgent,
+      details: { targetUserId: id },
+    });
     return NextResponse.json({ success: true });
   } catch (error) {
     if (error && typeof error === "object" && "code" in error && (error as { code?: string }).code === "P2025") {
       return NextResponse.json({ error: "ユーザーが見つかりません。" }, { status: 404 });
     }
+
+    const { ipAddress, userAgent } = getRequestMeta(request);
+    await recordAuditLog({
+      actorType: 'admin',
+      actorId: adminSession.email,
+      email: adminSession.email,
+      action: 'admin.user.delete',
+      result: 'failure',
+      ipAddress,
+      userAgent,
+      details: { error: error instanceof Error ? error.message : 'unknown' },
+    });
 
     return NextResponse.json({ error: "ユーザーの削除に失敗しました。" }, { status: 500 });
   }
@@ -61,11 +85,35 @@ export async function PATCH(request: Request) {
       },
     });
 
+    const { ipAddress, userAgent } = getRequestMeta(request);
+    await recordAuditLog({
+      actorType: 'admin',
+      actorId: adminSession.email,
+      email: adminSession.email,
+      action: 'admin.user.update-student-number',
+      result: 'success',
+      ipAddress,
+      userAgent,
+      details: { targetUserId: id, studentNumber },
+    });
+
     return NextResponse.json(user);
   } catch (error) {
     if (error && typeof error === "object" && "code" in error && (error as { code?: string }).code === "P2002") {
       return NextResponse.json({ error: "この出席番号はすでに使われています。" }, { status: 409 });
     }
+
+    const { ipAddress, userAgent } = getRequestMeta(request);
+    await recordAuditLog({
+      actorType: 'admin',
+      actorId: adminSession.email,
+      email: adminSession.email,
+      action: 'admin.user.update-student-number',
+      result: 'failure',
+      ipAddress,
+      userAgent,
+      details: { error: error instanceof Error ? error.message : 'unknown' },
+    });
 
     return NextResponse.json({ error: "ユーザー情報の更新に失敗しました。" }, { status: 500 });
   }

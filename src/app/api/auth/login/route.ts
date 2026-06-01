@@ -4,8 +4,8 @@ import bcrypt from 'bcrypt';
 import { SignJWT } from 'jose';
 import { getRequiredEnv } from '@/lib/env';
 import { validateEmail } from '@/lib/security';
-import { checkRateLimit } from '@/lib/rate-limit';
-import { redisRateLimit } from '@/lib/redis-rate-limit';
+import { checkRateLimitWithRedisFallback } from '@/lib/rate-limit';
+import { getRequestMeta, recordAuditLog } from '@/lib/audit-log';
 
 const JWT_SECRET = getRequiredEnv('JWT_SECRET');
 
@@ -16,14 +16,7 @@ export async function POST(request: Request) {
     const rateLimitKey = `${ip}:login`;
     
     // 1時間に10回まで
-    let allowed = true;
-    if (process.env.REDIS_URL) {
-      allowed = await redisRateLimit(rateLimitKey, 10, 60 * 60);
-    } else {
-      allowed = checkRateLimit(rateLimitKey, 10, 60 * 60 * 1000);
-    }
-
-    if (!allowed) {
+    if (!(await checkRateLimitWithRedisFallback(rateLimitKey, 10, 60 * 60 * 1000))) {
       return NextResponse.json(
         { error: 'ログインの試行回数が多すぎます。少し時間をおいてから再度お試しください。' },
         { status: 429 }
@@ -91,6 +84,17 @@ export async function POST(request: Request) {
       user: { email: user.email, isAdmin: !!user.isAdmin },
     });
 
+    const { ipAddress, userAgent } = getRequestMeta(request);
+    await recordAuditLog({
+      actorType: user.isAdmin ? 'admin' : 'user',
+      actorId: user.id,
+      email: user.email,
+      action: 'auth.login',
+      result: 'success',
+      ipAddress,
+      userAgent,
+    });
+
     // 🔒 クッキーにJWTを安全に保存 (HttpOnly, Secure, SameSite)
     response.cookies.set('auth_token', token, {
       httpOnly: true, // クライアント側のJSからトークンを隠蔽（XSS対策）
@@ -120,6 +124,15 @@ export async function POST(request: Request) {
     return response;
   } catch (error) {
     console.error('Login Error:', error);
+    const { ipAddress, userAgent } = getRequestMeta(request);
+    await recordAuditLog({
+      actorType: 'user',
+      action: 'auth.login',
+      result: 'failure',
+      ipAddress,
+      userAgent,
+      details: { error: error instanceof Error ? error.message : 'unknown' },
+    });
     return NextResponse.json(
       { error: 'サーバーエラーが発生しました。' },
       { status: 500 }
