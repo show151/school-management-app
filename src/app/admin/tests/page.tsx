@@ -282,7 +282,7 @@ export default function AdminTestsPage() {
                     {selectedSubject && (
                       <p className="mb-2 text-xs font-medium text-[var(--admin-600)]">選択中: {selectedSubject}</p>
                     )}
-                    <div className="flex flex-nowrap lg:flex-wrap gap-2 overflow-x-auto pb-1">
+                    <div className="flex flex-nowrap lg:flex-wrap gap-2 overflow-x-auto lg:overflow-y-auto pb-1 lg:pb-0 lg:max-h-64 pr-1">
                       {subjects.map((s) => (
                         <button
                           key={s.id}

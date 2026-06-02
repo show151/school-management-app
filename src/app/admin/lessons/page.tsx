@@ -141,7 +141,7 @@ export default function AdminLessonsPage() {
               {subjects.length === 0 ? (
                 <p className="text-xs text-[var(--muted)]">教科が登録されていません</p>
               ) : (
-                <div className="overflow-y-auto flex-1 flex flex-col gap-2 pr-1">
+                <div className="overflow-y-auto flex-1 flex flex-col gap-2 pr-1 max-h-48 lg:max-h-64">
                   {subjects.map((s) => {
                     const c = getColor(s.name);
                     const isSelected = selectedSubject === s.name;
@@ -180,12 +180,12 @@ export default function AdminLessonsPage() {
               <h2 className="text-sm font-bold text-[var(--foreground)]">時間割グリッド</h2>
               <p className="text-xs text-[var(--muted)]">×ボタンで個別削除</p>
             </div>
-            <table className="w-full table-fixed text-sm min-w-[320px]">
+            <table className="w-full text-sm min-w-[480px]">
               <thead>
-                <tr style={{ backgroundColor: "var(--admin-50)" }}>
-                  <th className="w-12 p-2 text-xs font-semibold text-[var(--admin-600)] rounded-tl-xl">時限</th>
+                <tr>
+                  <th className="w-10 py-2 px-2 text-xs font-bold text-center rounded-tl-xl" style={{ backgroundColor: "var(--admin-50)", color: "var(--admin-600)" }}>時限</th>
                   {DAYS.map((d, i) => (
-                    <th key={d} className={`p-2 text-xs font-semibold text-[var(--admin-600)] ${i === 4 ? "rounded-tr-xl" : ""}`}>
+                    <th key={d} className={`py-2 px-2 text-xs font-bold text-center ${i === 4 ? "rounded-tr-xl" : ""}`} style={{ backgroundColor: "var(--admin-50)", color: "var(--admin-600)" }}>
                       {d}
                     </th>
                   ))}
@@ -194,7 +194,7 @@ export default function AdminLessonsPage() {
               <tbody>
                 {PERIODS.map((period) => (
                   <tr key={period} className="border-t" style={{ borderColor: "var(--border)" }}>
-                    <td className="p-2 text-xs font-semibold text-center text-[var(--muted)]">{period}限</td>
+                    <td className="py-2 px-2 text-xs font-semibold text-center text-[var(--muted)]">{period}限</td>
                     {DAYS.map((day) => {
                       const cellLessons = getLessons(day, period);
                       const cellKey = `${day}-${period}`;
@@ -203,34 +203,35 @@ export default function AdminLessonsPage() {
                       return (
                         <td
                           key={day}
-                          className="p-1.5 align-top"
+                          className="py-1.5 px-1 align-top"
                           onDragOver={(e) => { e.preventDefault(); setDragOver(cellKey); }}
                           onDragLeave={() => setDragOver(null)}
                           onDrop={() => handleDrop(day, period)}
                         >
-                          <button
-                            type="button"
+                          <div
+                            role="button"
+                            tabIndex={canTapAdd ? 0 : -1}
                             onClick={() => handleCellTap(day, period)}
-                            disabled={!canTapAdd}
-                            className="w-full rounded-xl min-h-[52px] p-1 flex flex-col gap-1 transition-colors border text-left touch-manipulation disabled:cursor-default"
+                            onKeyDown={(e) => { if ((e.key === "Enter" || e.key === " ") && canTapAdd) handleCellTap(day, period); }}
+                            aria-label={`${day}曜${period}限`}
+                            className="flex flex-col gap-1 min-h-[36px] rounded-xl p-1 transition-colors"
                             style={{
                               backgroundColor: isOver ? "var(--admin-50)" : canTapAdd ? "rgba(79,70,229,0.04)" : "transparent",
-                              borderColor: isOver ? "var(--admin-600)" : "var(--border)",
-                              borderStyle: isOver || cellLessons.length > 0 ? "solid" : "dashed",
+                              outline: isOver ? "2px solid var(--admin-600)" : "none",
+                              cursor: canTapAdd ? "pointer" : "default",
                             }}
-                            aria-label={`${day}曜${period}限`}
                           >
                             {cellLessons.length === 0 && (
-                              <span className="text-xs text-[var(--muted)] opacity-40 m-auto pointer-events-none">
-                                {canTapAdd ? "タップで追加" : "+"}
-                              </span>
+                              <div className="rounded-xl py-2 px-1 text-xs text-center text-[var(--muted)] opacity-30">
+                                {canTapAdd ? "+ 追加" : "—"}
+                              </div>
                             )}
                             {cellLessons.map((lesson) => {
                               const c = getColor(lesson.subject);
                               return (
                                 <div
                                   key={lesson.id}
-                                  className="flex items-center justify-between gap-1 rounded-lg px-1.5 py-1 border pointer-events-auto"
+                                  className="flex items-center justify-between gap-0.5 rounded-xl py-1.5 px-2 border"
                                   style={{ backgroundColor: c.bg, borderColor: c.border }}
                                   onClick={(e) => e.stopPropagation()}
                                 >
@@ -243,7 +244,7 @@ export default function AdminLessonsPage() {
                                       e.stopPropagation();
                                       handleDelete(lesson.id);
                                     }}
-                                    className="shrink-0 text-xs leading-none rounded hover:opacity-70 transition-opacity min-w-[24px] min-h-[24px] flex items-center justify-center touch-manipulation"
+                                    className="shrink-0 text-xs leading-none rounded hover:opacity-60 transition-opacity min-w-[20px] min-h-[20px] flex items-center justify-center touch-manipulation"
                                     style={{ color: c.text }}
                                     aria-label={`${lesson.subject}を削除`}
                                   >
@@ -252,7 +253,7 @@ export default function AdminLessonsPage() {
                                 </div>
                               );
                             })}
-                          </button>
+                          </div>
                         </td>
                       );
                     })}
