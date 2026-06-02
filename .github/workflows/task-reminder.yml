@@ -13,4 +13,4 @@ jobs:
       - name: Call task reminder API
         run: |
           curl -f -X GET \
-            "${{ secrets.APP_URL }}/api/cron/task-reminder?secret=${{ secrets.CRON_SECRET }}"
+            "${{ secrets.SITE_URL }}/api/cron/task-reminder?secret=${{ secrets.CRON_SECRET }}"
