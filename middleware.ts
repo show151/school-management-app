@@ -64,7 +64,7 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/dashboard') ||
     pathname.startsWith('/api/lessons') ||
     pathname.startsWith('/api/tasks') ||
-    pathname.startsWith('/api/tests');
+    pathname.startsWith('/api/test-schedules');
 
   if (isUserProtectedPath) {
     // トークンがクッキーに存在しない場合は、ログイン画面へ強制リダイレクト
@@ -112,6 +112,6 @@ export const config = {
     '/dashboard/:path*', 
     '/api/lessons/:path*', 
     '/api/tasks/:path*', 
-    '/api/tests/:path*'
+    '/api/test-schedules/:path*'
   ],
 };

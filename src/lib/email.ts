@@ -180,6 +180,59 @@ export async function sendTestNotificationEmail(
   return sendRawEmail(email, `テストのお知らせ: ${safeSubject}`, html);
 }
 
+export async function sendTestScheduleNotificationEmail(
+  email: string,
+  name: string,
+  scheduleTitle: string,
+  startDate: Date,
+  endDate: Date,
+  scheduleId: string
+): Promise<boolean> {
+  const safeName = sanitizeInput(name);
+  const safeTitle = sanitizeInput(scheduleTitle);
+  const periodStr = `${startDate.toLocaleDateString('ja-JP')} 〜 ${endDate.toLocaleDateString('ja-JP')}`;
+  const viewUrl = `${APP_URL}/dashboard/tests?id=${encodeURIComponent(scheduleId)}`;
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2>テストスケジュールのお知らせ</h2>
+      <p>${safeName}さん</p>
+      <div style="background:#f5f5f5;padding:12px;border-radius:6px;margin:12px 0;">
+        <p><strong>${safeTitle}</strong></p>
+        <p><strong>期間：</strong>${periodStr}</p>
+      </div>
+      <p>各時限の教科をタップすると、特記事項を確認できます。</p>
+      <p><a href="${viewUrl}" style="display:inline-block;padding:8px 14px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:6px;">テストスケジュールを見る</a></p>
+    </div>
+  `;
+
+  return sendRawEmail(email, `テストスケジュール: ${safeTitle}`, html);
+}
+
+export async function sendBulkTestScheduleNotificationEmail(
+  recipients: Recipient[],
+  scheduleTitle: string,
+  startDate: Date,
+  endDate: Date,
+  scheduleId: string
+) {
+  let success = 0;
+  let failed = 0;
+  for (const r of recipients) {
+    const ok = await sendTestScheduleNotificationEmail(
+      r.email,
+      r.name ?? '',
+      scheduleTitle,
+      startDate,
+      endDate,
+      scheduleId
+    );
+    if (ok) success += 1;
+    else failed += 1;
+  }
+  return { success, failed };
+}
+
 export async function sendAnnouncementEmail(
   email: string,
   name: string,

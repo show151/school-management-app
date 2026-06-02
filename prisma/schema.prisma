@@ -21,7 +21,6 @@ model User {
   resetTokenExpiry        DateTime?
   lessons                 Lesson[]
   tasks                   Task[]
-  tests                   Test[]
   createdAt               DateTime @default(now())
 }
 
@@ -66,17 +65,25 @@ model Task {
   isCompleted Boolean @default(false) // 状態（未完了: false, 完了: true）
 }
 
-// 4. テスト情報
-model Test {
-  id           String   @id @default(uuid())
-  userId       String
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  adminBatchId String?
-  subject      String   // 教科名
-  period       Int      // 時限
-  range        String   // 範囲
-  note         String?  // 特記事項（Markdown可）
-  testDate     DateTime // テスト実施日
+// 4. テストスケジュール（期間）
+model TestSchedule {
+  id        String              @id @default(uuid())
+  title     String
+  startDate DateTime
+  endDate   DateTime
+  createdAt DateTime            @default(now())
+  entries   TestScheduleEntry[]
+}
+
+// 4b. テストスケジュールの各曜日・各時限（同一セルに複数教科可）
+model TestScheduleEntry {
+  id         String       @id @default(uuid())
+  scheduleId String
+  schedule   TestSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  dayOfWeek  String       // 月、火、水、木、金
+  period     Int
+  subject    String
+  note       String?
 }
 
 // 5. 管理者が登録する教科

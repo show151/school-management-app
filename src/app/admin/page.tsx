@@ -69,8 +69,8 @@ export default function AdminPage() {
             <span className="mt-1 block text-sm text-(--muted)">登録済みユーザー全員に課題を配布します。</span>
           </button>
           <button onClick={() => router.push("/admin/tests")} className="card text-left transition hover:border-(--admin-600) hover:bg-(--admin-50)">
-            <span className="block text-base font-semibold text-foreground">テスト管理</span>
-            <span className="mt-1 block text-sm text-(--muted)">テスト日程・範囲を登録し、生徒に通知します。</span>
+            <span className="block text-base font-semibold text-foreground">テスト連絡・スケジュール</span>
+            <span className="mt-1 block text-sm text-(--muted)">テスト期間を登録し、各時限の教科と特記事項を設定します。</span>
           </button>
           <button onClick={handleBackupDownload} className="card text-left transition hover:border-(--admin-600) hover:bg-(--admin-50)">
             <span className="block text-base font-semibold text-foreground">データバックアップ</span>

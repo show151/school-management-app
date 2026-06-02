@@ -1,4 +1,4 @@
-type SendEmailType = "task" | "test" | "announcement";
+type SendEmailType = "task" | "test" | "testSchedule" | "announcement";
 
 type SendEmailPayload = {
   taskTitle?: string;
@@ -9,6 +9,10 @@ type SendEmailPayload = {
   note?: string;
   title?: string;
   body?: string;
+  scheduleTitle?: string;
+  scheduleId?: string;
+  startDate?: string;
+  endDate?: string;
 };
 
 export async function sendAdminEmail(options: {

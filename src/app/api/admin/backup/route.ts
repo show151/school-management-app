@@ -38,7 +38,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const [users, auditLogs, lessons, tasks, tests, subjects, dailyLinks, announcements, announcementReads] = await Promise.all([
+  const [users, auditLogs, lessons, tasks, testSchedules, subjects, dailyLinks, announcements, announcementReads] = await Promise.all([
     safeFindMany(prisma.user.findMany({
       orderBy: { createdAt: 'asc' },
       select: {
@@ -59,7 +59,12 @@ export async function GET(request: Request) {
     safeFindMany(prisma.auditLog.findMany({ orderBy: { createdAt: 'asc' } })),
     safeFindMany(prisma.lesson.findMany({ orderBy: [{ dayOfWeek: 'asc' }, { period: 'asc' }] })),
     safeFindMany(prisma.task.findMany({ orderBy: { dueDate: 'asc' } })),
-    safeFindMany(prisma.test.findMany({ orderBy: { testDate: 'asc' } })),
+    safeFindMany(
+      prisma.testSchedule.findMany({
+        orderBy: { startDate: 'asc' },
+        include: { entries: { orderBy: { period: 'asc' } } },
+      })
+    ),
     safeFindMany(prisma.subject.findMany({ orderBy: { name: 'asc' } })),
     safeFindMany(prisma.dailyLink.findMany({ orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }] })),
     safeFindMany(prisma.announcement.findMany({ orderBy: { createdAt: 'asc' } })),
@@ -71,7 +76,7 @@ export async function GET(request: Request) {
     auditLogs,
     lessons,
     tasks,
-    tests,
+    testSchedules,
     subjects,
     dailyLinks,
     announcements,

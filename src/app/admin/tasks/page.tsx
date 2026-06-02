@@ -16,10 +16,6 @@ export default function AdminTasksPage() {
   const [subject, setSubject] = useState("");
   const [title, setTitle] = useState("");
   const [dueDate, setDueDate] = useState("");
-  const [sendAsTest, setSendAsTest] = useState(false);
-  const [testRange, setTestRange] = useState("");
-  const [testDateInput, setTestDateInput] = useState("");
-  const [testNote, setTestNote] = useState("");
   const [studentNumberFrom, setStudentNumberFrom] = useState('');
   const [studentNumberTo, setStudentNumberTo] = useState('');
   const [loading, setLoading] = useState(true);
@@ -80,13 +76,11 @@ export default function AdminTasksPage() {
     if (!res.ok) { alert("追加に失敗しました。"); return; }
 
     const emailResult = await sendAdminEmail({
-      type: sendAsTest ? "test" : "task",
+      type: "task",
       selectedUserIds,
       studentNumberFrom,
       studentNumberTo,
-      payload: sendAsTest
-        ? { subject: title || subject, testDate: testDateInput, range: testRange, note: testNote }
-        : { taskTitle: title, dueDate },
+      payload: { taskTitle: title, dueDate },
     });
     if (!emailResult.ok) {
       alert(`メール送信に失敗しました: ${emailResult.error}`);
@@ -148,43 +142,12 @@ export default function AdminTasksPage() {
               </div>
 
               <div>
-                <label className="inline-flex items-center gap-2">
-                  <input type="checkbox" checked={sendAsTest} onChange={(e) => setSendAsTest(e.target.checked)} />
-                  <span className="text-sm text-[var(--muted)]">テスト連絡として送信</span>
-                </label>
-              </div>
-
-              <div>
                 <label className="mb-1 block text-xs font-medium text-[var(--muted)]">出席番号範囲（任意）</label>
                 <div className="flex gap-2">
                   <input type="number" min="1" value={studentNumberFrom} onChange={(e) => setStudentNumberFrom(e.target.value)} placeholder="From" className="w-1/2" />
                   <input type="number" min="1" value={studentNumberTo} onChange={(e) => setStudentNumberTo(e.target.value)} placeholder="To" className="w-1/2" />
                 </div>
               </div>
-
-              {sendAsTest && (
-                <>
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-[var(--muted)]">範囲</label>
-                    <input type="text" placeholder="例: 第1章～第3章" value={testRange} onChange={(e) => setTestRange(e.target.value)} />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-[var(--muted)]">テスト日時</label>
-                    <input type="datetime-local" value={testDateInput} onChange={(e) => setTestDateInput(e.target.value)} />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-[var(--muted)]">特記事項（任意・Markdown可）</label>
-                    <textarea value={testNote} onChange={(e) => setTestNote(e.target.value)} className="min-h-16" placeholder="例: 持ち物: 筆記用具" />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-[var(--muted)]">出席番号範囲（任意）</label>
-                    <div className="flex gap-2">
-                      <input type="number" min="1" value={studentNumberFrom} onChange={(e) => setStudentNumberFrom(e.target.value)} placeholder="From" className="w-1/2" />
-                      <input type="number" min="1" value={studentNumberTo} onChange={(e) => setStudentNumberTo(e.target.value)} placeholder="To" className="w-1/2" />
-                    </div>
-                  </div>
-                </>
-              )}
 
               <div>
                 <label className="mb-1 block text-xs font-medium text-[var(--muted)]">

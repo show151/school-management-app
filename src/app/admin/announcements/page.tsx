@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { markdownToHtml } from '@/lib/markdown';
 import { sendAdminEmail } from "@/lib/send-admin-email";
+import { formatSchedulePeriod, type TestScheduleDto } from "@/lib/test-schedule";
 import { useRouter } from "next/navigation";
 
 type Announcement = { id: string; title: string; body: string; date: string };
@@ -13,12 +14,11 @@ export default function AdminAnnouncementsPage() {
   const router = useRouter();
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [testSchedules, setTestSchedules] = useState<TestScheduleDto[]>([]);
   const [title, setTitle] = useState("");
+  const [selectedScheduleId, setSelectedScheduleId] = useState("");
   const [body, setBody] = useState("");
   const [sendType, setSendType] = useState<SendType>('announcement');
-  const [testRange, setTestRange] = useState('');
-  const [testDateInput, setTestDateInput] = useState('');
-  const [testNote, setTestNote] = useState('');
   const [studentNumberFrom, setStudentNumberFrom] = useState('');
   const [studentNumberTo, setStudentNumberTo] = useState('');
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
@@ -36,15 +36,20 @@ export default function AdminAnnouncementsPage() {
 
   useEffect(() => {
     let isMounted = true;
-    Promise.all([fetch("/api/admin/announcements", { credentials: "same-origin" }), fetch("/api/admin/users", { credentials: "same-origin" })])
+    Promise.all([
+      fetch("/api/admin/announcements", { credentials: "same-origin" }),
+      fetch("/api/admin/users", { credentials: "same-origin" }),
+      fetch("/api/admin/test-schedules", { credentials: "same-origin" }),
+    ])
       .then((res) => {
-        if (!res[0].ok || !res[1].ok) throw new Error();
-        return Promise.all([res[0].json(), res[1].json()]);
+        if (!res[0].ok || !res[1].ok || !res[2].ok) throw new Error();
+        return Promise.all([res[0].json(), res[1].json(), res[2].json()]);
       })
-      .then(([announcementsData, usersData]) => {
+      .then(([announcementsData, usersData, schedulesData]) => {
         if (isMounted) {
           setAnnouncements(announcementsData as Announcement[]);
           setUsers(usersData as User[]);
+          setTestSchedules(schedulesData as TestScheduleDto[]);
         }
       })
       .catch(() => router.push("/"))
@@ -60,11 +65,8 @@ export default function AdminAnnouncementsPage() {
       if (!body.trim()) setBodyError("本文を入力してください。");
       if (!title.trim() || !body.trim()) return;
     } else {
-      // test
-      if (!title.trim()) setTitleError("教科名を入力してください。");
-      if (!testRange.trim()) setBodyError("範囲を入力してください。");
-      if (!testDateInput) setBodyError("テスト日時を入力してください。");
-      if (!title.trim() || !testRange.trim() || !testDateInput) return;
+      if (!selectedScheduleId) setTitleError("テストスケジュールを選択してください。");
+      if (!selectedScheduleId) return;
     }
 
     if (sendType === 'announcement') {
@@ -77,15 +79,21 @@ export default function AdminAnnouncementsPage() {
       if (!res.ok) { alert("連絡の登録に失敗しました。"); return; }
     }
 
+    const schedule = testSchedules.find((s) => s.id === selectedScheduleId);
     const emailResult = await sendAdminEmail({
-      type: sendType === "announcement" ? "announcement" : "test",
+      type: sendType === "announcement" ? "announcement" : "testSchedule",
       selectedUserIds,
       studentNumberFrom,
       studentNumberTo,
       payload:
         sendType === "announcement"
           ? { title, body }
-          : { subject: title, testDate: testDateInput, range: testRange, note: testNote },
+          : {
+              scheduleId: schedule!.id,
+              scheduleTitle: schedule!.title,
+              startDate: schedule!.startDate,
+              endDate: schedule!.endDate,
+            },
     });
     if (!emailResult.ok) {
       alert(
@@ -95,7 +103,7 @@ export default function AdminAnnouncementsPage() {
       );
     }
 
-    setTitle(""); setBody(""); setSelectedUserIds([]);
+    setTitle(""); setBody(""); setSelectedScheduleId(""); setSelectedUserIds([]);
     reload();
   };
 
@@ -145,11 +153,34 @@ export default function AdminAnnouncementsPage() {
                 </select>
               </div>
 
-              <div>
-                <label className="mb-1 block text-xs font-medium text-[var(--muted)]">件名 / 教科</label>
-                <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={sendType === 'announcement' ? '例: 明日の持ち物' : '例: 数学'} />
-                {titleError && <small className="text-xs text-red-600 mt-1 block">{titleError}</small>}
-              </div>
+              {sendType === "announcement" ? (
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-[var(--muted)]">件名</label>
+                  <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="例: 明日の持ち物" />
+                  {titleError && <small className="text-xs text-red-600 mt-1 block">{titleError}</small>}
+                </div>
+              ) : (
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-[var(--muted)]">テストスケジュール</label>
+                  <select value={selectedScheduleId} onChange={(e) => setSelectedScheduleId(e.target.value)}>
+                    <option value="">期間を選択</option>
+                    {testSchedules.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.title}（{formatSchedulePeriod(s.startDate, s.endDate)}）
+                      </option>
+                    ))}
+                  </select>
+                  {testSchedules.length === 0 && (
+                    <p className="mt-1 text-xs text-[var(--muted)]">
+                      <button type="button" onClick={() => router.push("/admin/tests")} className="admin-link">
+                        テスト連絡・スケジュール
+                      </button>
+                      で先に期間と各時限を登録してください。
+                    </p>
+                  )}
+                  {titleError && <small className="text-xs text-red-600 mt-1 block">{titleError}</small>}
+                </div>
+              )}
 
               {sendType === 'announcement' ? (
                 <>
@@ -167,27 +198,9 @@ export default function AdminAnnouncementsPage() {
                   </div>
                 </>
               ) : (
-                <>
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-[var(--muted)]">範囲</label>
-                    <input value={testRange} onChange={(e) => setTestRange(e.target.value)} placeholder="例: 第1章～第3章" />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-[var(--muted)]">特記事項（任意・Markdown可）</label>
-                    <textarea value={testNote} onChange={(e) => setTestNote(e.target.value)} className="min-h-16" placeholder="例: 持ち物: 筆記用具\n備考: 追加の注意" />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-[var(--muted)]">テスト日時</label>
-                    <input type="datetime-local" value={testDateInput} onChange={(e) => setTestDateInput(e.target.value)} />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-[var(--muted)]">出席番号範囲（任意）</label>
-                    <div className="flex gap-2">
-                      <input type="number" min="1" value={studentNumberFrom} onChange={(e) => setStudentNumberFrom(e.target.value)} placeholder="From" className="w-1/2" />
-                      <input type="number" min="1" value={studentNumberTo} onChange={(e) => setStudentNumberTo(e.target.value)} placeholder="To" className="w-1/2" />
-                    </div>
-                  </div>
-                </>
+                <p className="text-xs text-[var(--muted)]">
+                  各時限の教科・特記事項はテストスケジュール画面で登録済みである必要があります。メール送信後、生徒は教科をタップして特記事項のみ確認できます。
+                </p>
               )}
 
               <div>

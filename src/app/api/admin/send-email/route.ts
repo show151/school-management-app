@@ -5,11 +5,12 @@ import { getAdminSessionFromRequest } from '@/lib/admin-auth';
 import {
   sendBulkTaskNotificationEmail,
   sendBulkTestNotificationEmail,
+  sendBulkTestScheduleNotificationEmail,
   sendBulkAnnouncementEmail,
 } from '@/lib/email';
 
 interface SendEmailRequest {
-  type: 'task' | 'test' | 'announcement';
+  type: 'task' | 'test' | 'testSchedule' | 'announcement';
   userIds: string[];
   studentNumberFrom?: number;
   studentNumberTo?: number;
@@ -22,6 +23,10 @@ interface SendEmailRequest {
     note?: string;
     title?: string;
     body?: string;
+    scheduleTitle?: string;
+    scheduleId?: string;
+    startDate?: string;
+    endDate?: string;
   };
 }
 
@@ -134,6 +139,22 @@ export async function POST(request: Request) {
           new Date(body.payload.testDate),
           body.payload.range,
           body.payload.note ?? undefined
+        );
+        break;
+
+      case 'testSchedule':
+        if (!body.payload.scheduleTitle || !body.payload.scheduleId || !body.payload.startDate || !body.payload.endDate) {
+          return NextResponse.json(
+            { error: 'Missing scheduleTitle, scheduleId, startDate, or endDate in payload' },
+            { status: 400 }
+          );
+        }
+        result = await sendBulkTestScheduleNotificationEmail(
+          recipients,
+          body.payload.scheduleTitle,
+          new Date(body.payload.startDate),
+          new Date(body.payload.endDate),
+          body.payload.scheduleId
         );
         break;
 

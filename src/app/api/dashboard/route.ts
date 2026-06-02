@@ -73,18 +73,39 @@ export async function GET(request: Request) {
       } catch { /* ignore */ }
     }
 
-    const [tasks, announcements, lessons, tests, reads, dailyLinks] = await Promise.all([
+    const now = new Date();
+    const [tasks, announcements, lessons, testSchedules, reads, dailyLinks] = await Promise.all([
       prisma.task.findMany({ where: { userId }, orderBy: { dueDate: 'asc' }, take: 3 }),
       prisma.announcement.findMany({ orderBy: [{ date: 'desc' }, { createdAt: 'desc' }], take: 3 }),
       prisma.lesson.findMany({ orderBy: [{ dayOfWeek: 'asc' }, { period: 'asc' }] }),
-      prisma.test.findMany({ where: { userId }, orderBy: { testDate: 'asc' }, take: 3 }),
+      prisma.testSchedule.findMany({
+        where: { endDate: { gte: now } },
+        include: { entries: true },
+        orderBy: { startDate: 'asc' },
+        take: 3,
+      }),
       prisma.announcementRead.findMany({ where: { userId }, select: { announcementId: true } }),
       getDailyLinks(),
     ]);
 
     const readIds = reads.map((r: { announcementId: string }) => r.announcementId);
+    const testScheduleSummaries = testSchedules.map((s) => ({
+      id: s.id,
+      title: s.title,
+      startDate: s.startDate.toISOString(),
+      endDate: s.endDate.toISOString(),
+      entryCount: s.entries.length,
+    }));
 
-    return NextResponse.json({ tasks, announcements, lessons, tests, readIds, isAdmin, dailyLinks });
+    return NextResponse.json({
+      tasks,
+      announcements,
+      lessons,
+      testSchedules: testScheduleSummaries,
+      readIds,
+      isAdmin,
+      dailyLinks,
+    });
   } catch (error) {
     console.error('Dashboard Data Fetch Error:', error);
     return NextResponse.json({ error: 'データの取得に失敗しました。' }, { status: 500 });
