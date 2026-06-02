@@ -102,32 +102,33 @@ function TestsPageContent() {
         {schedules.length === 0 ? (
           <p className="text-sm text-[var(--muted)]">現在確認できるテスト期間はありません。</p>
         ) : (
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-            <div className="card space-y-2 lg:col-span-1">
-              <h2 className="text-sm font-bold text-[var(--foreground)]">テスト期間</h2>
+          <div className="space-y-4">
+            {/* タブ形式の期間選択 */}
+            <div className="flex gap-2 overflow-x-auto pb-1">
               {schedules.map((s) => (
                 <button
                   key={s.id}
                   type="button"
                   onClick={() => setSelectedId(s.id)}
-                  className={`w-full rounded-xl border p-3 text-left transition-colors ${selectedId === s.id ? "border-[var(--primary)] bg-[var(--primary-50)]" : ""}`}
+                  className={`shrink-0 rounded-xl border px-4 py-2 text-left transition-colors ${
+                    selectedId === s.id
+                      ? "border-[var(--primary)] bg-[var(--primary-50)]"
+                      : ""
+                  }`}
                   style={{ borderColor: selectedId === s.id ? undefined : "var(--border)" }}
                 >
-                  <p className="text-sm font-semibold text-[var(--foreground)]">{s.title}</p>
-                  <p className="text-xs text-[var(--muted)] mt-0.5">{formatSchedulePeriod(s.startDate, s.endDate)}</p>
-                  <p className="text-xs text-[var(--muted)]">{s.entryCount}件</p>
+                  <p className="text-sm font-semibold text-[var(--foreground)] whitespace-nowrap">{s.title}</p>
+                  <p className="text-xs text-[var(--muted)] mt-0.5 whitespace-nowrap">{formatSchedulePeriod(s.startDate, s.endDate)}</p>
                 </button>
               ))}
             </div>
 
-            <div className="card lg:col-span-2 overflow-x-auto">
+            <div className="card overflow-x-auto">
               {!detail ? (
                 <p className="text-sm text-[var(--muted)]">読み込み中...</p>
               ) : (
                 <>
-                  <h2 className="text-lg font-bold text-[var(--foreground)]">{detail.title}</h2>
-                  <p className="text-sm text-[var(--muted)] mb-2">{formatSchedulePeriod(detail.startDate, detail.endDate)}</p>
-                  <p className="text-xs text-[var(--muted)] mb-4">教科をタップすると特記事項を表示します。</p>
+                  <p className="text-xs text-[var(--muted)] mb-3">教科をタップすると特記事項を表示します。</p>
                   <TestScheduleWeekGrid
                     entries={detail.entries}
                     startDate={detail.startDate}

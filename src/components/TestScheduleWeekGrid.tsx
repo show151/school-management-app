@@ -46,6 +46,17 @@ function buildDayColumns(startDate?: string, endDate?: string): { day: string; l
   return cols.length > 0 ? cols : TEST_DAYS.map((d) => ({ day: d, label: d, key: d }));
 }
 
+const SUBJECT_COLORS = [
+  { bg: "#dbeafe", text: "#1d4ed8", border: "#93c5fd" },
+  { bg: "#dcfce7", text: "#15803d", border: "#86efac" },
+  { bg: "#fef9c3", text: "#a16207", border: "#fde047" },
+  { bg: "#fce7f3", text: "#be185d", border: "#f9a8d4" },
+  { bg: "#ede9fe", text: "#6d28d9", border: "#c4b5fd" },
+  { bg: "#ffedd5", text: "#c2410c", border: "#fdba74" },
+  { bg: "#cffafe", text: "#0e7490", border: "#67e8f9" },
+  { bg: "#f1f5f9", text: "#475569", border: "#cbd5e1" },
+];
+
 export function TestScheduleWeekGrid({
   entries,
   startDate,
@@ -61,34 +72,54 @@ export function TestScheduleWeekGrid({
     entries.filter((e) => e.dayOfWeek === day && e.period === period);
   const canAdd = Boolean(onCellAdd);
 
+  // 教科ごとに色を割り当て
+  const colorMap: Record<string, typeof SUBJECT_COLORS[0]> = {};
+  let ci = 0;
+  entries.forEach((e) => {
+    if (!(e.subject in colorMap)) colorMap[e.subject] = SUBJECT_COLORS[ci++ % SUBJECT_COLORS.length];
+  });
+
+  // 今日の日付文字列 (YYYY-M-D)
+  const now = new Date();
+  const todayKey = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
+
   return (
     <div className="overflow-x-auto">
-      <table className="w-full table-fixed text-sm min-w-[320px]">
+      <table className="w-full text-sm min-w-[480px]">
         <thead>
-          <tr style={{ backgroundColor: "var(--primary-50)" }}>
-            <th className="w-12 p-2 text-xs font-semibold text-[var(--primary)] rounded-tl-xl">時限</th>
-            {dayColumns.map(({ day, label, key }, i) => (
-              <th
-                key={key}
-                className={`p-2 text-xs font-semibold text-[var(--primary)] ${i === dayColumns.length - 1 ? "rounded-tr-xl" : ""}`}
-              >
-                {label}
-              </th>
-            ))}
+          <tr>
+            <th className="w-10 py-2 px-2 text-xs font-bold text-center rounded-tl-xl" style={{ backgroundColor: "var(--primary-50)", color: "var(--primary)" }}>時限</th>
+            {dayColumns.map(({ day, label, key }, i) => {
+              const isToday = key === todayKey;
+              return (
+                <th
+                  key={key}
+                  className={`py-2 px-1 text-xs font-bold text-center ${i === dayColumns.length - 1 ? "rounded-tr-xl" : ""}`}
+                  style={{
+                    backgroundColor: isToday ? "var(--primary)" : "var(--primary-50)",
+                    color: isToday ? "#fff" : "var(--primary)",
+                  }}
+                >
+                  {label}{isToday && <span className="ml-1 text-[10px] opacity-80">今日</span>}
+                </th>
+              );
+            })}
           </tr>
         </thead>
         <tbody>
           {TEST_PERIODS.map((period) => (
             <tr key={period} className="border-t" style={{ borderColor: "var(--border)" }}>
-              <td className="p-2 text-xs font-semibold text-center text-[var(--muted)]">{period}限</td>
+              <td className="py-2 px-1 text-xs font-semibold text-center text-[var(--muted)]">{period}限</td>
               {dayColumns.map(({ day, key }) => {
                 const cellEntries = getCellEntries(day, period);
                 const cellKey = `${key}-${period}`;
                 const isOver = dragOver === cellKey;
+                const isToday = key === todayKey;
                 return (
                   <td
                     key={key}
-                    className="p-1.5 align-top"
+                    className="py-1.5 px-1 align-top"
+                    style={isToday && !canAdd ? { backgroundColor: "rgba(79,70,229,0.04)" } : {}}
                     onDragOver={(e) => { e.preventDefault(); setDragOver(cellKey); }}
                     onDragLeave={() => setDragOver(null)}
                     onDrop={() => {
@@ -97,52 +128,53 @@ export function TestScheduleWeekGrid({
                     }}
                   >
                     <div
-                      role="button"
+                      role={canAdd ? "button" : undefined}
                       tabIndex={canAdd && selectedSubject ? 0 : -1}
                       onClick={() => { if (selectedSubject) onCellAdd?.(day, period, selectedSubject); }}
                       onKeyDown={(e) => { if ((e.key === "Enter" || e.key === " ") && selectedSubject) onCellAdd?.(day, period, selectedSubject); }}
-                      className="w-full rounded-xl min-h-[52px] p-1 flex flex-col gap-1 transition-colors border text-left touch-manipulation"
+                      className="flex flex-col gap-1 min-h-[36px] rounded-xl p-1 transition-colors"
                       style={{
-                        backgroundColor: isOver ? "var(--admin-50)" : (canAdd && selectedSubject) ? "rgba(79,70,229,0.04)" : "transparent",
-                        borderColor: isOver ? "var(--admin-600)" : "var(--border)",
-                        borderStyle: isOver || cellEntries.length > 0 ? "solid" : "dashed",
+                        backgroundColor: isOver ? "var(--primary-50)" : (canAdd && selectedSubject) ? "rgba(79,70,229,0.04)" : "transparent",
+                        outline: isOver ? "2px solid var(--primary)" : "none",
                         cursor: canAdd && selectedSubject ? "pointer" : "default",
                       }}
                     >
-                      {cellEntries.length === 0 && canAdd && (
-                        <span className="text-xs text-[var(--muted)] opacity-40 m-auto pointer-events-none">
-                          {selectedSubject ? "タップで追加" : "+"}
-                        </span>
+                      {cellEntries.length === 0 && (
+                        <div className="rounded-xl py-2 px-1 text-xs text-center text-[var(--muted)] opacity-30">
+                          {canAdd && selectedSubject ? "+ 追加" : "—"}
+                        </div>
                       )}
-                      {cellEntries.length === 0 && !canAdd && (
-                        <span className="text-xs text-[var(--muted)] opacity-40 m-auto">—</span>
-                      )}
-                      {cellEntries.map((entry) => (
-                        <div
-                          key={entry.id}
-                          className="flex items-center justify-between gap-0.5 rounded-lg px-1.5 py-1 border bg-[var(--card)]"
-                          style={{ borderColor: "var(--border)" }}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <button
-                            type="button"
-                            onClick={(e) => { e.stopPropagation(); onSubjectClick?.(entry); }}
-                            className="min-w-0 flex-1 text-left text-xs font-semibold text-[var(--foreground)] truncate touch-manipulation hover:underline"
+                      {cellEntries.map((entry) => {
+                        const c = colorMap[entry.subject] ?? SUBJECT_COLORS[0];
+                        return (
+                          <div
+                            key={entry.id}
+                            className="flex items-center justify-between gap-0.5 rounded-xl py-1.5 px-2 border"
+                            style={{ backgroundColor: c.bg, borderColor: c.border }}
+                            onClick={(e) => e.stopPropagation()}
                           >
-                            {entry.subject}
-                          </button>
-                          {onDeleteEntry && (
                             <button
                               type="button"
-                              onClick={(e) => { e.stopPropagation(); onDeleteEntry(entry.id); }}
-                              className="shrink-0 text-xs leading-none text-[var(--muted)] hover:text-red-600 min-w-[20px] min-h-[20px] touch-manipulation"
-                              aria-label={`${entry.subject}を削除`}
+                              onClick={(e) => { e.stopPropagation(); onSubjectClick?.(entry); }}
+                              className="min-w-0 flex-1 text-left text-xs font-semibold truncate touch-manipulation"
+                              style={{ color: c.text }}
                             >
-                              ×
+                              {entry.subject}
                             </button>
-                          )}
-                        </div>
-                      ))}
+                            {onDeleteEntry && (
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); onDeleteEntry(entry.id); }}
+                                className="shrink-0 text-xs leading-none min-w-[20px] min-h-[20px] touch-manipulation hover:opacity-60"
+                                style={{ color: c.text }}
+                                aria-label={`${entry.subject}を削除`}
+                              >
+                                ×
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </td>
                 );

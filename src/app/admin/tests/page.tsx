@@ -275,14 +275,14 @@ export default function AdminTestsPage() {
                   </button>
                 </div>
 
-                <div className="flex flex-col lg:flex-row gap-4">
-                  <div className="lg:w-40 lg:shrink-0">
+                <div className="space-y-3">
+                  <div>
                     <p className="text-xs text-[var(--muted)] mb-2 lg:hidden">教科をタップ→セルをタップで追加</p>
                     <p className="text-xs text-[var(--muted)] mb-2 hidden lg:block">教科を選択またはドラッグして追加</p>
                     {selectedSubject && (
                       <p className="mb-2 text-xs font-medium text-[var(--admin-600)]">選択中: {selectedSubject}</p>
                     )}
-                    <div className="flex flex-wrap lg:flex-col gap-2 max-h-48 overflow-y-auto lg:max-h-64 pr-1">
+                    <div className="flex flex-nowrap lg:flex-wrap gap-2 overflow-x-auto pb-1">
                       {subjects.map((s) => (
                         <button
                           key={s.id}
@@ -291,7 +291,7 @@ export default function AdminTestsPage() {
                           onDragStart={() => { setDragSubject(s.name); setSelectedSubject(""); }}
                           onDragEnd={() => setDragSubject("")}
                           onClick={() => setSelectedSubject(selectedSubject === s.name ? "" : s.name)}
-                          className={`rounded-xl border px-3 py-2 text-xs font-semibold touch-manipulation cursor-grab active:cursor-grabbing ${selectedSubject === s.name ? "ring-2 ring-[var(--admin-600)]" : ""}`}
+                          className={`shrink-0 rounded-xl border px-3 py-2 text-xs font-semibold touch-manipulation cursor-grab active:cursor-grabbing ${selectedSubject === s.name ? "ring-2 ring-[var(--admin-600)]" : ""}`}
                           style={{ borderColor: "var(--border)" }}
                         >
                           {s.name}
@@ -299,7 +299,7 @@ export default function AdminTestsPage() {
                       ))}
                     </div>
                   </div>
-                  <div className="flex-1 overflow-x-auto">
+                  <div className="overflow-x-auto">
                     <TestScheduleWeekGrid
                       entries={selectedSchedule.entries}
                       startDate={selectedSchedule.startDate}
