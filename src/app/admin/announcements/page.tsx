@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { markdownToHtml } from '@/lib/markdown';
+import { sendAdminEmail } from "@/lib/send-admin-email";
 import { useRouter } from "next/navigation";
 
 type Announcement = { id: string; title: string; body: string; date: string };
@@ -76,44 +77,22 @@ export default function AdminAnnouncementsPage() {
       if (!res.ok) { alert("連絡の登録に失敗しました。"); return; }
     }
 
-    if (selectedUserIds.length > 0 || studentNumberFrom || studentNumberTo) {
-      const userIdsPayload = selectedUserIds;
-      if (sendType === 'announcement') {
-        const emailRes = await fetch("/api/admin/send-email", {
-          method: "POST",
-          credentials: "same-origin",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            type: "announcement",
-            userIds: userIdsPayload,
-            studentNumberFrom: studentNumberFrom ? Number(studentNumberFrom) : undefined,
-            studentNumberTo: studentNumberTo ? Number(studentNumberTo) : undefined,
-            payload: { title, body },
-          }),
-        });
-        if (!emailRes.ok) {
-          const error = await emailRes.json().catch(() => ({ error: "Unknown error" }));
-          alert(`メール送信に失敗しました: ${error.error}`);
-        }
-      } else {
-        // test
-        const emailRes = await fetch("/api/admin/send-email", {
-          method: "POST",
-          credentials: "same-origin",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            type: "test",
-            userIds: userIdsPayload,
-            studentNumberFrom: studentNumberFrom ? Number(studentNumberFrom) : undefined,
-            studentNumberTo: studentNumberTo ? Number(studentNumberTo) : undefined,
-            payload: { subject: title, testDate: testDateInput, range: testRange, note: testNote },
-          }),
-        });
-        if (!emailRes.ok) {
-          const error = await emailRes.json().catch(() => ({ error: "Unknown error" }));
-          alert(`テスト連絡のメール送信に失敗しました: ${error.error}`);
-        }
-      }
+    const emailResult = await sendAdminEmail({
+      type: sendType === "announcement" ? "announcement" : "test",
+      selectedUserIds,
+      studentNumberFrom,
+      studentNumberTo,
+      payload:
+        sendType === "announcement"
+          ? { title, body }
+          : { subject: title, testDate: testDateInput, range: testRange, note: testNote },
+    });
+    if (!emailResult.ok) {
+      alert(
+        sendType === "announcement"
+          ? `メール送信に失敗しました: ${emailResult.error}`
+          : `テスト連絡のメール送信に失敗しました: ${emailResult.error}`
+      );
     }
 
     setTitle(""); setBody(""); setSelectedUserIds([]);

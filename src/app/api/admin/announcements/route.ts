@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminSessionFromRequest } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
-import { sendAnnouncementEmail } from "@/lib/email";
 
 export async function GET(request: Request) {
   try {
@@ -49,19 +48,6 @@ export async function POST(request: Request) {
         date: date ? new Date(date) : new Date(),
       },
     });
-
-    // 📧 すべてのユーザーにお知らせメール送信
-    const users = await prisma.user.findMany({
-      select: { email: true, name: true, emailVerified: true },
-      where: { emailVerified: true }, // メール確認済みのユーザーのみ
-    });
-
-    for (const user of users) {
-      // メール送信を非同期で実行（エラーでも処理を続行）
-      sendAnnouncementEmail(user.email, user.name, title.trim(), body.trim()).catch((err) => {
-        console.error(`Failed to send announcement email to ${user.email}:`, err);
-      });
-    }
 
     return NextResponse.json(announcement, { status: 201 });
   } catch (error) {

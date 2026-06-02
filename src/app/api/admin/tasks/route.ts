@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { getAdminSessionFromRequest } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
-import { sendTaskNotificationEmail } from "@/lib/email";
 
 type AdminTaskSummary = {
   batchId: string;
@@ -90,19 +89,6 @@ export async function POST(request: Request) {
         isCompleted: false,
       })),
     });
-
-    // 📧 すべてのユーザーに課題配布通知メール送信
-    const allUsers = await prisma.user.findMany({
-      select: { email: true, name: true },
-    });
-
-    const dueDateObj = new Date(dueDate);
-    for (const user of allUsers) {
-      // メール送信を非同期で実行（エラーでも処理を続行）
-      sendTaskNotificationEmail(user.email, user.name, title.trim(), dueDateObj).catch((err) => {
-        console.error(`Failed to send task notification to ${user.email}:`, err);
-      });
-    }
 
     return NextResponse.json(
       { message: "課題を登録しました。", adminBatchId, assignedCount: users.length },

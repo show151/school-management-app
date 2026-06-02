@@ -68,13 +68,15 @@ model Task {
 
 // 4. テスト情報
 model Test {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  subject   String   // 教科名
-  period    Int      // 時限
-  range     String   // 範囲
-  testDate  DateTime // テスト実施日
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  adminBatchId String?
+  subject      String   // 教科名
+  period       Int      // 時限
+  range        String   // 範囲
+  note         String?  // 特記事項（Markdown可）
+  testDate     DateTime // テスト実施日
 }
 
 // 5. 管理者が登録する教科

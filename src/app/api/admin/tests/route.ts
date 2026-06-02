@@ -1,13 +1,24 @@
 import { NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 import { getAdminSessionFromRequest } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
-import { sendTestNotificationEmail } from "@/lib/email";
+
+type AdminTestSummary = {
+  batchId: string;
+  subject: string;
+  period: number;
+  range: string;
+  note: string | null;
+  testDate: Date;
+  assignedCount: number;
+};
+
+type TestRow = Awaited<ReturnType<typeof prisma.test.findMany>>[number];
 
 export async function GET(request: Request) {
   try {
     const adminSession = await getAdminSessionFromRequest(request);
     if (!adminSession) {
-      // Return empty list during build/data-collection to avoid failing the build.
       return NextResponse.json([]);
     }
 
@@ -15,10 +26,33 @@ export async function GET(request: Request) {
       orderBy: { testDate: "asc" },
     });
 
-    return NextResponse.json(tests);
+    const summaries = Array.from(
+      tests
+        .reduce((map: Map<string, AdminTestSummary>, test: TestRow) => {
+          const batchId = test.adminBatchId || test.id;
+          const current =
+            map.get(batchId) ||
+            ({
+              batchId,
+              subject: test.subject,
+              period: test.period,
+              range: test.range,
+              note: test.note,
+              testDate: test.testDate,
+              assignedCount: 0,
+            } satisfies AdminTestSummary);
+
+          current.assignedCount += 1;
+          map.set(batchId, current);
+          return map;
+        }, new Map<string, AdminTestSummary>())
+        .values()
+    );
+
+    return NextResponse.json(summaries);
   } catch (error) {
-    console.error('GET /api/admin/tests error:', error);
-    return NextResponse.json({ error: 'テスト一覧の取得に失敗しました。' }, { status: 500 });
+    console.error("GET /api/admin/tests error:", error);
+    return NextResponse.json({ error: "テスト一覧の取得に失敗しました。" }, { status: 500 });
   }
 }
 
@@ -29,11 +63,12 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { subject, period, range, testDate } = (await request.json()) as {
+    const { subject, period, range, testDate, note } = (await request.json()) as {
       subject?: string;
       period?: number;
       range?: string;
       testDate?: string;
+      note?: string;
     };
 
     if (!subject?.trim() || !period || !range?.trim() || !testDate) {
@@ -44,7 +79,7 @@ export async function POST(request: Request) {
     }
 
     const users = await prisma.user.findMany({
-      select: { id: true, email: true, name: true, emailVerified: true },
+      select: { id: true },
     });
 
     if (users.length === 0) {
@@ -55,33 +90,25 @@ export async function POST(request: Request) {
     }
 
     const testDateObj = new Date(testDate);
+    const adminBatchId = randomUUID();
+    const trimmedNote = note?.trim() || null;
 
-    // テスト情報を全ユーザーに作成
     await prisma.test.createMany({
       data: users.map((user: { id: string }) => ({
         userId: user.id,
+        adminBatchId,
         subject: subject.trim(),
         period,
         range: range.trim(),
+        note: trimmedNote,
         testDate: testDateObj,
       })),
     });
 
-    // 📧 すべてのユーザーにテスト情報通知メール送信
-    for (const user of users) {
-      if (user.emailVerified) {
-        // メール送信を非同期で実行（エラーでも処理を続行）
-        sendTestNotificationEmail(user.email, user.name, subject.trim(), testDateObj, range.trim()).catch(
-          (err) => {
-            console.error(`Failed to send test notification to ${user.email}:`, err);
-          }
-        );
-      }
-    }
-
     return NextResponse.json(
       {
         message: "テスト情報を登録しました。",
+        adminBatchId,
         subject,
         testDate: testDateObj,
         assignedCount: users.length,
@@ -101,10 +128,16 @@ export async function DELETE(request: Request) {
   }
 
   try {
-    const { id } = (await request.json()) as { id?: string };
-    if (!id) return NextResponse.json({ error: "IDが必要です。" }, { status: 400 });
+    const { batchId, id } = (await request.json()) as { batchId?: string; id?: string };
+    const targetId = batchId || id;
+    if (!targetId) return NextResponse.json({ error: "IDが必要です。" }, { status: 400 });
 
-    await prisma.test.delete({ where: { id } });
+    await prisma.test.deleteMany({
+      where: {
+        OR: [{ adminBatchId: targetId }, { id: targetId }],
+      },
+    });
+
     return NextResponse.json({ message: "テスト情報を削除しました。" });
   } catch {
     return NextResponse.json({ error: "テスト情報の削除に失敗しました。" }, { status: 500 });

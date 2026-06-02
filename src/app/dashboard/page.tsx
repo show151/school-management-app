@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnnouncementBody } from "@/components/AnnouncementBody";
+import { markdownToHtml } from "@/lib/markdown";
 
 type Task = { id: string; subject: string; title: string; dueDate: string; isCompleted: boolean };
 type Lesson = { id: string; dayOfWeek: string; period: number; subject: string };
 type Announcement = { id: string; title: string; body: string; date: string };
-type Test = { id: string; subject: string; period: number; range: string; testDate: string };
+type Test = { id: string; subject: string; period: number; range: string; testDate: string; note?: string | null };
 type DailyLink = { id: string; label: string; description: string | null; href: string; sortOrder: number };
 
 type DashboardData = {
@@ -55,6 +56,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [readIds, setReadIds] = useState<Set<string>>(new Set());
+  const [expandedTestId, setExpandedTestId] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/dashboard")
@@ -305,21 +307,45 @@ export default function DashboardPage() {
                 upcomingTests.map((test) => {
                   const days = getDaysUntil(test.testDate);
                   const c = subjectColorMap[test.subject] ?? COLORS[0];
+                  const isExpanded = expandedTestId === test.id;
                   return (
-                    <div key={test.id} className="flex items-start gap-3 rounded-2xl border p-3"
+                    <div key={test.id} className="rounded-2xl border p-3"
                       style={{ borderColor: "var(--border)", backgroundColor: "var(--card)" }}>
-                      <div className="rounded-xl px-2 py-1 text-xs font-bold shrink-0 border"
-                        style={{ backgroundColor: c.bg, color: c.text, borderColor: c.border }}>
-                        {test.subject}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className="text-sm font-semibold text-[var(--foreground)]">{test.period}時限</p>
-                          <UrgencyBadge daysUntil={days} />
+                      <div className="flex items-start gap-3">
+                        <div className="rounded-xl px-2 py-1 text-xs font-bold shrink-0 border"
+                          style={{ backgroundColor: c.bg, color: c.text, borderColor: c.border }}>
+                          {test.subject}
                         </div>
-                        <p className="text-xs text-[var(--muted)] mt-0.5">範囲: {test.range}</p>
-                        <p className="text-xs text-[var(--muted)]">{new Date(test.testDate).toLocaleDateString()}</p>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="text-sm font-semibold text-[var(--foreground)]">{test.period}時限</p>
+                            <UrgencyBadge daysUntil={days} />
+                          </div>
+                          <p className="text-xs text-[var(--muted)] mt-0.5">範囲: {test.range}</p>
+                          <p className="text-xs text-[var(--muted)]">{new Date(test.testDate).toLocaleString("ja-JP")}</p>
+                          <button
+                            type="button"
+                            onClick={() => setExpandedTestId(isExpanded ? null : test.id)}
+                            className="mt-1 text-xs font-medium text-[var(--primary)] hover:underline"
+                          >
+                            {isExpanded ? "詳細を閉じる" : "詳細を見る"}
+                          </button>
+                        </div>
                       </div>
+                      {isExpanded && (
+                        <div className="mt-3 border-t pt-3 text-xs text-[var(--muted)]" style={{ borderColor: "var(--border)" }}>
+                          <p className="mb-1"><span className="font-semibold text-[var(--foreground)]">範囲:</span> {test.range}</p>
+                          <p className="mb-2"><span className="font-semibold text-[var(--foreground)]">日時:</span> {new Date(test.testDate).toLocaleString("ja-JP")}</p>
+                          {test.note ? (
+                            <div>
+                              <p className="font-semibold text-[var(--foreground)] mb-1">特記事項</p>
+                              <div dangerouslySetInnerHTML={{ __html: markdownToHtml(test.note) }} />
+                            </div>
+                          ) : (
+                            <p>特記事項はありません。</p>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })

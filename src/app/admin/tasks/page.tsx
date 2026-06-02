@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { sendAdminEmail } from "@/lib/send-admin-email";
 
 type Task = { batchId: string; subject: string; title: string; dueDate: string; assignedCount: number; completedCount: number };
 type Subject = { id: string; name: string };
@@ -78,43 +79,17 @@ export default function AdminTasksPage() {
     });
     if (!res.ok) { alert("追加に失敗しました。"); return; }
 
-    if (selectedUserIds.length > 0 || studentNumberFrom || studentNumberTo) {
-      const userIdsPayload = selectedUserIds;
-      if (sendAsTest) {
-        const emailRes = await fetch("/api/admin/send-email", {
-          method: "POST",
-          credentials: "same-origin",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            type: "test",
-            userIds: userIdsPayload,
-            studentNumberFrom: studentNumberFrom ? Number(studentNumberFrom) : undefined,
-            studentNumberTo: studentNumberTo ? Number(studentNumberTo) : undefined,
-            payload: { subject: title || subject, testDate: testDateInput, range: testRange, note: testNote },
-          }),
-        });
-        if (!emailRes.ok) {
-          const error = await emailRes.json().catch(() => ({ error: "Unknown error" }));
-          alert(`メール送信に失敗しました: ${error.error}`);
-        }
-      } else {
-        const emailRes = await fetch("/api/admin/send-email", {
-          method: "POST",
-          credentials: "same-origin",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            type: "task",
-            userIds: userIdsPayload,
-            studentNumberFrom: studentNumberFrom ? Number(studentNumberFrom) : undefined,
-            studentNumberTo: studentNumberTo ? Number(studentNumberTo) : undefined,
-            payload: { taskTitle: title, dueDate },
-          }),
-        });
-        if (!emailRes.ok) {
-          const error = await emailRes.json().catch(() => ({ error: "Unknown error" }));
-          alert(`メール送信に失敗しました: ${error.error}`);
-        }
-      }
+    const emailResult = await sendAdminEmail({
+      type: sendAsTest ? "test" : "task",
+      selectedUserIds,
+      studentNumberFrom,
+      studentNumberTo,
+      payload: sendAsTest
+        ? { subject: title || subject, testDate: testDateInput, range: testRange, note: testNote }
+        : { taskTitle: title, dueDate },
+    });
+    if (!emailResult.ok) {
+      alert(`メール送信に失敗しました: ${emailResult.error}`);
     }
 
     setSubject(""); setTitle(""); setDueDate(""); setSelectedUserIds([]);

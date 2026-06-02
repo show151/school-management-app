@@ -2,8 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { markdownToHtml } from "@/lib/markdown";
+import { sendAdminEmail } from "@/lib/send-admin-email";
 
-type Test = { id: string; subject: string; period: number; range: string; testDate: string };
+type Test = {
+  batchId: string;
+  subject: string;
+  period: number;
+  range: string;
+  note: string | null;
+  testDate: string;
+  assignedCount: number;
+};
 type User = { id: string; studentNumber?: number | null; name: string; email: string; createdAt: string };
 
 export default function AdminTestsPage() {
@@ -23,6 +33,7 @@ export default function AdminTestsPage() {
   const [rangeError, setRangeError] = useState("");
   const [testDateError, setTestDateError] = useState("");
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+  const [expandedBatchId, setExpandedBatchId] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -52,43 +63,35 @@ export default function AdminTestsPage() {
       method: "POST",
       credentials: "same-origin",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ subject, period: parseInt(period), range, testDate }),
+      body: JSON.stringify({ subject, period: parseInt(period), range, testDate, note }),
     });
     if (!res.ok) { alert("追加に失敗しました。"); return; }
 
-    if (selectedUserIds.length > 0 || studentNumberFrom || studentNumberTo) {
-      const emailRes = await fetch("/api/admin/send-email", {
-        method: "POST",
-        credentials: "same-origin",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: "test",
-          userIds: selectedUserIds,
-          studentNumberFrom: studentNumberFrom ? Number(studentNumberFrom) : undefined,
-          studentNumberTo: studentNumberTo ? Number(studentNumberTo) : undefined,
-          payload: { subject, testDate, range, note },
-        }),
-      });
-      if (!emailRes.ok) {
-        const error = await emailRes.json().catch(() => ({ error: "Unknown error" }));
-        alert(`メール送信に失敗しました: ${error.error}`);
-      }
+    const emailResult = await sendAdminEmail({
+      type: "test",
+      selectedUserIds,
+      studentNumberFrom,
+      studentNumberTo,
+      payload: { subject, testDate, range, note },
+    });
+    if (!emailResult.ok) {
+      alert(`メール送信に失敗しました: ${emailResult.error}`);
     }
 
-    setSubject(""); setPeriod(""); setRange(""); setTestDate(""); setSelectedUserIds([]);
+    setSubject(""); setPeriod(""); setRange(""); setTestDate(""); setNote(""); setSelectedUserIds([]);
     const testsRes = await fetch("/api/admin/tests", { credentials: "same-origin" });
     if (testsRes.ok) setTests(await testsRes.json());
   };
 
-  const handleDeleteTest = async (id: string) => {
+  const handleDeleteTest = async (batchId: string) => {
     if (!confirm("このテスト情報を削除してもよろしいですか？")) return;
     const res = await fetch("/api/admin/tests", {
       method: "DELETE",
       credentials: "same-origin",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id }),
+      body: JSON.stringify({ batchId }),
     });
-    if (res.ok) setTests(tests.filter(t => t.id !== id));
+    if (res.ok) setTests(tests.filter((t) => t.batchId !== batchId));
     else alert("削除に失敗しました。");
   };
 
@@ -177,16 +180,46 @@ export default function AdminTestsPage() {
               <p className="text-sm text-[var(--muted)]">登録されているテストはありません。</p>
             ) : (
               <div className="space-y-2">
-                {tests.map((test) => (
-                  <div key={test.id} className="flex flex-col gap-2 rounded-xl border p-3 sm:flex-row sm:items-start sm:justify-between" style={{ borderColor: "var(--border)" }}>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-[var(--foreground)]">【{test.subject}】{test.period}時限</p>
-                      <p className="text-xs text-[var(--muted)]">範囲: {test.range}</p>
-                      <p className="text-xs text-[var(--muted)]">日時: {new Date(test.testDate).toLocaleDateString()}</p>
+                {tests.map((test) => {
+                  const isExpanded = expandedBatchId === test.batchId;
+                  return (
+                    <div key={test.batchId} className="rounded-xl border p-3" style={{ borderColor: "var(--border)" }}>
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold text-[var(--foreground)]">【{test.subject}】{test.period}時限</p>
+                          <p className="text-xs text-[var(--muted)]">範囲: {test.range}</p>
+                          <p className="text-xs text-[var(--muted)]">
+                            日時: {new Date(test.testDate).toLocaleString("ja-JP")} / 配布 {test.assignedCount}人
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 gap-2 self-start">
+                          <button
+                            type="button"
+                            onClick={() => setExpandedBatchId(isExpanded ? null : test.batchId)}
+                            className="text-xs font-medium admin-link"
+                          >
+                            {isExpanded ? "閉じる" : "詳細"}
+                          </button>
+                          <button onClick={() => handleDeleteTest(test.batchId)} className="text-xs font-medium text-red-500 hover:text-red-700">削除</button>
+                        </div>
+                      </div>
+                      {isExpanded && (
+                        <div className="mt-3 space-y-2 border-t pt-3 text-sm" style={{ borderColor: "var(--border)" }}>
+                          <p><span className="font-medium text-[var(--foreground)]">範囲:</span> <span className="text-[var(--muted)]">{test.range}</span></p>
+                          <p><span className="font-medium text-[var(--foreground)]">日時:</span> <span className="text-[var(--muted)]">{new Date(test.testDate).toLocaleString("ja-JP")}</span></p>
+                          {test.note ? (
+                            <div>
+                              <p className="font-medium text-[var(--foreground)] mb-1">特記事項</p>
+                              <div className="text-xs text-[var(--muted)] prose-sm" dangerouslySetInnerHTML={{ __html: markdownToHtml(test.note) }} />
+                            </div>
+                          ) : (
+                            <p className="text-xs text-[var(--muted)]">特記事項はありません。</p>
+                          )}
+                        </div>
+                      )}
                     </div>
-                    <button onClick={() => handleDeleteTest(test.id)} className="self-start text-xs font-medium text-red-500 hover:text-red-700 sm:ml-2 sm:shrink-0">削除</button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
