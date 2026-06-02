@@ -99,6 +99,29 @@ export async function POST(request: Request) {
   }
 }
 
+export async function PATCH(request: Request) {
+  const adminSession = await getAdminSessionFromRequest(request);
+  if (!adminSession) {
+    return NextResponse.json({ error: "管理者認証が必要です。" }, { status: 401 });
+  }
+
+  try {
+    const { batchId, dueDate } = (await request.json()) as { batchId?: string; dueDate?: string };
+    if (!batchId || !dueDate) {
+      return NextResponse.json({ error: "batchIdとdueDateが必要です。" }, { status: 400 });
+    }
+
+    await prisma.task.updateMany({
+      where: { OR: [{ adminBatchId: batchId }, { id: batchId }] },
+      data: { dueDate: new Date(dueDate), isCompleted: false },
+    });
+
+    return NextResponse.json({ message: "締切日を更新しました。" });
+  } catch {
+    return NextResponse.json({ error: "締切日の更新に失敗しました。" }, { status: 500 });
+  }
+}
+
 export async function DELETE(request: Request) {
   const adminSession = await getAdminSessionFromRequest(request);
   if (!adminSession) {

@@ -35,6 +35,13 @@ export default function AdminTestsPage() {
   const [detailView, setDetailView] = useState<DetailView | null>(null);
   const [editNote, setEditNote] = useState("");
 
+  // 期間編集用state
+  const [editScheduleTarget, setEditScheduleTarget] = useState<TestScheduleDto | null>(null);
+  const [editScheduleTitle, setEditScheduleTitle] = useState("");
+  const [editScheduleStart, setEditScheduleStart] = useState("");
+  const [editScheduleEnd, setEditScheduleEnd] = useState("");
+  const [editScheduleUserIds, setEditScheduleUserIds] = useState<string[]>([]);
+
   const selectedSchedule = schedules.find((s) => s.id === selectedScheduleId) ?? null;
 
   const loadData = useCallback(async () => {
@@ -167,10 +174,86 @@ export default function AdminTestsPage() {
     await loadData();
   };
 
+  const handleEditSchedule = (s: TestScheduleDto) => {
+    setEditScheduleTarget(s);
+    setEditScheduleTitle(s.title);
+    setEditScheduleStart(s.startDate.slice(0, 10));
+    setEditScheduleEnd(s.endDate.slice(0, 10));
+    setEditScheduleUserIds([]);
+  };
+
+  const handleSaveEditSchedule = async () => {
+    if (!editScheduleTarget || !editScheduleTitle.trim() || !editScheduleStart || !editScheduleEnd) return;
+    const res = await fetch("/api/admin/test-schedules", {
+      method: "PATCH",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ scheduleId: editScheduleTarget.id, title: editScheduleTitle, startDate: editScheduleStart, endDate: editScheduleEnd }),
+    });
+    if (!res.ok) { alert("更新に失敗しました。"); return; }
+
+    if (editScheduleUserIds.length > 0) {
+      const emailResult = await sendAdminEmail({
+        type: "testScheduleUpdate",
+        selectedUserIds: editScheduleUserIds,
+        studentNumberFrom: "",
+        studentNumberTo: "",
+        payload: { scheduleTitle: editScheduleTitle, scheduleId: editScheduleTarget.id, startDate: editScheduleStart, endDate: editScheduleEnd },
+      });
+      if (!emailResult.ok) alert(`通知メールの送信に失敗しました: ${emailResult.error}`);
+    }
+
+    setEditScheduleTarget(null);
+    await loadData();
+  };
+
   if (loading) return <div className="p-8 text-center text-[var(--muted)]">読み込み中...</div>;
 
   return (
     <div className="min-h-screen bg-[var(--background)] admin-theme">
+      {editScheduleTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+          style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
+          onClick={() => setEditScheduleTarget(null)}
+          role="presentation"
+        >
+          <div className="card w-full max-w-md space-y-3" onClick={(e) => e.stopPropagation()} role="dialog">
+            <h3 className="text-base font-bold text-[var(--foreground)]">テスト期間を編集</h3>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-[var(--muted)]">タイトル</label>
+              <input value={editScheduleTitle} onChange={(e) => setEditScheduleTitle(e.target.value)} />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-[var(--muted)]">開始日</label>
+              <input type="date" value={editScheduleStart} onChange={(e) => setEditScheduleStart(e.target.value)} />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-[var(--muted)]">終了日</label>
+              <input type="date" value={editScheduleEnd} onChange={(e) => setEditScheduleEnd(e.target.value)} />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-[var(--muted)]">
+                更新を通知するユーザー（任意）
+                {editScheduleUserIds.length > 0 && <span className="ml-2 admin-pill">{editScheduleUserIds.length}人</span>}
+              </label>
+              <div className="max-h-32 space-y-1 overflow-y-auto rounded-xl border p-2" style={{ borderColor: "var(--border)" }}>
+                {users.map((user) => (
+                  <label key={user.id} className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 hover:bg-[var(--admin-50)]">
+                    <input type="checkbox" checked={editScheduleUserIds.includes(user.id)} onChange={() => setEditScheduleUserIds(prev => prev.includes(user.id) ? prev.filter(id => id !== user.id) : [...prev, user.id])} />
+                    <span className="text-xs">{user.name}</span>
+                  </label>
+                ))}
+              </div>
+              <button type="button" onClick={() => setEditScheduleUserIds(users.map(u => u.id))} className="mt-2 w-full admin-outline">すべて選択</button>
+            </div>
+            <div className="flex gap-2">
+              <button type="button" onClick={handleSaveEditSchedule} className="flex-1 admin-btn">保存{editScheduleUserIds.length > 0 ? " + 通知" : ""}</button>
+              <button type="button" onClick={() => setEditScheduleTarget(null)} className="text-xs text-[var(--muted)] px-3">キャンセル</button>
+            </div>
+          </div>
+        </div>
+      )}
       {detailView && (
         <div
           className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
@@ -235,19 +318,26 @@ export default function AdminTestsPage() {
               {schedules.length === 0 ? (
                 <p className="text-sm text-[var(--muted)]">まだ期間が登録されていません。</p>
               ) : (
-                <div className="space-y-2">
+                    <div className="space-y-2">
                   {schedules.map((s) => (
-                    <button
+                    <div
                       key={s.id}
-                      type="button"
-                      onClick={() => setSelectedScheduleId(s.id)}
                       className={`w-full rounded-xl border p-3 text-left transition-colors ${selectedScheduleId === s.id ? "border-[var(--admin-600)] bg-[var(--admin-50)]" : ""}`}
                       style={{ borderColor: selectedScheduleId === s.id ? undefined : "var(--border)" }}
                     >
-                      <p className="text-sm font-semibold text-[var(--foreground)]">{s.title}</p>
-                      <p className="text-xs text-[var(--muted)] mt-0.5">{formatSchedulePeriod(s.startDate, s.endDate)}</p>
-                      <p className="text-xs text-[var(--muted)]">{s.entries.length}件登録</p>
-                    </button>
+                      <div role="button" tabIndex={0} onClick={() => setSelectedScheduleId(s.id)} onKeyDown={(e) => { if (e.key === "Enter") setSelectedScheduleId(s.id); }} className="cursor-pointer">
+                        <p className="text-sm font-semibold text-[var(--foreground)]">{s.title}</p>
+                        <p className="text-xs text-[var(--muted)] mt-0.5">{formatSchedulePeriod(s.startDate, s.endDate)}</p>
+                        <p className="text-xs text-[var(--muted)]">{s.entries.length}件登録</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); handleEditSchedule(s); }}
+                        className="mt-1 text-xs font-medium text-[var(--admin-600)] hover:underline"
+                      >
+                        編集
+                      </button>
+                    </div>
                   ))}
                 </div>
               )}

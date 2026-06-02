@@ -56,6 +56,40 @@ export async function POST(request: Request) {
   }
 }
 
+export async function PATCH(request: Request) {
+  try {
+    const adminSession = await getAdminSessionFromRequest(request);
+    if (!adminSession) {
+      return NextResponse.json({ error: "管理者認証が必要です。" }, { status: 401 });
+    }
+
+    const { id, title, body, date } = (await request.json()) as {
+      id?: string;
+      title?: string;
+      body?: string;
+      date?: string;
+    };
+
+    if (!id || !title?.trim() || !body?.trim()) {
+      return NextResponse.json({ error: "ID・件名・本文を入力してください。" }, { status: 400 });
+    }
+
+    const announcement = await prisma.announcement.update({
+      where: { id },
+      data: {
+        title: title.trim(),
+        body: body.trim(),
+        date: date ? new Date(date) : undefined,
+      },
+    });
+
+    return NextResponse.json(announcement);
+  } catch (error) {
+    console.error('PATCH /api/admin/announcements error:', error);
+    return NextResponse.json({ error: "連絡の更新に失敗しました。" }, { status: 500 });
+  }
+}
+
 export async function DELETE(request: Request) {
   try {
     const adminSession = await getAdminSessionFromRequest(request);

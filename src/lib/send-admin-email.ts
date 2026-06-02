@@ -1,4 +1,4 @@
-type SendEmailType = "task" | "test" | "testSchedule" | "announcement";
+type SendEmailType = "task" | "test" | "testSchedule" | "announcement" | "announcementUpdate" | "taskDueDateUpdate" | "testScheduleUpdate";
 
 type SendEmailPayload = {
   taskTitle?: string;

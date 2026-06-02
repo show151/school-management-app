@@ -24,6 +24,11 @@ export default function AdminTasksPage() {
   const [dueDateError, setDueDateError] = useState("");
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
 
+  // 締切変更用state
+  const [editTarget, setEditTarget] = useState<Task | null>(null);
+  const [editDueDate, setEditDueDate] = useState("");
+  const [editUserIds, setEditUserIds] = useState<string[]>([]);
+
   const fetchTasks = useCallback(async () => {
     try {
       const res = await fetch("/api/admin/tasks", { credentials: "same-origin" });
@@ -102,6 +107,37 @@ export default function AdminTasksPage() {
     else alert("削除に失敗しました。");
   };
 
+  const handleEditTask = (task: Task) => {
+    setEditTarget(task);
+    setEditDueDate(task.dueDate.slice(0, 10));
+    setEditUserIds([]);
+  };
+
+  const handleSaveEditTask = async () => {
+    if (!editTarget || !editDueDate) return;
+    const res = await fetch("/api/admin/tasks", {
+      method: "PATCH",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ batchId: editTarget.batchId, dueDate: editDueDate }),
+    });
+    if (!res.ok) { alert("更新に失敗しました。"); return; }
+
+    if (editUserIds.length > 0) {
+      const emailResult = await sendAdminEmail({
+        type: "taskDueDateUpdate",
+        selectedUserIds: editUserIds,
+        studentNumberFrom: "",
+        studentNumberTo: "",
+        payload: { taskTitle: editTarget.title, subject: editTarget.subject, dueDate: editDueDate },
+      });
+      if (!emailResult.ok) alert(`通知メールの送信に失敗しました: ${emailResult.error}`);
+    }
+
+    setEditTarget(null);
+    fetchTasks();
+  };
+
   const toggleUserSelection = (userId: string) => {
     setSelectedUserIds(prev =>
       prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]
@@ -112,6 +148,42 @@ export default function AdminTasksPage() {
 
   return (
     <div className="min-h-screen bg-[var(--background)] admin-theme">
+      {editTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+          style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
+          onClick={() => setEditTarget(null)}
+          role="presentation"
+        >
+          <div className="card w-full max-w-md space-y-3" onClick={(e) => e.stopPropagation()} role="dialog">
+            <h3 className="text-base font-bold text-[var(--foreground)]">締切日を変更</h3>
+            <p className="text-sm text-[var(--foreground)]">【{editTarget.subject}】{editTarget.title}</p>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-[var(--muted)]">新しい締切日</label>
+              <input type="date" value={editDueDate} onChange={(e) => setEditDueDate(e.target.value)} />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-[var(--muted)]">
+                変更を通知するユーザー（任意）
+                {editUserIds.length > 0 && <span className="ml-2 admin-pill">{editUserIds.length}人</span>}
+              </label>
+              <div className="max-h-32 space-y-1 overflow-y-auto rounded-xl border p-2" style={{ borderColor: "var(--border)" }}>
+                {users.map((user) => (
+                  <label key={user.id} className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 hover:bg-[var(--admin-50)]">
+                    <input type="checkbox" checked={editUserIds.includes(user.id)} onChange={() => setEditUserIds(prev => prev.includes(user.id) ? prev.filter(id => id !== user.id) : [...prev, user.id])} />
+                    <span className="text-xs">{user.studentNumber ? `(${user.studentNumber}) ` : ''}{user.name}</span>
+                  </label>
+                ))}
+              </div>
+              <button type="button" onClick={() => setEditUserIds(users.map(u => u.id))} className="mt-2 w-full admin-outline">すべて選択</button>
+            </div>
+            <div className="flex gap-2">
+              <button type="button" onClick={handleSaveEditTask} className="flex-1 admin-btn">保存{editUserIds.length > 0 ? " + 通知" : ""}</button>
+              <button type="button" onClick={() => setEditTarget(null)} className="text-xs text-[var(--muted)] px-3">キャンセル</button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="container-responsive py-6 space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <button onClick={() => router.push("/admin")} className="text-sm font-medium admin-link md:hidden">管理メニューへ戻る</button>
@@ -187,6 +259,7 @@ export default function AdminTasksPage() {
                       <p className="text-sm font-semibold text-[var(--foreground)]">【{task.subject}】{task.title}</p>
                       <p className="text-xs text-[var(--muted)]">締切: {new Date(task.dueDate).toLocaleDateString()} / 完了 {task.completedCount} / 配布 {task.assignedCount}</p>
                     </div>
+                    <button onClick={() => handleEditTask(task)} className="self-start text-xs font-medium text-[var(--admin-600)] hover:underline sm:shrink-0">締切変更</button>
                     <button onClick={() => handleDeleteTask(task.batchId)} className="self-start text-xs font-medium text-red-500 hover:text-red-700 sm:ml-2 sm:shrink-0">削除</button>
                   </div>
                 ))}

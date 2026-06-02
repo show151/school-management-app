@@ -27,11 +27,17 @@ export default function AdminAnnouncementsPage() {
   const [bodyError, setBodyError] = useState("");
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
 
+  // 編集用state
+  const [editTarget, setEditTarget] = useState<Announcement | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editBody, setEditBody] = useState("");
+  const [editDate, setEditDate] = useState("");
+  const [editUserIds, setEditUserIds] = useState<string[]>([]);
+
   const reload = async () => {
     const res = await fetch("/api/admin/announcements", { credentials: "same-origin" });
     if (!res.ok) { router.push("/"); return; }
     setAnnouncements((await res.json()) as Announcement[]);
-    setLoading(false);
   };
 
   useEffect(() => {
@@ -96,14 +102,46 @@ export default function AdminAnnouncementsPage() {
             },
     });
     if (!emailResult.ok) {
-      alert(
-        sendType === "announcement"
-          ? `メール送信に失敗しました: ${emailResult.error}`
-          : `テスト連絡のメール送信に失敗しました: ${emailResult.error}`
+      alert(sendType === "announcement"
+        ? `メール送信に失敗しました: ${emailResult.error}`
+        : `テスト連絡のメール送信に失敗しました: ${emailResult.error}`
       );
     }
 
     setTitle(""); setBody(""); setSelectedScheduleId(""); setSelectedUserIds([]);
+    reload();
+  };
+
+  const handleEdit = (a: Announcement) => {
+    setEditTarget(a);
+    setEditTitle(a.title);
+    setEditBody(a.body);
+    setEditDate(a.date.slice(0, 10));
+    setEditUserIds([]);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editTarget || !editTitle.trim() || !editBody.trim()) return;
+    const res = await fetch("/api/admin/announcements", {
+      method: "PATCH",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: editTarget.id, title: editTitle, body: editBody, date: editDate }),
+    });
+    if (!res.ok) { alert("更新に失敗しました。"); return; }
+
+    if (editUserIds.length > 0) {
+      const emailResult = await sendAdminEmail({
+        type: "announcementUpdate",
+        selectedUserIds: editUserIds,
+        studentNumberFrom: "",
+        studentNumberTo: "",
+        payload: { title: editTitle, body: editBody },
+      });
+      if (!emailResult.ok) alert(`更新通知メールの送信に失敗しました: ${emailResult.error}`);
+    }
+
+    setEditTarget(null);
     reload();
   };
 
@@ -129,6 +167,50 @@ export default function AdminAnnouncementsPage() {
 
   return (
     <div className="min-h-screen bg-[var(--background)] admin-theme">
+      {editTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+          style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
+          onClick={() => setEditTarget(null)}
+          role="presentation"
+        >
+          <div className="card w-full max-w-lg space-y-3" onClick={(e) => e.stopPropagation()} role="dialog">
+            <h3 className="text-base font-bold text-[var(--foreground)]">連絡を編集</h3>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-[var(--muted)]">日付</label>
+              <input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-[var(--muted)]">件名</label>
+              <input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-[var(--muted)]">本文</label>
+              <textarea value={editBody} onChange={(e) => setEditBody(e.target.value)} className="min-h-24" />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-[var(--muted)]">
+                更新を通知するユーザー（任意）
+                {editUserIds.length > 0 && <span className="ml-2 admin-pill">{editUserIds.length}人</span>}
+              </label>
+              <div className="max-h-32 space-y-1 overflow-y-auto rounded-xl border p-2" style={{ borderColor: "var(--border)" }}>
+                {users.map((user) => (
+                  <label key={user.id} className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 hover:bg-[var(--admin-50)]">
+                    <input type="checkbox" checked={editUserIds.includes(user.id)} onChange={() => setEditUserIds(prev => prev.includes(user.id) ? prev.filter(id => id !== user.id) : [...prev, user.id])} />
+                    <span className="text-xs">{user.studentNumber ? `(${user.studentNumber}) ` : ''}{user.name}</span>
+                  </label>
+                ))}
+              </div>
+              <button type="button" onClick={() => setEditUserIds(users.map(u => u.id))} className="mt-2 w-full admin-outline">すべて選択</button>
+            </div>
+            <div className="flex gap-2">
+              <button type="button" onClick={handleSaveEdit} className="flex-1 admin-btn">保存{editUserIds.length > 0 ? " + 通知" : ""}</button>
+              <button type="button" onClick={() => setEditTarget(null)} className="text-xs text-[var(--muted)] px-3">キャンセル</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="container-responsive py-6 space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <button onClick={() => router.push("/admin")} className="text-sm font-medium admin-link md:hidden">
@@ -147,7 +229,7 @@ export default function AdminAnnouncementsPage() {
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium text-[var(--muted)]">送信種別</label>
-                <select value={sendType} onChange={(e) => setSendType(e.target.value === 'test' ? 'test' : 'announcement')} className="mt-1 block w-full rounded px-3 py-2 bg-[var(--card)] border-[var(--border)] text-[var(--foreground)]">
+                <select value={sendType} onChange={(e) => setSendType(e.target.value === 'test' ? 'test' : 'announcement')}>
                   <option value="announcement">お知らせ</option>
                   <option value="test">テスト連絡</option>
                 </select>
@@ -199,7 +281,7 @@ export default function AdminAnnouncementsPage() {
                 </>
               ) : (
                 <p className="text-xs text-[var(--muted)]">
-                  各時限の教科・特記事項はテストスケジュール画面で登録済みである必要があります。メール送信後、生徒は教科をタップして特記事項のみ確認できます。
+                  各時限の教科・特記事項はテストスケジュール画面で登録済みである必要があります。
                 </p>
               )}
 
@@ -213,7 +295,7 @@ export default function AdminAnnouncementsPage() {
                     <p className="text-xs text-[var(--muted)]">ユーザーが登録されていません</p>
                   ) : (
                     users.map((user) => (
-                      <label key={user.id} className={`flex cursor-pointer items-center gap-2 rounded px-1 py-1 hover:bg-[var(--admin-50)]`}>
+                      <label key={user.id} className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 hover:bg-[var(--admin-50)]">
                         <input type="checkbox" checked={selectedUserIds.includes(user.id)} onChange={() => toggleUserSelection(user.id)} className="cursor-pointer" />
                         <p className="text-xs font-medium text-[var(--foreground)]">{user.studentNumber ? `(${user.studentNumber}) ` : ''}{user.name}</p>
                       </label>
@@ -221,8 +303,6 @@ export default function AdminAnnouncementsPage() {
                   )}
                 </div>
               </div>
-
-              {/* 全員へ送信オプションは不要のため削除 */}
 
               <div className="space-y-2 pt-2">
                 <button type="button" onClick={() => setSelectedUserIds(users.map(u => u.id))} className="w-full admin-outline">すべて選択</button>
@@ -245,7 +325,10 @@ export default function AdminAnnouncementsPage() {
                         <h3 className="mt-1 text-sm font-bold text-[var(--foreground)]">{announcement.title}</h3>
                         <div className="mt-1 line-clamp-2 text-xs text-[var(--muted)]" dangerouslySetInnerHTML={{ __html: markdownToHtml(announcement.body) }} />
                       </div>
-                      <button onClick={() => handleDelete(announcement.id)} className="self-start text-xs font-medium text-red-500 hover:text-red-700 sm:self-auto">削除</button>
+                      <div className="flex gap-3 self-start sm:self-auto">
+                        <button onClick={() => handleEdit(announcement)} className="text-xs font-medium text-[var(--admin-600)] hover:underline">編集</button>
+                        <button onClick={() => handleDelete(announcement.id)} className="text-xs font-medium text-red-500 hover:text-red-700">削除</button>
+                      </div>
                     </div>
                   </article>
                 ))}

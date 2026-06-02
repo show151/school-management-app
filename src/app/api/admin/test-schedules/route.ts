@@ -88,6 +88,43 @@ export async function POST(request: Request) {
   }
 }
 
+export async function PATCH(request: Request) {
+  const adminSession = await getAdminSessionFromRequest(request);
+  if (!adminSession) {
+    return NextResponse.json({ error: "管理者認証が必要です。" }, { status: 401 });
+  }
+
+  try {
+    const { scheduleId, title, startDate, endDate } = (await request.json()) as {
+      scheduleId?: string;
+      title?: string;
+      startDate?: string;
+      endDate?: string;
+    };
+
+    if (!scheduleId || !title?.trim() || !startDate || !endDate) {
+      return NextResponse.json({ error: "必要な項目が不足しています。" }, { status: 400 });
+    }
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    if (end < start) {
+      return NextResponse.json({ error: "終了日は開始日以降にしてください。" }, { status: 400 });
+    }
+
+    const schedule = await prisma.testSchedule.update({
+      where: { id: scheduleId },
+      data: { title: title.trim(), startDate: start, endDate: end },
+      include: { entries: true },
+    });
+
+    return NextResponse.json(serializeSchedule(schedule));
+  } catch (error) {
+    console.error("PATCH /api/admin/test-schedules error:", error);
+    return NextResponse.json({ error: "更新に失敗しました。" }, { status: 500 });
+  }
+}
+
 export async function DELETE(request: Request) {
   const adminSession = await getAdminSessionFromRequest(request);
   if (!adminSession) {

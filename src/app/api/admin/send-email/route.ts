@@ -7,10 +7,13 @@ import {
   sendBulkTestNotificationEmail,
   sendBulkTestScheduleNotificationEmail,
   sendBulkAnnouncementEmail,
+  sendBulkAnnouncementUpdateEmail,
+  sendBulkTaskDueDateUpdateEmail,
+  sendBulkTestScheduleUpdateEmail,
 } from '@/lib/email';
 
 interface SendEmailRequest {
-  type: 'task' | 'test' | 'testSchedule' | 'announcement';
+  type: 'task' | 'test' | 'testSchedule' | 'announcement' | 'announcementUpdate' | 'taskDueDateUpdate' | 'testScheduleUpdate';
   userIds: string[];
   studentNumberFrom?: number;
   studentNumberTo?: number;
@@ -173,6 +176,27 @@ export async function POST(request: Request) {
           body.payload.title,
           body.payload.body
         );
+        break;
+
+      case 'announcementUpdate':
+        if (!body.payload.title || !body.payload.body) {
+          return NextResponse.json({ error: 'Missing title or body in payload' }, { status: 400 });
+        }
+        result = await sendBulkAnnouncementUpdateEmail(recipients, body.payload.title, body.payload.body);
+        break;
+
+      case 'taskDueDateUpdate':
+        if (!body.payload.taskTitle || !body.payload.dueDate || !body.payload.subject) {
+          return NextResponse.json({ error: 'Missing taskTitle, subject or dueDate in payload' }, { status: 400 });
+        }
+        result = await sendBulkTaskDueDateUpdateEmail(recipients, body.payload.taskTitle, body.payload.subject, new Date(body.payload.dueDate));
+        break;
+
+      case 'testScheduleUpdate':
+        if (!body.payload.scheduleTitle || !body.payload.scheduleId || !body.payload.startDate || !body.payload.endDate) {
+          return NextResponse.json({ error: 'Missing scheduleTitle, scheduleId, startDate or endDate in payload' }, { status: 400 });
+        }
+        result = await sendBulkTestScheduleUpdateEmail(recipients, body.payload.scheduleTitle, new Date(body.payload.startDate), new Date(body.payload.endDate), body.payload.scheduleId);
         break;
 
       default:

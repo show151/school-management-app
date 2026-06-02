@@ -256,6 +256,115 @@ export async function sendAnnouncementEmail(
   return sendRawEmail(email, `お知らせ: ${safeTitle}`, html);
 }
 
+export async function sendAnnouncementUpdateEmail(
+  email: string,
+  name: string,
+  title: string,
+  body: string
+): Promise<boolean> {
+  const safeName = sanitizeInput(name);
+  const safeTitle = sanitizeInput(title);
+  const bodyHtml = markdownToHtml(body);
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2>お知らせが更新されました</h2>
+      <p>${safeName}さん</p>
+      <h3>${safeTitle}</h3>
+      <div style="background:#f5f5f5;padding:12px;border-radius:6px;margin:12px 0;line-height:1.6;">${bodyHtml}</div>
+      <p><a href="${APP_URL}/dashboard" style="display:inline-block;padding:8px 14px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:6px;">ダッシュボードを開く</a></p>
+    </div>
+  `;
+
+  return sendRawEmail(email, `[更新] お知らせ: ${safeTitle}`, html);
+}
+
+export async function sendBulkAnnouncementUpdateEmail(recipients: Recipient[], title: string, body: string) {
+  let success = 0;
+  let failed = 0;
+  for (const r of recipients) {
+    const ok = await sendAnnouncementUpdateEmail(r.email, r.name ?? '', title, body);
+    if (ok) success += 1; else failed += 1;
+  }
+  return { success, failed };
+}
+
+export async function sendTaskDueDateUpdateEmail(
+  email: string,
+  name: string,
+  taskTitle: string,
+  subject: string,
+  newDueDate: Date
+): Promise<boolean> {
+  const safeName = sanitizeInput(name);
+  const safeTitle = sanitizeInput(taskTitle);
+  const safeSubject = sanitizeInput(subject);
+  const dueDateStr = newDueDate.toLocaleDateString('ja-JP');
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2>課題の締切日が変更されました</h2>
+      <p>${safeName}さん</p>
+      <div style="background:#fff7e6;padding:12px;border-radius:6px;margin:12px 0;border:1px solid #f0e6cc;">
+        <p><strong>課題：</strong>${safeTitle}</p>
+        <p><strong>科目：</strong>${safeSubject}</p>
+        <p><strong>新しい締切：</strong>${dueDateStr}</p>
+      </div>
+      <p><a href="${APP_URL}/dashboard/tasks" style="display:inline-block;padding:8px 14px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:6px;">確認する</a></p>
+    </div>
+  `;
+
+  return sendRawEmail(email, `[締切変更] ${safeTitle}`, html);
+}
+
+export async function sendBulkTaskDueDateUpdateEmail(recipients: Recipient[], taskTitle: string, subject: string, newDueDate: Date) {
+  let success = 0;
+  let failed = 0;
+  for (const r of recipients) {
+    const ok = await sendTaskDueDateUpdateEmail(r.email, r.name ?? '', taskTitle, subject, newDueDate);
+    if (ok) success += 1; else failed += 1;
+  }
+  return { success, failed };
+}
+
+export async function sendTestScheduleUpdateEmail(
+  email: string,
+  name: string,
+  scheduleTitle: string,
+  startDate: Date,
+  endDate: Date,
+  scheduleId: string
+): Promise<boolean> {
+  const safeName = sanitizeInput(name);
+  const safeTitle = sanitizeInput(scheduleTitle);
+  const periodStr = `${startDate.toLocaleDateString('ja-JP')} 〜 ${endDate.toLocaleDateString('ja-JP')}`;
+  const viewUrl = `${APP_URL}/dashboard/tests?id=${encodeURIComponent(scheduleId)}`;
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2>テストスケジュールが更新されました</h2>
+      <p>${safeName}さん</p>
+      <div style="background:#f5f5f5;padding:12px;border-radius:6px;margin:12px 0;">
+        <p><strong>${safeTitle}</strong></p>
+        <p><strong>期間：</strong>${periodStr}</p>
+      </div>
+      <p><a href="${viewUrl}" style="display:inline-block;padding:8px 14px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:6px;">テストスケジュールを見る</a></p>
+    </div>
+  `;
+
+  return sendRawEmail(email, `[更新] テストスケジュール: ${safeTitle}`, html);
+}
+
+export async function sendBulkTestScheduleUpdateEmail(recipients: Recipient[], scheduleTitle: string, startDate: Date, endDate: Date, scheduleId: string) {
+  let success = 0;
+  let failed = 0;
+  for (const r of recipients) {
+    const ok = await sendTestScheduleUpdateEmail(r.email, r.name ?? '', scheduleTitle, startDate, endDate, scheduleId);
+    if (ok) success += 1; else failed += 1;
+  }
+  return { success, failed };
+}
+
 // Bulk senders return a summary of successes/failures
 export async function sendBulkTaskNotificationEmail(recipients: Recipient[], taskTitle: string, dueDate: Date) {
   let success = 0;
