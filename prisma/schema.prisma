@@ -62,6 +62,7 @@ model Task {
   subject   String   // 教科名
   title     String   // 課題のタイトル
   dueDate   DateTime // 締切日
+  note      String?  // 補足
   isCompleted Boolean @default(false) // 状態（未完了: false, 完了: true）
 }
 
@@ -95,12 +96,13 @@ model Subject {
 
 // 6. 管理者からの日々の連絡
 model Announcement {
-  id        String   @id @default(uuid())
-  title     String
-  body      String
-  date      DateTime @default(now())
-  createdAt DateTime @default(now())
-  reads     AnnouncementRead[]
+  id               String   @id @default(uuid())
+  announcementType String   @default("announcement") // "announcement" or "test"
+  title            String
+  body             String
+  date             DateTime @default(now())
+  createdAt        DateTime @default(now())
+  reads            AnnouncementRead[]
 }
 
 // 7. 連絡の既読管理

@@ -8,6 +8,7 @@ type AdminTaskSummary = {
   subject: string;
   title: string;
   dueDate: Date;
+  note: string | null;
   assignedCount: number;
   completedCount: number;
 };
@@ -36,6 +37,7 @@ export async function GET(request: Request) {
             subject: task.subject,
             title: task.title,
             dueDate: task.dueDate,
+            note: task.note ?? null,
             assignedCount: 0,
             completedCount: 0,
           } satisfies AdminTaskSummary);
@@ -59,10 +61,11 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { subject, title, dueDate } = (await request.json()) as {
+    const { subject, title, dueDate, note } = (await request.json()) as {
       subject?: string;
       title?: string;
       dueDate?: string;
+      note?: string;
     };
 
     if (!subject?.trim() || !title?.trim() || !dueDate) {
@@ -86,6 +89,7 @@ export async function POST(request: Request) {
         subject: subject.trim(),
         title: title.trim(),
         dueDate: new Date(dueDate),
+        note: note?.trim() || null,
         isCompleted: false,
       })),
     });
@@ -106,14 +110,14 @@ export async function PATCH(request: Request) {
   }
 
   try {
-    const { batchId, dueDate } = (await request.json()) as { batchId?: string; dueDate?: string };
+    const { batchId, dueDate, note } = (await request.json()) as { batchId?: string; dueDate?: string; note?: string };
     if (!batchId || !dueDate) {
       return NextResponse.json({ error: "batchIdとdueDateが必要です。" }, { status: 400 });
     }
 
     await prisma.task.updateMany({
       where: { OR: [{ adminBatchId: batchId }, { id: batchId }] },
-      data: { dueDate: new Date(dueDate), isCompleted: false },
+      data: { dueDate: new Date(dueDate), note: note?.trim() ?? null, isCompleted: false },
     });
 
     return NextResponse.json({ message: "締切日を更新しました。" });

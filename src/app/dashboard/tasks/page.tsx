@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-type Task = { id: string; subject: string; title: string; dueDate: string; isCompleted: boolean };
+type Task = { id: string; subject: string; title: string; dueDate: string; isCompleted: boolean; note?: string | null };
 
 function getDaysUntil(dateStr: string) {
   const due = new Date(dateStr); due.setHours(0, 0, 0, 0);
@@ -122,6 +122,7 @@ export default function TasksPage() {
                       {task.title}
                     </p>
                     <p className="text-xs text-[var(--muted)] mt-0.5">締切: {new Date(task.dueDate).toLocaleDateString()}</p>
+                    {task.note && <p className="text-xs text-[var(--muted)] mt-0.5 italic">補足: {task.note}</p>}
                   </div>
                   <button onClick={() => handleToggle(task.id, task.isCompleted)}
                     className={`shrink-0 rounded-xl px-3 py-1.5 text-xs font-medium transition-colors ${task.isCompleted ? "border" : "bg-[var(--primary)] text-white"}`}

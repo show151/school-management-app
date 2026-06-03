@@ -6,7 +6,7 @@ import { sendAdminEmail } from "@/lib/send-admin-email";
 import { formatSchedulePeriod, type TestScheduleDto } from "@/lib/test-schedule";
 import { useRouter } from "next/navigation";
 
-type Announcement = { id: string; title: string; body: string; date: string };
+type Announcement = { id: string; title: string; body: string; date: string; announcementType: string };
 type User = { id: string; studentNumber?: number | null; name: string; email: string; createdAt: string };
 type SendType = 'announcement' | 'test';
 
@@ -16,7 +16,6 @@ export default function AdminAnnouncementsPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [testSchedules, setTestSchedules] = useState<TestScheduleDto[]>([]);
   const [title, setTitle] = useState("");
-  const [selectedScheduleId, setSelectedScheduleId] = useState("");
   const [body, setBody] = useState("");
   const [sendType, setSendType] = useState<SendType>('announcement');
   const [studentNumberFrom, setStudentNumberFrom] = useState('');
@@ -33,6 +32,11 @@ export default function AdminAnnouncementsPage() {
   const [editBody, setEditBody] = useState("");
   const [editDate, setEditDate] = useState("");
   const [editUserIds, setEditUserIds] = useState<string[]>([]);
+
+  // 再送信用state
+  const [resendAnnTarget, setResendAnnTarget] = useState<Announcement | null>(null);
+  const [resendAnnUserIds, setResendAnnUserIds] = useState<string[]>([]);
+  const [resendAnnLoading, setResendAnnLoading] = useState(false);
 
   const reload = async () => {
     const res = await fetch("/api/admin/announcements", { credentials: "same-origin" });
@@ -66,49 +70,30 @@ export default function AdminAnnouncementsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setTitleError(""); setBodyError("");
-    if (sendType === 'announcement') {
-      if (!title.trim()) setTitleError("件名を入力してください。");
-      if (!body.trim()) setBodyError("本文を入力してください。");
-      if (!title.trim() || !body.trim()) return;
-    } else {
-      if (!selectedScheduleId) setTitleError("テストスケジュールを選択してください。");
-      if (!selectedScheduleId) return;
-    }
+    if (!title.trim()) setTitleError("件名を入力してください。");
+    if (!body.trim()) setBodyError("本文を入力してください。");
+    if (!title.trim() || !body.trim()) return;
 
-    if (sendType === 'announcement') {
-      const res = await fetch("/api/admin/announcements", {
-        method: "POST",
-        credentials: "same-origin",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, body, date }),
-      });
-      if (!res.ok) { alert("連絡の登録に失敗しました。"); return; }
-    }
+    const res = await fetch("/api/admin/announcements", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: title, body: body, date, announcementType: sendType }),
+    });
+    if (!res.ok) { alert("連絡の登録に失敗しました。"); return; }
 
-    const schedule = testSchedules.find((s) => s.id === selectedScheduleId);
     const emailResult = await sendAdminEmail({
-      type: sendType === "announcement" ? "announcement" : "testSchedule",
+      type: "announcement",
       selectedUserIds,
       studentNumberFrom,
       studentNumberTo,
-      payload:
-        sendType === "announcement"
-          ? { title, body }
-          : {
-              scheduleId: schedule!.id,
-              scheduleTitle: schedule!.title,
-              startDate: schedule!.startDate,
-              endDate: schedule!.endDate,
-            },
+      payload: { title, body },
     });
     if (!emailResult.ok) {
-      alert(sendType === "announcement"
-        ? `メール送信に失敗しました: ${emailResult.error}`
-        : `テスト連絡のメール送信に失敗しました: ${emailResult.error}`
-      );
+      alert(`メール送信に失敗しました: ${emailResult.error}`);
     }
 
-    setTitle(""); setBody(""); setSelectedScheduleId(""); setSelectedUserIds([]);
+    setTitle(""); setBody(""); setSelectedUserIds([]);
     reload();
   };
 
@@ -126,7 +111,7 @@ export default function AdminAnnouncementsPage() {
       method: "PATCH",
       credentials: "same-origin",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: editTarget.id, title: editTitle, body: editBody, date: editDate }),
+      body: JSON.stringify({ id: editTarget.id, title: editTitle, body: editBody, date: editDate, announcementType: editTarget.announcementType }),
     });
     if (!res.ok) { alert("更新に失敗しました。"); return; }
 
@@ -163,10 +148,66 @@ export default function AdminAnnouncementsPage() {
     );
   };
 
+  const handleResendAnnouncement = async () => {
+    if (!resendAnnTarget || resendAnnUserIds.length === 0) return;
+    setResendAnnLoading(true);
+    const emailResult = await sendAdminEmail({
+      type: "announcement",
+      selectedUserIds: resendAnnUserIds,
+      studentNumberFrom: "",
+      studentNumberTo: "",
+      payload: { title: resendAnnTarget.title, body: resendAnnTarget.body },
+    });
+    setResendAnnLoading(false);
+    if (!emailResult.ok) {
+      alert(`再送信に失敗しました: ${emailResult.error}`);
+    } else {
+      alert(`${resendAnnUserIds.length}人に再送信しました。`);
+    }
+    setResendAnnTarget(null);
+    setResendAnnUserIds([]);
+  };
+
   if (loading) return <div className="p-8 text-center text-[var(--muted)]">読み込み中...</div>;
 
   return (
     <div className="min-h-screen bg-[var(--background)] admin-theme">
+      {/* 再送信モーダル */}
+      {resendAnnTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+          style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
+          onClick={() => { setResendAnnTarget(null); setResendAnnUserIds([]); }}
+          role="presentation"
+        >
+          <div className="card w-full max-w-md space-y-3" onClick={(e) => e.stopPropagation()} role="dialog">
+            <h3 className="text-base font-bold text-[var(--foreground)]">連絡を再送信</h3>
+            <p className="text-sm font-semibold text-[var(--foreground)]">{resendAnnTarget.title}</p>
+            <p className="text-xs text-[var(--muted)]">{new Date(resendAnnTarget.date).toLocaleDateString()}</p>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-[var(--muted)]">
+                再送信するユーザー
+                {resendAnnUserIds.length > 0 && <span className="ml-2 admin-pill">{resendAnnUserIds.length}人</span>}
+              </label>
+              <div className="max-h-40 space-y-1 overflow-y-auto rounded-xl border p-2" style={{ borderColor: "var(--border)" }}>
+                {users.map((user) => (
+                  <label key={user.id} className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 hover:bg-[var(--admin-50)]">
+                    <input type="checkbox" checked={resendAnnUserIds.includes(user.id)} onChange={() => setResendAnnUserIds(prev => prev.includes(user.id) ? prev.filter(id => id !== user.id) : [...prev, user.id])} />
+                    <span className="text-xs">{user.studentNumber ? `(${user.studentNumber}) ` : ''}{user.name}</span>
+                  </label>
+                ))}
+              </div>
+              <button type="button" onClick={() => setResendAnnUserIds(users.map(u => u.id))} className="mt-2 w-full admin-outline">すべて選択</button>
+            </div>
+            <div className="flex gap-2">
+              <button type="button" onClick={handleResendAnnouncement} disabled={resendAnnUserIds.length === 0 || resendAnnLoading} className="flex-1 admin-btn disabled:opacity-50">
+                {resendAnnLoading ? "送信中..." : `再送信 (${resendAnnUserIds.length}人)`}
+              </button>
+              <button type="button" onClick={() => { setResendAnnTarget(null); setResendAnnUserIds([]); }} className="text-xs text-[var(--muted)] px-3">キャンセル</button>
+            </div>
+          </div>
+        </div>
+      )}
       {editTarget && (
         <div
           className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
@@ -235,55 +276,25 @@ export default function AdminAnnouncementsPage() {
                 </select>
               </div>
 
-              {sendType === "announcement" ? (
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-[var(--muted)]">件名</label>
-                  <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="例: 明日の持ち物" />
-                  {titleError && <small className="text-xs text-red-600 mt-1 block">{titleError}</small>}
-                </div>
-              ) : (
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-[var(--muted)]">テストスケジュール</label>
-                  <select value={selectedScheduleId} onChange={(e) => setSelectedScheduleId(e.target.value)}>
-                    <option value="">期間を選択</option>
-                    {testSchedules.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.title}（{formatSchedulePeriod(s.startDate, s.endDate)}）
-                      </option>
-                    ))}
-                  </select>
-                  {testSchedules.length === 0 && (
-                    <p className="mt-1 text-xs text-[var(--muted)]">
-                      <button type="button" onClick={() => router.push("/admin/tests")} className="admin-link">
-                        テスト連絡・スケジュール
-                      </button>
-                      で先に期間と各時限を登録してください。
-                    </p>
-                  )}
-                  {titleError && <small className="text-xs text-red-600 mt-1 block">{titleError}</small>}
-                </div>
-              )}
+              <div>
+                <label className="mb-1 block text-xs font-medium text-[var(--muted)]">件名</label>
+                <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="例: 明日の持ち物" />
+                {titleError && <small className="text-xs text-red-600 mt-1 block">{titleError}</small>}
+              </div>
 
-              {sendType === 'announcement' ? (
-                <>
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-[var(--muted)]">本文</label>
-                    <textarea value={body} onChange={(e) => setBody(e.target.value)} className="min-h-20" placeholder="連絡内容を入力" />
-                    {bodyError && <small className="text-xs text-red-600 mt-1 block">{bodyError}</small>}
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-[var(--muted)]">出席番号範囲（任意）</label>
-                    <div className="flex gap-2">
-                      <input type="number" min="1" value={studentNumberFrom} onChange={(e) => setStudentNumberFrom(e.target.value)} placeholder="From" className="w-1/2" />
-                      <input type="number" min="1" value={studentNumberTo} onChange={(e) => setStudentNumberTo(e.target.value)} placeholder="To" className="w-1/2" />
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <p className="text-xs text-[var(--muted)]">
-                  各時限の教科・特記事項はテストスケジュール画面で登録済みである必要があります。
-                </p>
-              )}
+              <div>
+                <label className="mb-1 block text-xs font-medium text-[var(--muted)]">本文</label>
+                <textarea value={body} onChange={(e) => setBody(e.target.value)} className="min-h-20" placeholder="連絡内容を入力" />
+                {bodyError && <small className="text-xs text-red-600 mt-1 block">{bodyError}</small>}
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-medium text-[var(--muted)]">出席番号範囲（任意）</label>
+                <div className="flex gap-2">
+                  <input type="number" min="1" value={studentNumberFrom} onChange={(e) => setStudentNumberFrom(e.target.value)} placeholder="From" className="w-1/2" />
+                  <input type="number" min="1" value={studentNumberTo} onChange={(e) => setStudentNumberTo(e.target.value)} placeholder="To" className="w-1/2" />
+                </div>
+              </div>
 
               <div>
                 <label className="mb-1 block text-xs font-medium text-[var(--muted)]">
@@ -322,11 +333,17 @@ export default function AdminAnnouncementsPage() {
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                       <div className="min-w-0 flex-1">
                         <p className="text-xs text-[var(--muted)]">{new Date(announcement.date).toLocaleDateString()}</p>
-                        <h3 className="mt-1 text-sm font-bold text-[var(--foreground)]">{announcement.title}</h3>
+                        <div className="flex items-center gap-2 mt-1">
+                          {announcement.announcementType === "test" && (
+                            <span className="text-xs font-bold px-1.5 py-0.5 rounded text-purple-700 bg-purple-100 shrink-0">テスト連絡</span>
+                          )}
+                          <h3 className="text-sm font-bold text-[var(--foreground)]">{announcement.title}</h3>
+                        </div>
                         <div className="mt-1 line-clamp-2 text-xs text-[var(--muted)]" dangerouslySetInnerHTML={{ __html: markdownToHtml(announcement.body) }} />
                       </div>
                       <div className="flex gap-3 self-start sm:self-auto">
                         <button onClick={() => handleEdit(announcement)} className="text-xs font-medium text-[var(--admin-600)] hover:underline">編集</button>
+                        <button onClick={() => { setResendAnnTarget(announcement); setResendAnnUserIds([]); }} className="text-xs font-medium text-blue-500 hover:text-blue-700">再送信</button>
                         <button onClick={() => handleDelete(announcement.id)} className="text-xs font-medium text-red-500 hover:text-red-700">削除</button>
                       </div>
                     </div>

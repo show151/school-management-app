@@ -75,7 +75,7 @@ export async function GET(request: Request) {
 
     const now = new Date();
     const [tasks, announcements, lessons, testSchedules, reads, dailyLinks] = await Promise.all([
-      prisma.task.findMany({ where: { userId }, orderBy: { dueDate: 'asc' }, take: 3 }),
+      prisma.task.findMany({ where: { userId }, orderBy: { dueDate: 'asc' } }),
       prisma.announcement.findMany({ orderBy: [{ date: 'desc' }, { createdAt: 'desc' }], take: 3 }),
       prisma.lesson.findMany({ orderBy: [{ dayOfWeek: 'asc' }, { period: 'asc' }] }),
       prisma.testSchedule.findMany({

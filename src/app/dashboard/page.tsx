@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import { AnnouncementBody } from "@/components/AnnouncementBody";
 import { formatSchedulePeriod } from "@/lib/test-schedule";
 
-type Task = { id: string; subject: string; title: string; dueDate: string; isCompleted: boolean };
+type Task = { id: string; subject: string; title: string; dueDate: string; isCompleted: boolean; note?: string | null };
 type Lesson = { id: string; dayOfWeek: string; period: number; subject: string };
-type Announcement = { id: string; title: string; body: string; date: string };
+type Announcement = { id: string; title: string; body: string; date: string; announcementType: string };
 type TestScheduleSummary = { id: string; title: string; startDate: string; endDate: string; entryCount: number };
 type DailyLink = { id: string; label: string; description: string | null; href: string; sortOrder: number };
 
@@ -101,6 +101,8 @@ export default function DashboardPage() {
 
   const todayDay = ["日", "月", "火", "水", "木", "金", "土"][new Date().getDay()];
   const incompleteTasks = data.tasks.filter((t) => !t.isCompleted);
+  const displayTasks = incompleteTasks.slice(0, 3);
+  const hiddenTasksCount = incompleteTasks.length - displayTasks.length;
   const completedCount = data.tasks.filter((t) => t.isCompleted).length;
   const progressPct = data.tasks.length > 0 ? Math.round((completedCount / data.tasks.length) * 100) : 0;
   const unreadCount = data.announcements.filter((a) => !readIds.has(a.id)).length;
@@ -143,7 +145,11 @@ export default function DashboardPage() {
             style={{ borderLeft: "4px solid var(--accent)", backgroundColor: "var(--accent-bg)" }}>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs font-bold px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: "var(--accent)" }}>お知らせ</span>
+                {a.announcementType === "test" ? (
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">テスト連絡</span>
+                ) : (
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: "var(--accent)" }}>お知らせ</span>
+                )}
                 <span className="text-xs" style={{ color: "var(--muted)" }}>{new Date(a.date).toLocaleDateString()}</span>
               </div>
               <p className="text-sm font-bold" style={{ color: "var(--foreground)" }}>{a.title}</p>
@@ -264,10 +270,10 @@ export default function DashboardPage() {
             )}
 
             <div className="space-y-2">
-              {data.tasks.length === 0 ? (
-                <p className="text-sm text-[var(--muted)]">現在登録されている課題はありません。</p>
+              {displayTasks.length === 0 ? (
+                <p className="text-sm text-[var(--muted)]">現在登録されている未完了の課題はありません。</p>
               ) : (
-                data.tasks.map((task) => {
+                displayTasks.map((task) => {
                   const days = getDaysUntil(task.dueDate);
                   return (
                     <div key={task.id} className={`task-item ${task.isCompleted ? "task-complete" : ""}`}>
@@ -282,6 +288,7 @@ export default function DashboardPage() {
                           {!task.isCompleted && <UrgencyBadge daysUntil={days} />}
                         </div>
                         <p className="mt-0.5 text-xs text-[var(--muted)]">締切: {new Date(task.dueDate).toLocaleDateString()}</p>
+                        {task.note && <p className="mt-0.5 text-xs text-[var(--muted)] italic">補足: {task.note}</p>}
                       </div>
                       <button onClick={() => handleToggleTask(task.id, task.isCompleted)}
                         className={`shrink-0 rounded-xl px-3 py-1.5 text-xs font-medium ${task.isCompleted ? "bg-[var(--background)] text-[var(--muted)] border" : "bg-[var(--primary)] text-white"}`}
@@ -291,6 +298,14 @@ export default function DashboardPage() {
                     </div>
                   );
                 })
+              )}
+              {hiddenTasksCount > 0 && (
+                <button
+                  onClick={() => router.push("/dashboard/tasks")}
+                  className="w-full mt-2 text-sm text-[var(--primary)] font-medium hover:underline text-center py-2 bg-[var(--primary-50)] rounded-xl"
+                >
+                  あと {hiddenTasksCount} 件の未完了課題を見る →
+                </button>
               )}
             </div>
           </div>
@@ -354,6 +369,9 @@ export default function DashboardPage() {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           {!isRead && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: "var(--accent)" }} />}
+                          {a.announcementType === "test" && (
+                            <span className="text-xs font-bold px-1.5 py-0.5 rounded text-purple-700 bg-purple-100 shrink-0">テスト</span>
+                          )}
                           <h3 className="text-sm font-semibold text-[var(--foreground)]">{a.title}</h3>
                         </div>
                         <AnnouncementBody body={a.body} muted={isRead} className="mt-1" />

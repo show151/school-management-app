@@ -31,10 +31,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "管理者認証が必要です。" }, { status: 401 });
     }
 
-    const { title, body, date } = (await request.json()) as {
+    const { title, body, date, announcementType } = (await request.json()) as {
       title?: string;
       body?: string;
       date?: string;
+      announcementType?: string;
     };
 
     if (!title?.trim() || !body?.trim()) {
@@ -46,6 +47,7 @@ export async function POST(request: Request) {
         title: title.trim(),
         body: body.trim(),
         date: date ? new Date(date) : new Date(),
+        announcementType: announcementType ?? "announcement",
       },
     });
 
@@ -63,11 +65,12 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "管理者認証が必要です。" }, { status: 401 });
     }
 
-    const { id, title, body, date } = (await request.json()) as {
+    const { id, title, body, date, announcementType } = (await request.json()) as {
       id?: string;
       title?: string;
       body?: string;
       date?: string;
+      announcementType?: string;
     };
 
     if (!id || !title?.trim() || !body?.trim()) {
@@ -80,6 +83,7 @@ export async function PATCH(request: Request) {
         title: title.trim(),
         body: body.trim(),
         date: date ? new Date(date) : undefined,
+        announcementType: announcementType ?? undefined,
       },
     });
 
