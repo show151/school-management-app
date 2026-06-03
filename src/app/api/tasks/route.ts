@@ -29,8 +29,20 @@ export async function GET(request: Request) {
   if (!userId) return NextResponse.json({ error: '認証が必要です。' }, { status: 401 });
 
   try {
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    
     const tasks = await prisma.task.findMany({
-      where: { userId },
+      where: {
+        userId,
+        // 締め切り翌日以降 かつ 完了済み の課題は自動的に非表示
+        NOT: {
+          AND: [
+            { dueDate: { lt: startOfToday } },
+            { isCompleted: true },
+          ],
+        },
+      },
       orderBy: { dueDate: 'asc' },
     });
     return NextResponse.json(tasks);
@@ -52,6 +64,25 @@ export async function PUT(request: Request) {
       where: { id, userId },
       data: { isCompleted },
     });
+
+    // 完了にした場合、全員が完了しているか確認してバッチ全削除
+    if (isCompleted) {
+      // 更新した課題の adminBatchId を取得
+      const task = await prisma.task.findUnique({ where: { id }, select: { adminBatchId: true } });
+      if (task?.adminBatchId) {
+        const batchId = task.adminBatchId;
+        const [total, completed] = await Promise.all([
+          prisma.task.count({ where: { adminBatchId: batchId } }),
+          prisma.task.count({ where: { adminBatchId: batchId, isCompleted: true } }),
+        ]);
+        if (total > 0 && total === completed) {
+          // 全員完了 → バッチをまるごと削除
+          await prisma.task.deleteMany({ where: { adminBatchId: batchId } });
+          console.log(`🗑️ Batch ${batchId} fully completed by all users. Deleted ${total} records.`);
+          return NextResponse.json({ message: '更新しました。全員完了のため課題を削除しました。', updatedTask, batchDeleted: true });
+        }
+      }
+    }
 
     return NextResponse.json({ message: '更新しました。', updatedTask });
   } catch {

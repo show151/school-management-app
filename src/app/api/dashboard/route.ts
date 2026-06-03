@@ -74,8 +74,23 @@ export async function GET(request: Request) {
     }
 
     const now = new Date();
+    const startOfToday = new Date(now);
+    startOfToday.setHours(0, 0, 0, 0);
+
     const [tasks, announcements, lessons, testSchedules, reads, dailyLinks] = await Promise.all([
-      prisma.task.findMany({ where: { userId }, orderBy: { dueDate: 'asc' } }),
+      prisma.task.findMany({
+        where: {
+          userId,
+          // 締め切り翌日以降 かつ 完了済み の課題は自動的に非表示
+          NOT: {
+            AND: [
+              { dueDate: { lt: startOfToday } },
+              { isCompleted: true },
+            ],
+          },
+        },
+        orderBy: { dueDate: 'asc' },
+      }),
       prisma.announcement.findMany({ orderBy: [{ date: 'desc' }, { createdAt: 'desc' }], take: 3 }),
       prisma.lesson.findMany({ orderBy: [{ dayOfWeek: 'asc' }, { period: 'asc' }] }),
       prisma.testSchedule.findMany({

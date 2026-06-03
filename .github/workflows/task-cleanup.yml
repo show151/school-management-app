@@ -1,0 +1,16 @@
+name: Task Cleanup
+
+on:
+  schedule:
+    # 毎日 6:00 JST (UTC 21:00 前日) に実行
+    - cron: '0 21 * * *'
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call task cleanup API
+        run: |
+          curl -f -X GET \
+            "${{ secrets.SITE_URL }}/api/cron/task-cleanup?secret=${{ secrets.CRON_SECRET }}"
