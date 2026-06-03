@@ -1,10 +1,10 @@
-import { sanitizeInput, validateUrl } from './security';
+import DOMPurify from 'isomorphic-dompurify';
+import { validateUrl } from './security';
 
 // Very small Markdown -> HTML converter (supports headings, bold, italic, code, links, lists)
 export function markdownToHtml(md: string): string {
   if (!md) return '';
-  // Escape HTML first
-  let s = sanitizeInput(md);
+  let s = md;
 
   const placeholders: string[] = [];
   function addPlaceholder(html: string) {
@@ -80,14 +80,16 @@ export function markdownToHtml(md: string): string {
     s = s.replace(`@@MDPLACEHOLDER${i}@@`, html);
   });
 
-  return s;
+  // DOMPurifyで最終的なHTMLをサニタイズ (XSS対策)
+  return DOMPurify.sanitize(s, {
+    ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'strong', 'em', 'ul', 'li', 'a', 'code', 'pre', 'div', 'span'],
+    ALLOWED_ATTR: ['href', 'target', 'rel', 'class', 'style'],
+  });
 }
 
 function sanitizeHref(href: string): string {
   // Basic href sanitizer: allow http(s) and mailto only
   const trimmed = href.trim();
-  // すでに markdownToHtml の冒頭で sanitizeInput が実行されているため、
-  // ここで再度 sanitizeInput を呼ぶと & 等が二重にエスケープされるのを防ぎます。
   // validateUrl で安全性を確認し、問題なければそのまま返します。
   if (validateUrl(trimmed)) return trimmed;
   // それ以外の場合は、JavaScript: URLなどの危険なプロトコルを避けるために '#' を返す

@@ -100,7 +100,7 @@ README 用に、機能の概要が分かる図を用意しています。
   - Strict-Transport-Security
 - ログインと登録にはレート制限を入れています。
 - 入力値は `src/lib/security.ts` のバリデーションで検証しています。
-- メール本文は Markdown を HTML 化する前にサニタイズしています。
+- マークダウン由来の HTML 文字列は、`dangerouslySetInnerHTML` で描画する前に `DOMPurify (isomorphic-dompurify)` によってサニタイズし、Stored XSS (蓄積型XSS) を防止しています。
 - cron の task reminder は `CRON_SECRET` を使って保護しています。
 - 管理者 API は認証済みの admin のみが触れる前提です。
 
