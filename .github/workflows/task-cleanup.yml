@@ -12,5 +12,6 @@ jobs:
     steps:
       - name: Call task cleanup API
         run: |
-          curl -f -X GET \
-            "${{ secrets.SITE_URL }}/api/cron/task-cleanup?secret=${{ secrets.CRON_SECRET }}"
+          curl -X GET \
+            "${{ secrets.SITE_URL }}/api/cron/task-cleanup?secret=${{ secrets.CRON_SECRET }}" \
+            --fail-with-body

@@ -12,7 +12,7 @@ jobs:
     steps:
       - name: Call backup API
         run: |
-          curl -f -X GET \
+          curl -X GET \
             "${{ secrets.SITE_URL }}/api/cron/backup?secret=${{ secrets.CRON_SECRET }}" \
             -o backup.json \
             --fail-with-body
