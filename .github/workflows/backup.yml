@@ -1,0 +1,36 @@
+name: Weekly Backup
+
+on:
+  schedule:
+    # 毎週金曜日 21:00 JST (UTC 12:00) に実行
+    - cron: '0 12 * * 5'
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call backup API
+        run: |
+          curl -f -X GET \
+            "${{ secrets.SITE_URL }}/api/cron/backup?secret=${{ secrets.CRON_SECRET }}" \
+            -o backup.json \
+            --fail-with-body
+
+      - name: Verify backup file
+        run: |
+          if [ ! -f backup.json ]; then
+            echo "❌ Backup file not created"
+            exit 1
+          fi
+          SIZE=$(wc -c < backup.json)
+          echo "✅ Backup file created: ${SIZE} bytes"
+          # exportedAt フィールドの確認
+          cat backup.json | grep -o '"exportedAt":"[^"]*"' | head -1
+
+      - name: Upload backup as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: school-management-backup-${{ github.run_id }}
+          path: backup.json
+          retention-days: 90

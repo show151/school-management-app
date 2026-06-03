@@ -11,6 +11,7 @@ type AdminTaskSummary = {
   note: string | null;
   assignedCount: number;
   completedCount: number;
+  assignedUserIds: string[];
 };
 
 type TaskRow = Awaited<ReturnType<typeof prisma.task.findMany>>[number];
@@ -40,10 +41,14 @@ export async function GET(request: Request) {
             note: task.note ?? null,
             assignedCount: 0,
             completedCount: 0,
+            assignedUserIds: [],
           } satisfies AdminTaskSummary);
 
         current.assignedCount += 1;
         if (task.isCompleted) current.completedCount += 1;
+        if (!current.assignedUserIds.includes(task.userId)) {
+          current.assignedUserIds.push(task.userId);
+        }
         map.set(batchId, current);
 
         return map;

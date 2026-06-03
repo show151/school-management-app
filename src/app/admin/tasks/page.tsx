@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { sendAdminEmail } from "@/lib/send-admin-email";
 
-type Task = { batchId: string; subject: string; title: string; dueDate: string; note: string | null; assignedCount: number; completedCount: number };
+type Task = { batchId: string; subject: string; title: string; dueDate: string; note: string | null; assignedCount: number; completedCount: number; assignedUserIds: string[] };
 type Subject = { id: string; name: string };
 type User = { id: string; studentNumber?: number | null; name: string; email: string; createdAt: string };
 
@@ -32,10 +32,13 @@ export default function AdminTasksPage() {
   const [editUserIds, setEditUserIds] = useState<string[]>([]);
 
   // 再送信用state
-  const [resendTarget, setResendTarget] = useState<Task | null>(null);
+  const [resendTargets, setResendTargets] = useState<Task[]>([]);
   const [resendUserIds, setResendUserIds] = useState<string[]>([]);
   const [resendLoading, setResendLoading] = useState(false);
   const [resendAssign, setResendAssign] = useState(true);
+  
+  // 一括選択用state
+  const [selectedTaskBatchIds, setSelectedTaskBatchIds] = useState<string[]>([]);
 
   const fetchTasks = useCallback(async () => {
     try {
@@ -154,15 +157,17 @@ export default function AdminTasksPage() {
   };
 
   const handleResendTask = async () => {
-    if (!resendTarget || resendUserIds.length === 0) return;
+    if (resendTargets.length === 0 || resendUserIds.length === 0) return;
     setResendLoading(true);
+
+    const batchIds = resendTargets.map(t => t.batchId);
 
     if (resendAssign) {
       const assignRes = await fetch("/api/admin/tasks/assign", {
         method: "POST",
         credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ batchId: resendTarget.batchId, userIds: resendUserIds }),
+        body: JSON.stringify({ batchIds, userIds: resendUserIds }),
       });
       if (!assignRes.ok) {
         alert("課題の割り当てに失敗しました。メール送信を中止します。");
@@ -171,22 +176,33 @@ export default function AdminTasksPage() {
       }
     }
 
-    const emailResult = await sendAdminEmail({
-      type: "task",
-      selectedUserIds: resendUserIds,
-      studentNumberFrom: "",
-      studentNumberTo: "",
-      payload: { taskTitle: resendTarget.title, dueDate: resendTarget.dueDate },
-    });
+    let emailSuccessCount = 0;
+    let emailFailCount = 0;
+
+    for (const target of resendTargets) {
+      const emailResult = await sendAdminEmail({
+        type: "task",
+        selectedUserIds: resendUserIds,
+        studentNumberFrom: "",
+        studentNumberTo: "",
+        payload: { taskTitle: target.title, dueDate: target.dueDate },
+      });
+      if (emailResult.ok) emailSuccessCount++;
+      else emailFailCount++;
+    }
+
     setResendLoading(false);
-    if (!emailResult.ok) {
-      alert(`再送信に失敗しました: ${emailResult.error}`);
+    
+    if (emailFailCount > 0) {
+      alert(`${emailSuccessCount}件の課題の再送信に成功、${emailFailCount}件の再送信に失敗しました。`);
     } else {
-      alert(`${resendUserIds.length}人に再送信しました。${resendAssign ? '課題リストへの追加も行いました。' : ''}`);
+      alert(`${resendTargets.length}件の課題を${resendUserIds.length}人に再送信しました。${resendAssign ? '課題リストへの追加も行いました。' : ''}`);
       fetchTasks();
     }
-    setResendTarget(null);
+    
+    setResendTargets([]);
     setResendUserIds([]);
+    setSelectedTaskBatchIds([]);
   };
 
   if (loading) return <div className="p-8 text-center text-[var(--muted)]">読み込み中...</div>;
@@ -194,31 +210,80 @@ export default function AdminTasksPage() {
   return (
     <div className="min-h-screen bg-[var(--background)] admin-theme">
       {/* 再送信モーダル */}
-      {resendTarget && (
+      {resendTargets.length > 0 && (
         <div
           className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
           style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
-          onClick={() => { setResendTarget(null); setResendUserIds([]); }}
+          onClick={() => { setResendTargets([]); setResendUserIds([]); }}
           role="presentation"
         >
           <div className="card w-full max-w-md space-y-3" onClick={(e) => e.stopPropagation()} role="dialog">
-            <h3 className="text-base font-bold text-[var(--foreground)]">課題を再送信</h3>
-            <p className="text-sm text-[var(--foreground)]">【{resendTarget.subject}】{resendTarget.title}</p>
-            <p className="text-xs text-[var(--muted)]">締切: {new Date(resendTarget.dueDate).toLocaleDateString()}</p>
+            <h3 className="text-base font-bold text-[var(--foreground)]">
+              課題を再送信 {resendTargets.length > 1 && `(${resendTargets.length}件)`}
+            </h3>
+            <div className="max-h-32 overflow-y-auto space-y-1 rounded border p-2" style={{ borderColor: "var(--border)", backgroundColor: "var(--background)" }}>
+              {resendTargets.map(t => (
+                <div key={t.batchId} className="text-sm text-[var(--foreground)]">
+                  <p>【{t.subject}】{t.title}</p>
+                  <p className="text-xs text-[var(--muted)]">締切: {new Date(t.dueDate).toLocaleDateString()}</p>
+                </div>
+              ))}
+            </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-[var(--muted)]">
                 再送信するユーザー
                 {resendUserIds.length > 0 && <span className="ml-2 admin-pill">{resendUserIds.length}人</span>}
               </label>
               <div className="max-h-40 space-y-1 overflow-y-auto rounded-xl border p-2" style={{ borderColor: "var(--border)" }}>
-                {users.map((user) => (
-                  <label key={user.id} className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 hover:bg-[var(--admin-50)]">
-                    <input type="checkbox" checked={resendUserIds.includes(user.id)} onChange={() => setResendUserIds(prev => prev.includes(user.id) ? prev.filter(id => id !== user.id) : [...prev, user.id])} />
-                    <span className="text-xs">{user.studentNumber ? `(${user.studentNumber}) ` : ''}{user.name}</span>
-                  </label>
-                ))}
+                {users.map((user) => {
+                  // 選択した全課題をすでに持っているユーザーは除外
+                  const alreadyHasAll = resendTargets.every(t =>
+                    (t.assignedUserIds ?? []).includes(user.id)
+                  );
+                  return (
+                    <label
+                      key={user.id}
+                      className={`flex cursor-pointer items-center gap-2 rounded px-1 py-1 ${
+                        alreadyHasAll
+                          ? 'opacity-40 cursor-not-allowed'
+                          : 'hover:bg-[var(--admin-50)]'
+                      }`}
+                      title={alreadyHasAll ? 'この課題・連絡は既に登録済みです' : ''}
+                    >
+                      <input
+                        type="checkbox"
+                        disabled={alreadyHasAll}
+                        checked={resendUserIds.includes(user.id)}
+                        onChange={() =>
+                          !alreadyHasAll &&
+                          setResendUserIds(prev =>
+                            prev.includes(user.id)
+                              ? prev.filter(id => id !== user.id)
+                              : [...prev, user.id]
+                          )
+                        }
+                      />
+                      <span className="text-xs">
+                        {user.studentNumber ? `(${user.studentNumber}) ` : ''}{user.name}
+                        {alreadyHasAll && <span className="ml-1 text-[10px] text-[var(--muted)]">（登録済み）</span>}
+                      </span>
+                    </label>
+                  );
+                })}
               </div>
-              <button type="button" onClick={() => setResendUserIds(users.map(u => u.id))} className="mt-2 w-full admin-outline">すべて選択</button>
+              <button
+                type="button"
+                onClick={() => {
+                  // 除外対象（全課題登録済み）以外を全選択
+                  const eligible = users.filter(
+                    u => !resendTargets.every(t => (t.assignedUserIds ?? []).includes(u.id))
+                  );
+                  setResendUserIds(eligible.map(u => u.id));
+                }}
+                className="mt-2 w-full admin-outline"
+              >
+                すべて選択（除外対象を除く）
+              </button>
             </div>
             <div className="mt-2">
               <label className="flex cursor-pointer items-center gap-2">
@@ -231,7 +296,7 @@ export default function AdminTasksPage() {
               <button type="button" onClick={handleResendTask} disabled={resendUserIds.length === 0 || resendLoading} className="flex-1 admin-btn disabled:opacity-50">
                 {resendLoading ? "送信中..." : `再送信 (${resendUserIds.length}人)`}
               </button>
-              <button type="button" onClick={() => { setResendTarget(null); setResendUserIds([]); }} className="text-xs text-[var(--muted)] px-3">キャンセル</button>
+              <button type="button" onClick={() => { setResendTargets([]); setResendUserIds([]); }} className="text-xs text-[var(--muted)] px-3">キャンセル</button>
             </div>
           </div>
         </div>
@@ -344,21 +409,60 @@ export default function AdminTasksPage() {
           </div>
 
           <div className="card">
-            <h2 className="mb-3 text-base font-bold text-[var(--foreground)]">現在の課題一覧</h2>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-base font-bold text-[var(--foreground)]">現在の課題一覧</h2>
+              {selectedTaskBatchIds.length > 0 && (
+                <button 
+                  onClick={() => {
+                    const targets = tasks.filter(t => selectedTaskBatchIds.includes(t.batchId));
+                    setResendTargets(targets);
+                    setResendUserIds([]);
+                  }}
+                  className="text-xs bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded font-medium transition-colors"
+                >
+                  一括再送信 ({selectedTaskBatchIds.length})
+                </button>
+              )}
+            </div>
             {tasks.length === 0 ? (
               <p className="text-sm text-[var(--muted)]">登録されている課題はありません。</p>
             ) : (
               <div className="space-y-2">
+                <div className="flex items-center gap-2 px-3 py-1">
+                  <input 
+                    type="checkbox" 
+                    checked={selectedTaskBatchIds.length === tasks.length && tasks.length > 0}
+                    onChange={(e) => {
+                      if (e.target.checked) setSelectedTaskBatchIds(tasks.map(t => t.batchId));
+                      else setSelectedTaskBatchIds([]);
+                    }}
+                    className="cursor-pointer"
+                  />
+                  <span className="text-xs text-[var(--muted)]">すべて選択</span>
+                </div>
                 {tasks.map((task) => (
                   <div key={task.batchId} className="flex flex-col gap-2 rounded-xl border p-3 sm:flex-row sm:items-center sm:justify-between" style={{ borderColor: "var(--border)" }}>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-[var(--foreground)]">【{task.subject}】{task.title}</p>
-                      <p className="text-xs text-[var(--muted)]">締切: {new Date(task.dueDate).toLocaleDateString()} / 完了 {task.completedCount} / 配布 {task.assignedCount}</p>
-                      {task.note && <p className="text-xs text-[var(--muted)] mt-0.5">補足: {task.note}</p>}
+                    <div className="flex items-start gap-3 min-w-0 flex-1">
+                      <input 
+                        type="checkbox" 
+                        className="mt-1 cursor-pointer"
+                        checked={selectedTaskBatchIds.includes(task.batchId)}
+                        onChange={(e) => {
+                          if (e.target.checked) setSelectedTaskBatchIds(prev => [...prev, task.batchId]);
+                          else setSelectedTaskBatchIds(prev => prev.filter(id => id !== task.batchId));
+                        }}
+                      />
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-[var(--foreground)]">【{task.subject}】{task.title}</p>
+                        <p className="text-xs text-[var(--muted)]">締切: {new Date(task.dueDate).toLocaleDateString()} / 完了 {task.completedCount} / 配布 {task.assignedCount}</p>
+                        {task.note && <p className="text-xs text-[var(--muted)] mt-0.5">補足: {task.note}</p>}
+                      </div>
                     </div>
-                    <button onClick={() => handleEditTask(task)} className="self-start text-xs font-medium text-[var(--admin-600)] hover:underline sm:shrink-0">締切変更</button>
-                    <button onClick={() => { setResendTarget(task); setResendUserIds([]); }} className="self-start text-xs font-medium text-blue-500 hover:text-blue-700 sm:shrink-0">再送信</button>
-                    <button onClick={() => handleDeleteTask(task.batchId)} className="self-start text-xs font-medium text-red-500 hover:text-red-700 sm:ml-2 sm:shrink-0">削除</button>
+                    <div className="flex gap-2 sm:shrink-0 sm:ml-2">
+                      <button onClick={() => handleEditTask(task)} className="text-xs font-medium text-[var(--admin-600)] hover:underline">締切変更</button>
+                      <button onClick={() => { setResendTargets([task]); setResendUserIds([]); }} className="text-xs font-medium text-blue-500 hover:text-blue-700">再送信</button>
+                      <button onClick={() => handleDeleteTask(task.batchId)} className="text-xs font-medium text-red-500 hover:text-red-700">削除</button>
+                    </div>
                   </div>
                 ))}
               </div>
