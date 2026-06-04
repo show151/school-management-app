@@ -35,8 +35,8 @@ export async function GET(request: Request) {
       where: {
         isCompleted: false,
         dueDate: {
-          gte: startOfTodayJST_inUTC.toISOString(),
-          lte: endOfTomorrowJST_inUTC.toISOString(),
+          gte: startOfTodayJST_inUTC,
+          lte: endOfTomorrowJST_inUTC,
         },
       },
       include: {
@@ -80,6 +80,9 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error('Error in task reminder cron job:', error);
-    return NextResponse.json({ error: 'Failed to process task reminders.' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Failed to process task reminders.', 
+      details: error instanceof Error ? error.message : String(error) 
+    }, { status: 500 });
   }
 }
