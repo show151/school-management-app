@@ -1,15 +1,18 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getRequiredEnv } from '@/lib/env';
+
 import { sendTaskReminderEmail } from '@/lib/email';
 
 export async function GET(request: Request) {
-  // 1. Validate the cron secret
-  const cronSecret = getRequiredEnv('CRON_SECRET');
-  const { searchParams } = new URL(request.url);
-  const secret = searchParams.get('secret');
+  const url = new URL(request.url);
+  const secret = url.searchParams.get('secret') ?? request.headers.get('x-cron-secret');
 
-  if (secret !== cronSecret) {
+  const configuredSecret = process.env.CRON_SECRET;
+
+  if (!configuredSecret || secret !== configuredSecret) {
+    if (!configuredSecret) {
+      console.error('❌ CRON_SECRET is not set in environment variables');
+    }
     console.warn('Unauthorized attempt to access task reminder cron job.');
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -40,12 +43,7 @@ export async function GET(request: Request) {
         },
       },
       include: {
-        user: {
-          select: {
-            email: true,
-            name: true,
-          },
-        },
+        user: true,
       },
     });
 
