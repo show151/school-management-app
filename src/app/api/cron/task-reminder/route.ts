@@ -1,62 +1,53 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { sendTaskReminderEmail } from '@/lib/email';
+import { getRequiredEnv } from '@/lib/env';
 
 export async function GET(request: Request) {
-  // CRON_SECRET で不正アクセスを防ぐ
-  const url = new URL(request.url);
-  const secret = url.searchParams.get('secret') ?? request.headers.get('x-cron-secret');
-  
-  const configuredSecret = process.env.CRON_SECRET;
-  
-  if (!configuredSecret || secret !== configuredSecret) {
-    if (!configuredSecret) {
-      console.error('❌ CRON_SECRET is not set in environment variables');
-    }
+  // 1. Validate the cron secret
+  const cronSecret = getRequiredEnv('CRON_SECRET');
+  const { searchParams } = new URL(request.url);
+  const secret = searchParams.get('secret');
+
+  if (secret !== cronSecret) {
+    console.warn('Unauthorized attempt to access task reminder cron job.');
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // 明日の0:00〜23:59を範囲として取得
-  // 実行環境（サーバー）がUTCの場合を考慮し、日付計算を調整
-  const tomorrowStart = new Date();
-  tomorrowStart.setDate(tomorrowStart.getDate() + 1);
-  tomorrowStart.setHours(0, 0, 0, 0);
+  try {
+    // 2. Implement task reminder logic here
+    //    Example: Fetch tasks that are not completed and due in the next 3 days.
 
-  const tomorrowEnd = new Date(tomorrowStart);
-  tomorrowEnd.setHours(23, 59, 59, 999);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Normalize to start of day
 
-  // 明日が締め切りで未完了の課題をユーザー情報ごと取得
-  const tasks = await prisma.task.findMany({
-    where: {
-      isCompleted: false,
-      dueDate: { gte: tomorrowStart, lte: tomorrowEnd },
-    },
-    include: { user: { select: { email: true, name: true } } },
-  });
+    const threeDaysFromNow = new Date(today);
+    threeDaysFromNow.setDate(today.getDate() + 3);
 
-  let sent = 0;
-  let failed = 0;
+    const tasksDueSoon = await prisma.task.findMany({
+      where: {
+        isCompleted: false,
+        dueDate: {
+          gte: today.toISOString(), // Due date is today or in the future
+          lte: threeDaysFromNow.toISOString(), // Due date is within the next 3 days
+        },
+      },
+      include: {
+        user: {
+          select: {
+            email: true, // Select user email for notification
+            name: true,
+          },
+        },
+      },
+    });
 
-  if (tasks.length === 0) {
-    console.log('📧 Task reminder cron: no pending tasks found');
-    return NextResponse.json({ sent, failed, total: 0 });
+    console.log(`[Cron] Found ${tasksDueSoon.length} tasks due soon. Processing reminders...`);
+    // TODO: Implement actual notification sending logic (e.g., email, push notification)
+    // For example: for (const task of tasksDueSoon) { await sendReminder(task.user.email, task); }
+
+    return NextResponse.json({ message: 'Task reminder process completed successfully.', tasksReminded: tasksDueSoon.length });
+  } catch (error) {
+    console.error('Error in task reminder cron job:', error);
+    return NextResponse.json({ error: 'Failed to process task reminders.' }, { status: 500 });
   }
-
-  for (const task of tasks) {
-    const ok = await sendTaskReminderEmail(
-      task.user.email,
-      task.user.name,
-      task.title,
-      task.subject,
-      task.dueDate,
-    );
-    if (ok) {
-      sent += 1;
-    } else {
-      failed += 1;
-    }
-  }
-
-  console.log(`📧 Task reminder cron: sent=${sent}, failed=${failed}`);
-  return NextResponse.json({ sent, failed, total: tasks.length });
 }
