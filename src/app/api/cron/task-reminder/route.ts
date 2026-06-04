@@ -15,20 +15,32 @@ export async function GET(request: Request) {
 
   try {
     // 2. Implement task reminder logic here
-    //    Example: Fetch tasks that are not completed and due in the next 3 days.
+    //    Fetch tasks that are not completed and due on "tomorrow" in JST.
+    //    Cron runs at 22:00 UTC, which is 07:00 JST the next day.
+    //    So, "tomorrow" in JST refers to the day after the JST day the cron runs.
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Normalize to start of day
+    const nowUTC = new Date(); // e.g., June 3rd, 22:00:00 UTC (which is June 4th, 07:00:00 JST)
 
-    const threeDaysFromNow = new Date(today);
-    threeDaysFromNow.setDate(today.getDate() + 3);
+    // Calculate the start of "tomorrow" in JST (e.g., June 5th, 00:00:00 JST) in UTC.
+    // This corresponds to 22:00 UTC of the current UTC day + 1 day.
+    const startOfTomorrowJST_inUTC = new Date(nowUTC);
+    startOfTomorrowJST_inUTC.setUTCHours(22, 0, 0, 0); // Set to 22:00 UTC
+    // If nowUTC is June 3rd, 22:00:00 UTC, startOfTomorrowJST_inUTC becomes June 3rd, 22:00:00 UTC.
+    // We need the start of the *next* JST day, so add one more UTC day.
+    startOfTomorrowJST_inUTC.setUTCDate(startOfTomorrowJST_inUTC.getUTCDate() + 1);
+    // Now startOfTomorrowJST_inUTC is June 4th, 22:00:00 UTC (start of June 5th JST).
+
+    // Calculate the end of "tomorrow" in JST (e.g., June 5th, 23:59:59.999 JST) in UTC.
+    const endOfTomorrowJST_inUTC = new Date(startOfTomorrowJST_inUTC);
+    endOfTomorrowJST_inUTC.setUTCDate(endOfTomorrowJST_inUTC.getUTCDate() + 1); // Move to the next UTC day (June 5th, 22:00:00 UTC)
+    endOfTomorrowJST_inUTC.setUTCHours(21, 59, 59, 999); // Set to 21:59:59.999 UTC (June 5th, 21:59:59.999 UTC)
 
     const tasksDueSoon = await prisma.task.findMany({
       where: {
         isCompleted: false,
         dueDate: {
-          gte: today.toISOString(), // Due date is today or in the future
-          lte: threeDaysFromNow.toISOString(), // Due date is within the next 3 days
+          gte: startOfTomorrowJST_inUTC.toISOString(), // Due date is tomorrow JST (start)
+          lte: endOfTomorrowJST_inUTC.toISOString(), // Due date is tomorrow JST (end)
         },
       },
       include: {
@@ -41,7 +53,7 @@ export async function GET(request: Request) {
       },
     });
 
-    console.log(`[Cron] Found ${tasksDueSoon.length} tasks due soon. Processing reminders...`);
+    console.log(`[Cron] Found ${tasksDueSoon.length} tasks due tomorrow (JST). Processing reminders...`);
     // TODO: Implement actual notification sending logic (e.g., email, push notification)
     // For example: for (const task of tasksDueSoon) { await sendReminder(task.user.email, task); }
 
