@@ -57,7 +57,13 @@ export async function GET(request: Request) {
     for (const task of tasksDueSoon) {
       if (task.user.email) {
         try {
-          await sendTaskReminderEmail(task.user.email, task.title, task.dueDate);
+          await sendTaskReminderEmail(
+            task.user.email,
+            task.user.name,
+            task.title,
+            task.subject,
+            task.dueDate
+          );
           sentCount++;
         } catch (error) {
           console.error(`Failed to send reminder for task ID ${task.id} to ${task.user.email}:`, error);
