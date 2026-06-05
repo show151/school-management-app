@@ -18,7 +18,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    // 2. Fetch tasks that are not completed and due today or tomorrow in JST.
+    // 2. Fetch tasks that are not completed and due today, tomorrow, or in 3 days in JST.
     const nowUTC = new Date();
 
     // Convert current UTC time to JST (+9 hours)
@@ -34,20 +34,36 @@ export async function GET(request: Request) {
     // End of tomorrow in JST (which is 14:59:59.999 UTC of tomorrow)
     const endOfTomorrowJST_inUTC = new Date(Date.UTC(jstYear, jstMonth, jstDate + 1, 14, 59, 59, 999));
 
+    // Start of 3 days later in JST (which is 15:00 UTC of 2 days later)
+    const startOf3DaysLaterJST_inUTC = new Date(Date.UTC(jstYear, jstMonth, jstDate + 2, 15, 0, 0, 0));
+
+    // End of 3 days later in JST (which is 14:59:59.999 UTC of 3 days later)
+    const endOf3DaysLaterJST_inUTC = new Date(Date.UTC(jstYear, jstMonth, jstDate + 3, 14, 59, 59, 999));
+
     const tasksDueSoon = await prisma.task.findMany({
       where: {
         isCompleted: false,
-        dueDate: {
-          gte: startOfTodayJST_inUTC,
-          lte: endOfTomorrowJST_inUTC,
-        },
+        OR: [
+          {
+            dueDate: {
+              gte: startOfTodayJST_inUTC,
+              lte: endOfTomorrowJST_inUTC,
+            },
+          },
+          {
+            dueDate: {
+              gte: startOf3DaysLaterJST_inUTC,
+              lte: endOf3DaysLaterJST_inUTC,
+            },
+          }
+        ]
       },
       include: {
         user: true,
       },
     });
 
-    console.log(`[Cron] Found ${tasksDueSoon.length} tasks due today or tomorrow (JST). Processing reminders...`);
+    console.log(`[Cron] Found ${tasksDueSoon.length} tasks due today, tomorrow, or in 3 days (JST). Processing reminders...`);
 
     let sentCount = 0;
     let errorCount = 0;
