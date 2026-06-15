@@ -1,3 +1,8 @@
+/**
+ * @file email.ts
+ * @description Resend APIを利用してメールを送信するための各種関数を提供します。
+ * アカウント認証、リセット、通知など、用途に応じたメールテンプレートを管理し送信処理を行います。
+ */
 import { Resend } from 'resend';
 import { sanitizeInput } from '@/lib/security';
 import { markdownToHtml } from './markdown';
@@ -9,6 +14,13 @@ const APP_URL = process.env.APP_URL || 'http://localhost:3000';
 
 type Recipient = { email: string; name?: string | null };
 
+/**
+ * Resendを使って実際のメール送信リクエストを行う共通関数です。
+ * @param to - 送信先メールアドレス
+ * @param subject - メールの件名
+ * @param html - メールのHTML本文
+ * @returns 送信成功時はtrue、失敗時はfalse
+ */
 async function sendRawEmail(to: string, subject: string, html: string) {
   try {
     const res = await resend.emails.send({
@@ -28,6 +40,13 @@ async function sendRawEmail(to: string, subject: string, html: string) {
   }
 }
 
+/**
+ * メールアドレス確認用のメールを送信します。
+ * @param email - ユーザーのメールアドレス
+ * @param name - ユーザー名
+ * @param verificationToken - 検証用トークン
+ * @returns 送信成功時はtrue、失敗時はfalse
+ */
 export async function sendVerificationEmail(
   email: string,
   name: string,
@@ -51,6 +70,13 @@ export async function sendVerificationEmail(
   return sendRawEmail(email, 'メールアドレスの確認', html);
 }
 
+/**
+ * パスワードリセット用のメールを送信します。
+ * @param email - ユーザーのメールアドレス
+ * @param name - ユーザー名
+ * @param resetToken - パスワードリセット用トークン
+ * @returns 送信成功時はtrue、失敗時はfalse
+ */
 export async function sendPasswordResetEmail(
   email: string,
   name: string,
