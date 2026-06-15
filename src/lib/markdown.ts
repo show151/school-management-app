@@ -1,10 +1,13 @@
-import DOMPurify from 'isomorphic-dompurify';
 import { validateUrl } from './security';
 
 // Very small Markdown -> HTML converter (supports headings, bold, italic, code, links, lists)
 export function markdownToHtml(md: string): string {
   if (!md) return '';
-  let s = md;
+  
+  // 0. XSS対策として、最初に入力全体をHTMLエスケープする
+  let s = md.replace(/[&<>"']/g, (m) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+  })[m as string] || m);
 
   const placeholders: string[] = [];
   function addPlaceholder(html: string) {
@@ -15,7 +18,7 @@ export function markdownToHtml(md: string): string {
 
   // 1. Code blocks ``` ```
   s = s.replace(/```([\s\S]*?)```/g, (_m, code) => {
-    return addPlaceholder(`<pre class="overflow-x-auto w-full max-w-full bg-[var(--card)] p-3 rounded-md my-3 border border-[var(--border)] text-sm block"><code>${code.replace(/</g, '&lt;')}</code></pre>`);
+    return addPlaceholder(`<pre class="overflow-x-auto w-full max-w-full bg-[var(--card)] p-3 rounded-md my-3 border border-[var(--border)] text-sm block"><code>${code}</code></pre>`);
   });
 
   // 2. Inline code `code`
@@ -25,7 +28,17 @@ export function markdownToHtml(md: string): string {
 
   // 3. Links [text](url)
   s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_m, text, url) => {
-    const safeUrl = sanitizeHref(url);
+    // url is already HTML escaped (e.g. & -> &amp;), which is safe and correct for href.
+    // However, sanitizeHref might expect an unescaped URL to validate properly.
+    // validateUrl doesn't care much about &amp;, but just in case, we unescape it for validation.
+    const rawUrl = url.replace(/&amp;/g, '&').replace(/&#039;/g, "'").replace(/&quot;/g, '"');
+    let safeUrl = sanitizeHref(rawUrl);
+    
+    // Re-escape for safe HTML attribute
+    safeUrl = safeUrl.replace(/[&<>"']/g, (m) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+    })[m as string] || m);
+
     // Link text 内の装飾を処理
     let formattedText = text
       .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
@@ -37,8 +50,14 @@ export function markdownToHtml(md: string): string {
 
   // 4. URLの自動リンク化
   s = s.replace(/(^|[\s>])(https?:\/\/[^\s<"']+|[a-z0-9+.-]+:\/\/[^\s<"']+)/gi, (m, space, url) => {
-    const safeUrl = sanitizeHref(url);
+    const rawUrl = url.replace(/&amp;/g, '&').replace(/&#039;/g, "'").replace(/&quot;/g, '"');
+    let safeUrl = sanitizeHref(rawUrl);
     if (safeUrl === '#') return m;
+    
+    safeUrl = safeUrl.replace(/[&<>"']/g, (match) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+    })[match as string] || match);
+
     return space + addPlaceholder(`<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="text-[var(--primary)] hover:underline break-all">${url}</a>`);
   });
 
@@ -80,11 +99,7 @@ export function markdownToHtml(md: string): string {
     s = s.replace(`@@MDPLACEHOLDER${i}@@`, html);
   });
 
-  // DOMPurifyで最終的なHTMLをサニタイズ (XSS対策)
-  return DOMPurify.sanitize(s, {
-    ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'strong', 'em', 'ul', 'li', 'a', 'code', 'pre', 'div', 'span'],
-    ALLOWED_ATTR: ['href', 'target', 'rel', 'class', 'style'],
-  });
+  return s;
 }
 
 function sanitizeHref(href: string): string {

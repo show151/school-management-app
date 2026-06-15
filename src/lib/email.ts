@@ -7,7 +7,7 @@ import { Resend } from 'resend';
 import { sanitizeInput } from '@/lib/security';
 import { markdownToHtml } from './markdown';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = new Resend(process.env.RESEND_API_KEY || 'dummy_key');
 
 const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@school-management.com';
 const APP_URL = process.env.APP_URL || 'http://localhost:3000';

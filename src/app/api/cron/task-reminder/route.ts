@@ -1,65 +1,102 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getRequiredEnv } from '@/lib/env';
+
+import { sendTaskReminderEmail } from '@/lib/email';
 
 export async function GET(request: Request) {
-  // 1. Validate the cron secret
-  const cronSecret = getRequiredEnv('CRON_SECRET');
-  const { searchParams } = new URL(request.url);
-  const secret = searchParams.get('secret');
+  const url = new URL(request.url);
+  const secret = url.searchParams.get('secret') ?? request.headers.get('x-cron-secret');
 
-  if (secret !== cronSecret) {
+  const configuredSecret = process.env.CRON_SECRET;
+
+  if (!configuredSecret || secret !== configuredSecret) {
+    if (!configuredSecret) {
+      console.error('❌ CRON_SECRET is not set in environment variables');
+    }
     console.warn('Unauthorized attempt to access task reminder cron job.');
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
-    // 2. Implement task reminder logic here
-    //    Fetch tasks that are not completed and due on "tomorrow" in JST.
-    //    Cron runs at 22:00 UTC, which is 07:00 JST the next day.
-    //    So, "tomorrow" in JST refers to the day after the JST day the cron runs.
+    // 2. Fetch tasks that are not completed and due today, tomorrow, or in 3 days in JST.
+    const nowUTC = new Date();
 
-    const nowUTC = new Date(); // e.g., June 3rd, 22:00:00 UTC (which is June 4th, 07:00:00 JST)
+    // Convert current UTC time to JST (+9 hours)
+    const nowJST = new Date(nowUTC.getTime() + 9 * 60 * 60 * 1000);
 
-    // Calculate the start of "tomorrow" in JST (e.g., June 5th, 00:00:00 JST) in UTC.
-    // This corresponds to 22:00 UTC of the current UTC day + 1 day.
-    const startOfTomorrowJST_inUTC = new Date(nowUTC);
-    startOfTomorrowJST_inUTC.setUTCHours(22, 0, 0, 0); // Set to 22:00 UTC
-    // If nowUTC is June 3rd, 22:00:00 UTC, startOfTomorrowJST_inUTC becomes June 3rd, 22:00:00 UTC.
-    // We need the start of the *next* JST day, so add one more UTC day.
-    startOfTomorrowJST_inUTC.setUTCDate(startOfTomorrowJST_inUTC.getUTCDate() + 1);
-    // Now startOfTomorrowJST_inUTC is June 4th, 22:00:00 UTC (start of June 5th JST).
+    const jstYear = nowJST.getUTCFullYear();
+    const jstMonth = nowJST.getUTCMonth();
+    const jstDate = nowJST.getUTCDate();
 
-    // Calculate the end of "tomorrow" in JST (e.g., June 5th, 23:59:59.999 JST) in UTC.
-    const endOfTomorrowJST_inUTC = new Date(startOfTomorrowJST_inUTC);
-    endOfTomorrowJST_inUTC.setUTCDate(endOfTomorrowJST_inUTC.getUTCDate() + 1); // Move to the next UTC day (June 5th, 22:00:00 UTC)
-    endOfTomorrowJST_inUTC.setUTCHours(21, 59, 59, 999); // Set to 21:59:59.999 UTC (June 5th, 21:59:59.999 UTC)
+    // Start of today in JST (which is 15:00 UTC of the previous day)
+    const startOfTodayJST_inUTC = new Date(Date.UTC(jstYear, jstMonth, jstDate - 1, 15, 0, 0, 0));
+
+    // End of tomorrow in JST (which is 14:59:59.999 UTC of tomorrow)
+    const endOfTomorrowJST_inUTC = new Date(Date.UTC(jstYear, jstMonth, jstDate + 1, 14, 59, 59, 999));
+
+    // Start of 3 days later in JST (which is 15:00 UTC of 2 days later)
+    const startOf3DaysLaterJST_inUTC = new Date(Date.UTC(jstYear, jstMonth, jstDate + 2, 15, 0, 0, 0));
+
+    // End of 3 days later in JST (which is 14:59:59.999 UTC of 3 days later)
+    const endOf3DaysLaterJST_inUTC = new Date(Date.UTC(jstYear, jstMonth, jstDate + 3, 14, 59, 59, 999));
 
     const tasksDueSoon = await prisma.task.findMany({
       where: {
         isCompleted: false,
-        dueDate: {
-          gte: startOfTomorrowJST_inUTC.toISOString(), // Due date is tomorrow JST (start)
-          lte: endOfTomorrowJST_inUTC.toISOString(), // Due date is tomorrow JST (end)
-        },
+        OR: [
+          {
+            dueDate: {
+              gte: startOfTodayJST_inUTC,
+              lte: endOfTomorrowJST_inUTC,
+            },
+          },
+          {
+            dueDate: {
+              gte: startOf3DaysLaterJST_inUTC,
+              lte: endOf3DaysLaterJST_inUTC,
+            },
+          }
+        ]
       },
       include: {
-        user: {
-          select: {
-            email: true, // Select user email for notification
-            name: true,
-          },
-        },
+        user: true,
       },
     });
 
-    console.log(`[Cron] Found ${tasksDueSoon.length} tasks due tomorrow (JST). Processing reminders...`);
-    // TODO: Implement actual notification sending logic (e.g., email, push notification)
-    // For example: for (const task of tasksDueSoon) { await sendReminder(task.user.email, task); }
+    console.log(`[Cron] Found ${tasksDueSoon.length} tasks due today, tomorrow, or in 3 days (JST). Processing reminders...`);
 
-    return NextResponse.json({ message: 'Task reminder process completed successfully.', tasksReminded: tasksDueSoon.length });
+    let sentCount = 0;
+    let errorCount = 0;
+
+    for (const task of tasksDueSoon) {
+      try {
+        if (task.user?.email) {
+          await sendTaskReminderEmail(
+            task.user.email,
+            task.user.name,
+            task.title,
+            task.subject,
+            task.dueDate
+          );
+          sentCount++;
+        }
+      } catch (error) {
+        console.error(`Failed to send reminder for task ID ${task.id}:`, error);
+        errorCount++;
+      }
+    }
+
+    return NextResponse.json({ 
+      message: 'Task reminder process completed successfully.', 
+      tasksFound: tasksDueSoon.length,
+      emailsSent: sentCount,
+      errors: errorCount
+    });
   } catch (error) {
     console.error('Error in task reminder cron job:', error);
-    return NextResponse.json({ error: 'Failed to process task reminders.' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Failed to process task reminders.', 
+      details: error instanceof Error ? error.message : String(error) 
+    }, { status: 500 });
   }
-}
+}
