@@ -39,6 +39,35 @@ README 用に、機能の概要が分かる図を用意しています。
 
 ![セキュリティ構成](public/readme/security.svg)
 
+## アプリ画面
+
+### ログイン
+![ログイン](public/readme/login.png)
+
+### 新規登録
+![新規登録](public/readme/newaccount.png)
+
+### パスワードを忘れたとき
+![パスワードを忘れたとき](public/readme/passwordreset.png)
+
+### ダッシュボード
+![ダッシュボード 1](public/readme/dashboard1.png)
+![ダッシュボード 2](public/readme/dashboard2.png)
+![ダッシュボード 3](public/readme/dashboard3.png)
+![ダッシュボード 4](public/readme/dashboard4.png)
+
+### 課題一覧
+![課題一覧](public/readme/assignment.png)
+
+### テストスケジュール
+![テストスケジュール](public/readme/test.png)
+
+### 連絡一覧
+![連絡一覧](public/readme/announce.png)
+
+### 設定画面
+![設定画面](public/readme/setting.png)
+
 ## 主な機能
 
 ### 生徒向け
