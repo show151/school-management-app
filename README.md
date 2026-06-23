@@ -15,27 +15,7 @@
 - 出席番号を使って、登録後に設定したり、通知対象を絞り込んだりできます。
 - 認証、Cookie、CSP、レート制限、cron secret など、セキュアな設計を重視しています。
 
-## 画像
-
-README 用に、機能の概要が分かる図を用意しています。
-
-### 1. 全体像
-
-![スクール管理アプリの全体像](public/readme/hero.svg)
-
-### 2. 生徒ダッシュボード
-
-![ダッシュボードの概念図](public/readme/dashboard.svg)
-
-### 3. 日々の連絡・テスト連絡
-
-![管理者の連絡送信](public/readme/admin-announcements.svg)
-
-### 4. ユーザー管理と出席番号編集
-
-![ユーザー管理](public/readme/admin-users.svg)
-
-### 5. セキュリティ設計
+## セキュリティ設計
 
 ![セキュリティ構成](public/readme/security.svg)
 
