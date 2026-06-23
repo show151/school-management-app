@@ -147,21 +147,37 @@ IP アドレスベースのレート制限を実装し、`REDIS_URL` がある�
 - [x] `RESEND_API_KEY` と `FROM_EMAIL` を設定する
 - [x] `APP_URL` を本番サイト URL に設定する
 - [x] `CRON_SECRET` を GitHub Actions の secret と一致させる
-- [x] `ADMIN_PASSWORD` を強力な値に設定する（env ベース管理者を使う場合）
+- [x] `ADMIN_EMAIL` と `ADMIN_PASSWORD` を本番用の安全な値に設定する（env ベース管理者を使う場合）
 - [x] データベースバックアップのエクスポート機能
 - [x] ログ監視設定
 - [ ] インシデント対応計画
 - [ ] `REDIS_URL` の設定（レート制限強化を使う場合）
 - [x] `ADMIN_IP_WHITELIST` の設定（管理者を特定 IP に制限する場合）
 
-### 12. 💾 バックアップ
+### 12. 💾 バックアップとデータ保護
 
-管理者メニューから、登録データを JSON 形式でエクスポートできます。
+管理画面からの手動バックアップに加えて、定期的な自動バックアップを実装しています。
 
-- API: `src/app/api/admin/backup/route.ts`
-- 取得対象: `User`, `AuditLog`, `Lesson`, `Task`, `Test`, `Subject`, `Announcement`, `AnnouncementRead`
-- 形式: `application/json` のダウンロードファイル
-- 権限制御: 管理者ログイン済みのみ
+- **手動エクスポート**
+  - API: `src/app/api/admin/backup/route.ts`
+  - 取得対象: `User`, `AuditLog`, `Lesson`, `Task`, `Test`, `Subject`, `DailyLink`, `Announcement`, `AnnouncementRead`
+  - 形式: `application/json` のダウンロードファイル
+  - 権限制御: 管理者ログイン済みのみ
+
+- **自動バックアップ (Cron)**
+  - API: `src/app/api/cron/backup/route.ts`
+  - 実行方法: `.github/workflows/backup.yml` による定期実行 (GitHub Actions)
+  - 認証保護: `CRON_SECRET` トークンによる検証
+
+### 13. ⚙️ 定期処理（Cron Job）の保護
+
+データベースのメンテナンスなどのバッチ処理は、外部から不正に実行されないよう保護されています。
+
+- **保護メカニズム**: リクエストヘッダー `Authorization: Bearer <CRON_SECRET>` による検証
+- **主なバッチ処理**:
+  - `src/app/api/cron/task-reminder/route.ts` (課題リマインド通知)
+  - `src/app/api/cron/task-cleanup/route.ts` (過去の課題クリーンアップ)
+  - `src/app/api/cron/backup/route.ts` (データベース自動バックアップ)
 
 ## 参考リンク
 
