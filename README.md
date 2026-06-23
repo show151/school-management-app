@@ -1,4 +1,4 @@
-# スクール管理アプリ
+# 高専生活サポートアプリ
 
 - アプリサイト: [https://www.kosen-management.jp](https://www.kosen-management.jp)
 - 制作時間: 30時間30分

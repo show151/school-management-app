@@ -76,7 +76,8 @@ export async function GET(request: Request) {
             task.user.name,
             task.title,
             task.subject,
-            task.dueDate
+            task.dueDate,
+            task.note ?? undefined
           );
           sentCount++;
         }

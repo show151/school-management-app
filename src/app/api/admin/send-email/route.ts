@@ -121,7 +121,8 @@ export async function POST(request: Request) {
         result = await sendBulkTaskNotificationEmail(
           recipients,
           body.payload.taskTitle,
-          new Date(body.payload.dueDate)
+          new Date(body.payload.dueDate),
+          body.payload.note
         );
         break;
 
@@ -189,7 +190,7 @@ export async function POST(request: Request) {
         if (!body.payload.taskTitle || !body.payload.dueDate || !body.payload.subject) {
           return NextResponse.json({ error: 'Missing taskTitle, subject or dueDate in payload' }, { status: 400 });
         }
-        result = await sendBulkTaskDueDateUpdateEmail(recipients, body.payload.taskTitle, body.payload.subject, new Date(body.payload.dueDate));
+        result = await sendBulkTaskDueDateUpdateEmail(recipients, body.payload.taskTitle, body.payload.subject, new Date(body.payload.dueDate), body.payload.note);
         break;
 
       case 'testScheduleUpdate':

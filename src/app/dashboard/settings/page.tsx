@@ -110,56 +110,68 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen bg-[var(--background)]">
       <main className="container-responsive py-6 space-y-6">
-        <div className="flex items-center gap-3">
-          <button onClick={() => router.push("/dashboard")} className="text-sm text-[var(--muted)] hover:text-[var(--foreground)]">← ダッシュボード</button>
+        <div className="flex items-center gap-3 mb-2">
+          <button onClick={() => router.push("/dashboard")} className="text-sm font-medium text-[var(--muted)] hover:text-[var(--foreground)] transition-colors">← ダッシュボード</button>
         </div>
 
-        <div className="card w-full max-w-md">
-          <h1 className="text-xl font-bold text-[var(--foreground)] mb-6">プロフィール</h1>
-          <form onSubmit={handleNameSave} className="space-y-4 mb-6">
-            {nameMessage && <div className="p-3 rounded-xl bg-green-50 border border-green-200 text-sm text-green-700">{nameMessage}</div>}
-            <div>
-              <label className="block text-sm font-medium text-[var(--foreground)] mb-1">表示名</label>
-              <input type="text" value={name} onChange={(e) => setName(e.target.value)} required />
-            </div>
-            <button type="submit" disabled={nameLoading} className="w-full btn-primary disabled:opacity-50">
-              {nameLoading ? '保存中...' : '名前を保存する'}
-            </button>
-          </form>
+        <h1 className="text-2xl font-bold text-[var(--foreground)] mb-6">設定</h1>
 
-          <h2 className="text-lg font-semibold text-[var(--foreground)] mb-4">出席番号</h2>
-          <form onSubmit={handleStudentNumberSave} className="space-y-4 mb-6">
-            {studentNumberMessage && <div className="p-3 rounded-xl bg-green-50 border border-green-200 text-sm text-green-700">{studentNumberMessage}</div>}
-            <div>
-              <label className="block text-sm font-medium text-[var(--foreground)] mb-1">出席番号</label>
-              <input type="number" min="1" value={studentNumber} onChange={(e) => setStudentNumber(e.target.value)} placeholder="未設定" />
-              <p className="mt-1 text-xs text-[var(--muted)]">空欄にすると未設定に戻せます。</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+          <div className="space-y-6">
+            <div className="card w-full">
+              <h2 className="text-lg font-bold text-[var(--foreground)] mb-4">プロフィール</h2>
+              <form onSubmit={handleNameSave} className="space-y-4">
+                {nameMessage && <div className="p-3 rounded-xl bg-green-50 border border-green-200 text-sm text-green-700">{nameMessage}</div>}
+                <div>
+                  <label className="block text-sm font-medium text-[var(--foreground)] mb-1">表示名</label>
+                  <input type="text" value={name} onChange={(e) => setName(e.target.value)} required />
+                </div>
+                <button type="submit" disabled={nameLoading} className="w-full btn-primary disabled:opacity-50 mt-2">
+                  {nameLoading ? '保存中...' : '名前を保存する'}
+                </button>
+              </form>
             </div>
-            <button type="submit" disabled={studentNumberLoading} className="w-full btn-primary disabled:opacity-50">
-              {studentNumberLoading ? '保存中...' : '出席番号を保存する'}
-            </button>
-          </form>
 
-          <h2 className="text-lg font-semibold text-[var(--foreground)] mb-4">パスワード変更</h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-sm text-red-700">{error}</div>}
-            {success && <div className="p-3 rounded-xl bg-green-50 border border-green-200 text-sm text-green-700">{success}</div>}
-            <div>
-              <label className="block text-sm font-medium text-[var(--foreground)] mb-1">現在のパスワード</label>
-              <input type="password" value={current} onChange={(e) => setCurrent(e.target.value)} required />
+            <div className="card w-full">
+              <h2 className="text-lg font-bold text-[var(--foreground)] mb-4">出席番号</h2>
+              <form onSubmit={handleStudentNumberSave} className="space-y-4">
+                {studentNumberMessage && <div className="p-3 rounded-xl bg-green-50 border border-green-200 text-sm text-green-700">{studentNumberMessage}</div>}
+                <div>
+                  <label className="block text-sm font-medium text-[var(--foreground)] mb-1">出席番号</label>
+                  <input type="number" min="1" value={studentNumber} onChange={(e) => setStudentNumber(e.target.value)} placeholder="未設定" />
+                  <p className="mt-1 text-xs text-[var(--muted)]">空欄にすると未設定に戻せます。</p>
+                </div>
+                <button type="submit" disabled={studentNumberLoading} className="w-full btn-primary disabled:opacity-50 mt-2">
+                  {studentNumberLoading ? '保存中...' : '出席番号を保存する'}
+                </button>
+              </form>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-[var(--foreground)] mb-1">新しいパスワード</label>
-              <input type="password" value={next} onChange={(e) => setNext(e.target.value)} required placeholder="8文字以上" />
+          </div>
+
+          <div className="space-y-6">
+            <div className="card w-full">
+              <h2 className="text-lg font-bold text-[var(--foreground)] mb-4">パスワード変更</h2>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {error && <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-sm text-red-700">{error}</div>}
+                {success && <div className="p-3 rounded-xl bg-green-50 border border-green-200 text-sm text-green-700">{success}</div>}
+                <div>
+                  <label className="block text-sm font-medium text-[var(--foreground)] mb-1">現在のパスワード</label>
+                  <input type="password" value={current} onChange={(e) => setCurrent(e.target.value)} required />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[var(--foreground)] mb-1">新しいパスワード</label>
+                  <input type="password" value={next} onChange={(e) => setNext(e.target.value)} required placeholder="8文字以上" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[var(--foreground)] mb-1">新しいパスワード（確認）</label>
+                  <input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required placeholder="もう一度入力" />
+                </div>
+                <button type="submit" disabled={loading} className="w-full btn-primary disabled:opacity-50 mt-2">
+                  {loading ? "変更中..." : "パスワードを変更する"}
+                </button>
+              </form>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-[var(--foreground)] mb-1">新しいパスワード（確認）</label>
-              <input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required placeholder="もう一度入力" />
-            </div>
-            <button type="submit" disabled={loading} className="w-full btn-primary disabled:opacity-50">
-              {loading ? "変更中..." : "パスワードを変更する"}
-            </button>
-          </form>
+          </div>
         </div>
       </main>
     </div>

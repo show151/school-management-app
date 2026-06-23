@@ -125,11 +125,14 @@ export async function sendTaskNotificationEmail(
   email: string,
   name: string,
   taskTitle: string,
-  dueDate: Date
+  dueDate: Date,
+  note?: string
 ): Promise<boolean> {
   const safeName = sanitizeInput(name);
   const safeTaskTitle = sanitizeInput(taskTitle);
   const dueDateStr = dueDate.toLocaleString('ja-JP');
+
+  const noteHtml = note ? `<div style="background:#fff;padding:12px;border-radius:6px;margin:12px 0;border:1px solid #eee;"><strong>補足事項</strong><div style="margin-top:8px;">${markdownToHtml(note)}</div></div>` : '';
 
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -139,6 +142,7 @@ export async function sendTaskNotificationEmail(
         <p><strong>課題：</strong>${safeTaskTitle}</p>
         <p><strong>締切：</strong>${dueDateStr}</p>
       </div>
+      ${noteHtml}
       <p><a href="${APP_URL}/dashboard/tasks" style="display:inline-block;padding:8px 14px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:6px;">ダッシュボードで確認</a></p>
     </div>
   `;
@@ -151,12 +155,15 @@ export async function sendTaskReminderEmail(
   name: string,
   title: string,
   subject: string,
-  dueDate: Date
+  dueDate: Date,
+  note?: string
 ): Promise<boolean> {
   const safeName = sanitizeInput(name);
   const safeTitle = sanitizeInput(title);
   const safeSubject = sanitizeInput(subject);
   const dueDateStr = dueDate.toLocaleString('ja-JP');
+
+  const noteHtml = note ? `<div style="background:#fff;padding:12px;border-radius:6px;margin:12px 0;border:1px solid #eee;"><strong>補足事項</strong><div style="margin-top:8px;">${markdownToHtml(note)}</div></div>` : '';
 
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -167,6 +174,7 @@ export async function sendTaskReminderEmail(
         <p><strong>科目：</strong>${safeSubject}</p>
         <p><strong>締切：</strong>${dueDateStr}</p>
       </div>
+      ${noteHtml}
       <p><a href="${APP_URL}/dashboard/tasks" style="display:inline-block;padding:8px 14px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:6px;">確認する</a></p>
     </div>
   `;
@@ -320,12 +328,15 @@ export async function sendTaskDueDateUpdateEmail(
   name: string,
   taskTitle: string,
   subject: string,
-  newDueDate: Date
+  newDueDate: Date,
+  note?: string
 ): Promise<boolean> {
   const safeName = sanitizeInput(name);
   const safeTitle = sanitizeInput(taskTitle);
   const safeSubject = sanitizeInput(subject);
   const dueDateStr = newDueDate.toLocaleDateString('ja-JP');
+
+  const noteHtml = note ? `<div style="background:#fff;padding:12px;border-radius:6px;margin:12px 0;border:1px solid #eee;"><strong>補足事項</strong><div style="margin-top:8px;">${markdownToHtml(note)}</div></div>` : '';
 
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -336,6 +347,7 @@ export async function sendTaskDueDateUpdateEmail(
         <p><strong>科目：</strong>${safeSubject}</p>
         <p><strong>新しい締切：</strong>${dueDateStr}</p>
       </div>
+      ${noteHtml}
       <p><a href="${APP_URL}/dashboard/tasks" style="display:inline-block;padding:8px 14px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:6px;">確認する</a></p>
     </div>
   `;
@@ -343,11 +355,11 @@ export async function sendTaskDueDateUpdateEmail(
   return sendRawEmail(email, `[締切変更] ${safeTitle}`, html);
 }
 
-export async function sendBulkTaskDueDateUpdateEmail(recipients: Recipient[], taskTitle: string, subject: string, newDueDate: Date) {
+export async function sendBulkTaskDueDateUpdateEmail(recipients: Recipient[], taskTitle: string, subject: string, newDueDate: Date, note?: string) {
   let success = 0;
   let failed = 0;
   for (const r of recipients) {
-    const ok = await sendTaskDueDateUpdateEmail(r.email, r.name ?? '', taskTitle, subject, newDueDate);
+    const ok = await sendTaskDueDateUpdateEmail(r.email, r.name ?? '', taskTitle, subject, newDueDate, note);
     if (ok) success += 1; else failed += 1;
   }
   return { success, failed };
@@ -392,11 +404,11 @@ export async function sendBulkTestScheduleUpdateEmail(recipients: Recipient[], s
 }
 
 // Bulk senders return a summary of successes/failures
-export async function sendBulkTaskNotificationEmail(recipients: Recipient[], taskTitle: string, dueDate: Date) {
+export async function sendBulkTaskNotificationEmail(recipients: Recipient[], taskTitle: string, dueDate: Date, note?: string) {
   let success = 0;
   let failed = 0;
   for (const r of recipients) {
-    const ok = await sendTaskNotificationEmail(r.email, r.name ?? '', taskTitle, dueDate);
+    const ok = await sendTaskNotificationEmail(r.email, r.name ?? '', taskTitle, dueDate, note);
     if (ok) success += 1; else failed += 1;
   }
   return { success, failed };

@@ -96,7 +96,7 @@ export default function AdminTasksPage() {
       selectedUserIds,
       studentNumberFrom,
       studentNumberTo,
-      payload: { taskTitle: title, dueDate },
+      payload: { taskTitle: title, dueDate, note },
     });
     if (!emailResult.ok) {
       alert(`メール送信に失敗しました: ${emailResult.error}`);
@@ -141,7 +141,7 @@ export default function AdminTasksPage() {
         selectedUserIds: editUserIds,
         studentNumberFrom: "",
         studentNumberTo: "",
-        payload: { taskTitle: editTarget.title, subject: editTarget.subject, dueDate: editDueDate },
+        payload: { taskTitle: editTarget.title, subject: editTarget.subject, dueDate: editDueDate, note: editNote },
       });
       if (!emailResult.ok) alert(`通知メールの送信に失敗しました: ${emailResult.error}`);
     }
@@ -185,7 +185,7 @@ export default function AdminTasksPage() {
         selectedUserIds: resendUserIds,
         studentNumberFrom: "",
         studentNumberTo: "",
-        payload: { taskTitle: target.title, dueDate: target.dueDate },
+        payload: { taskTitle: target.title, dueDate: target.dueDate, note: target.note ?? undefined },
       });
       if (emailResult.ok) emailSuccessCount++;
       else emailFailCount++;
