@@ -52,14 +52,17 @@
 
 ### 生徒向け
 
-- ログイン / 新規登録
+- ログイン / 新規登録 / パスワード再設定
 - 出席番号の登録
-- ダッシュボードで以下を一覧表示
+- ダッシュボードで直近の予定を一覧表示
   - 時間割
-  - 課題一覧
-  - 完了状態の切り替え
+  - 期限が近い課題と完了状態の切り替え
   - 未読連絡の確認と既読化
-  - テスト予定
+  - 近いテストの予定
+- 専用ページでの詳細確認
+  - 課題一覧
+  - テストスケジュール
+  - 連絡一覧
 - 設定画面で表示名と出席番号を後から変更可能
 
 ### 管理者向け
@@ -68,8 +71,8 @@
   - 登録済みユーザーの一覧表示
   - 出席番号の後から編集
   - ユーザー削除
-- 教科登録
-- 時間割管理
+- 教科管理 (科目と担当者の登録)
+- 授業 / 時間割管理
 - 課題管理
   - 課題の登録と削除
   - 生徒への通知送信
@@ -81,6 +84,8 @@
   - お知らせ登録
   - Markdown 対応の本文をメール送信
   - テスト連絡の送信にも対応
+- 日々のリンク管理
+  - リモート授業やオンライン資料へのリンク共有
 
 ### 通知の特徴
 
@@ -128,20 +133,39 @@
 
 ## ディレクトリの見どころ
 
-- `src/app/page.tsx` : ログイン / 新規登録
+### 生徒向け画面 (`src/app/dashboard/*`, `src/app/auth/*`)
+- `src/app/page.tsx` : ログイン
+- `src/app/auth/register/page.tsx` : 新規登録
+- `src/app/auth/forgot-password/page.tsx` : パスワード再設定
 - `src/app/dashboard/page.tsx` : 生徒ダッシュボード
-- `src/app/dashboard/settings/page.tsx` : 表示名・出席番号の設定
+- `src/app/dashboard/tasks/page.tsx` : 課題一覧
+- `src/app/dashboard/tests/page.tsx` : テストスケジュール
+- `src/app/dashboard/announcements/page.tsx` : 連絡一覧
+- `src/app/dashboard/settings/page.tsx` : 設定画面
+
+### 管理者向け画面 (`src/app/admin/*`)
 - `src/app/admin/page.tsx` : 管理メニュー
 - `src/app/admin/users/page.tsx` : ユーザー管理
-- `src/app/admin/announcements/page.tsx` : 日々の連絡
+- `src/app/admin/subjects/page.tsx` : 教科管理
+- `src/app/admin/lessons/page.tsx` : 授業/時間割管理
 - `src/app/admin/tasks/page.tsx` : 課題管理
 - `src/app/admin/tests/page.tsx` : テスト管理
+- `src/app/admin/announcements/page.tsx` : 日々の連絡
+- `src/app/admin/daily-links/page.tsx` : 日々のリンク
+
+### API・バッチ処理 (`src/app/api/*`, `.github/workflows/*`)
 - `src/app/api/auth/*` : 認証 API
 - `src/app/api/admin/*` : 管理者 API
 - `src/app/api/cron/task-reminder/route.ts` : 課題リマインド cron
-- `src/lib/email.ts` : メール送信
+- `src/app/api/cron/task-cleanup/route.ts` : 過去の課題クリーンアップ cron
+- `src/app/api/cron/backup/route.ts` : データベースバックアップ cron
+- `.github/workflows/task-cleanup.yml` : 課題クリーンアップの定期実行 (GitHub Actions)
+- `.github/workflows/backup.yml` : データベースバックアップの定期実行 (GitHub Actions)
+
+### 共通処理 (`src/lib/*`)
+- `src/lib/email.ts` : メール送信処理
 - `src/lib/markdown.ts` : Markdown → HTML 変換
-- `src/lib/security.ts` : 入力検証とサニタイズ
+- `src/lib/security.ts` : 入力検証とサニタイズ処理
 
 ## 開発方法
 
