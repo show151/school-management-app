@@ -4,7 +4,11 @@ import { prisma } from "@/lib/prisma";
 import { TEST_DAYS, TEST_PERIODS } from "@/lib/test-schedule";
 
 function isValidDay(day: string) {
-  return (TEST_DAYS as readonly string[]).includes(day);
+  // 漢字形式（レガシー）
+  if ((TEST_DAYS as readonly string[]).includes(day)) return true;
+  // 日付文字列形式（新形式: "YYYY-M-D"）
+  if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(day)) return true;
+  return false;
 }
 
 function isValidPeriod(period: number) {
