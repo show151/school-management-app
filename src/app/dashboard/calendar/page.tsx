@@ -260,79 +260,116 @@ export default function CalendarPage() {
         </div>
 
         {/* カレンダー */}
-        <div className="card">
+        <div className="card overflow-x-auto">
           {/* 曜日ヘッダー */}
-          <div className="grid grid-cols-7 gap-2 mb-2">
-            {["日", "月", "火", "水", "木", "金", "土"].map((day, index) => (
-              <div
-                key={day}
-                className="text-center text-sm font-bold py-2"
-                style={{
-                  color: index === 0 ? "#dc2626" : index === 6 ? "#2563eb" : "var(--foreground)",
-                }}
-              >
-                {day}
-              </div>
-            ))}
-          </div>
-
-          {/* カレンダーグリッド */}
-          <div className="grid grid-cols-7 gap-2">
-            {calendarDays.map((day, index) => {
-              const hasIncompleteTasks = day.tasks.length > 0;
-              const dotColor = getDotColor(day.tasks, day.date);
-              return (
-                <button
-                  key={index}
-                  onClick={() => hasIncompleteTasks && day.isCurrentMonth ? setSelectedDay(day) : null}
-                  disabled={!hasIncompleteTasks || !day.isCurrentMonth}
-                  className={`min-h-[80px] p-2 rounded-xl border transition-all ${
-                    day.isToday ? "ring-2 ring-[var(--primary)]" : ""
-                  } ${hasIncompleteTasks && day.isCurrentMonth ? "cursor-pointer hover:bg-[var(--primary-50)]" : "cursor-default"}`}
-                  style={{
-                    borderColor: day.isCurrentMonth ? "var(--border)" : "transparent",
-                    backgroundColor: day.isCurrentMonth ? "var(--card)" : "var(--background)",
-                    opacity: day.isCurrentMonth ? 1 : 0.5,
-                  }}
-                >
-                  <div
-                    className={`text-sm font-semibold mb-2 ${
-                      day.isToday ? "text-white bg-[var(--primary)] rounded-full w-6 h-6 flex items-center justify-center mx-auto" : ""
-                    }`}
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="border-b-2" style={{ borderColor: "var(--border)" }}>
+                {["日", "月", "火", "水", "木", "金", "土"].map((day, index) => (
+                  <th
+                    key={day}
+                    className="text-center text-sm font-bold py-3 px-2"
                     style={{
-                      color: day.isToday
-                        ? "white"
-                        : index % 7 === 0
-                        ? "#dc2626"
-                        : index % 7 === 6
-                        ? "#2563eb"
-                        : "var(--foreground)",
+                      color: index === 0 ? "#dc2626" : index === 6 ? "#2563eb" : "var(--foreground)",
                     }}
                   >
-                    {day.dayOfMonth}
-                  </div>
+                    {day}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {Array.from({ length: 6 }, (_, weekIndex) => {
+                const weekStart = weekIndex * 7;
+                const weekEnd = weekStart + 7;
+                const weekDays = calendarDays.slice(weekStart, weekEnd);
+                
+                // この週に当月の日付がない場合はスキップ
+                if (!weekDays.some(d => d.isCurrentMonth)) {
+                  return null;
+                }
 
-                  {/* タスクドット表示（色は緊急度で変化） */}
-                  {hasIncompleteTasks && (
-                    <div className="flex justify-center items-center gap-1 flex-wrap">
-                      {day.tasks.slice(0, 3).map((_, i) => (
-                        <div
-                          key={i}
-                          className="w-2 h-2 rounded-full"
-                          style={{ backgroundColor: dotColor }}
-                        />
-                      ))}
-                      {day.tasks.length > 3 && (
-                        <span className="text-[10px] font-bold" style={{ color: dotColor }}>
-                          +{day.tasks.length - 3}
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </button>
-              );
-            })}
-          </div>
+                return (
+                  <tr key={weekIndex} className="border-b" style={{ borderColor: "var(--border)" }}>
+                    {weekDays.map((day, dayIndex) => {
+                      const hasIncompleteTasks = day.tasks.length > 0;
+                      const dotColor = getDotColor(day.tasks, day.date);
+                      const actualIndex = weekStart + dayIndex;
+                      
+                      return (
+                        <td
+                          key={actualIndex}
+                          className="relative align-top p-0"
+                          style={{
+                            minHeight: "80px",
+                            backgroundColor: day.isCurrentMonth ? "var(--card)" : "var(--background)",
+                          }}
+                        >
+                          <button
+                            onClick={() => hasIncompleteTasks && day.isCurrentMonth ? setSelectedDay(day) : null}
+                            disabled={!hasIncompleteTasks || !day.isCurrentMonth}
+                            className={`w-full h-full min-h-[80px] p-2 text-left transition-all ${
+                              hasIncompleteTasks && day.isCurrentMonth ? "cursor-pointer hover:bg-[var(--primary-50)]" : "cursor-default"
+                            }`}
+                            style={{
+                              opacity: day.isCurrentMonth ? 1 : 0.4,
+                            }}
+                          >
+                            <div className="flex items-start justify-between mb-1">
+                              <div
+                                className={`text-sm font-semibold ${
+                                  day.isToday
+                                    ? "text-white bg-[var(--primary)] rounded-full w-6 h-6 flex items-center justify-center"
+                                    : ""
+                                }`}
+                                style={{
+                                  color: day.isToday
+                                    ? "white"
+                                    : actualIndex % 7 === 0
+                                    ? "#dc2626"
+                                    : actualIndex % 7 === 6
+                                    ? "#2563eb"
+                                    : "var(--foreground)",
+                                }}
+                              >
+                                {day.dayOfMonth}
+                              </div>
+                              
+                              {/* 今日のリングインジケーター */}
+                              {day.isToday && (
+                                <div
+                                  className="absolute top-1 right-1 w-2 h-2 rounded-full"
+                                  style={{ backgroundColor: "var(--primary)" }}
+                                />
+                              )}
+                            </div>
+
+                            {/* タスクドット表示（色は緊急度で変化） */}
+                            {hasIncompleteTasks && (
+                              <div className="flex items-center gap-1 flex-wrap mt-1">
+                                {day.tasks.slice(0, 5).map((_, i) => (
+                                  <div
+                                    key={i}
+                                    className="w-1.5 h-1.5 rounded-full"
+                                    style={{ backgroundColor: dotColor }}
+                                  />
+                                ))}
+                                {day.tasks.length > 5 && (
+                                  <span className="text-[9px] font-bold ml-0.5" style={{ color: dotColor }}>
+                                    +{day.tasks.length - 5}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </button>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
 
         {/* 凡例 */}
