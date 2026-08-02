@@ -34,7 +34,7 @@ function buildDayColumns(startDate?: string, endDate?: string): { day: string; l
   const end = endDate ? parseLocalDate(endDate) : start;
   const cols: { day: string; label: string; key: string }[] = [];
   const cur = new Date(start);
-  while (cur <= end && cols.length < 7) {
+  while (cur <= end && cols.length < 14) {
     const jsDay = cur.getDay();
     const kanji = JS_DAY_TO_KANJI[jsDay];
     if (kanji) {
@@ -68,8 +68,21 @@ export function TestScheduleWeekGrid({
 }: Props) {
   const [dragOver, setDragOver] = useState<string | null>(null);
   const dayColumns = buildDayColumns(startDate, endDate);
-  const getCellEntries = (day: string, period: number) =>
-    entries.filter((e) => e.dayOfWeek === day && e.period === period);
+
+  // 同じ曜日が複数回出現するかのマップ（レガシーフォールバック判定用）
+  const dayCount: Record<string, number> = {};
+  dayColumns.forEach(({ day }) => { dayCount[day] = (dayCount[day] ?? 0) + 1; });
+
+  // エントリーのフィルタリング: 日付キー（新形式）で一致するか、
+  // 同じ曜日が1回しかないカラムの場合は漢字（レガシー形式）でもフォールバック
+  const getCellEntries = (colKey: string, colDay: string, period: number) =>
+    entries.filter((e) => {
+      if (e.period !== period) return false;
+      if (e.dayOfWeek === colKey) return true;
+      // レガシー互換: 同じ曜日が1つしかない場合のみ漢字マッチ
+      if ((dayCount[colDay] ?? 0) <= 1 && e.dayOfWeek === colDay) return true;
+      return false;
+    });
   const canAdd = Boolean(onCellAdd);
 
   // 教科ごとに色を割り当て
@@ -111,7 +124,7 @@ export function TestScheduleWeekGrid({
             <tr key={period} className="border-t" style={{ borderColor: "var(--border)" }}>
               <td className="py-2 px-1 text-xs font-semibold text-center text-[var(--muted)]">{period}限</td>
               {dayColumns.map(({ day, key }) => {
-                const cellEntries = getCellEntries(day, period);
+                const cellEntries = getCellEntries(key, day, period);
                 const cellKey = `${key}-${period}`;
                 const isOver = dragOver === cellKey;
                 const isToday = key === todayKey;
@@ -124,14 +137,14 @@ export function TestScheduleWeekGrid({
                     onDragLeave={() => setDragOver(null)}
                     onDrop={() => {
                       setDragOver(null);
-                      if (selectedSubject) onCellAdd?.(day, period, selectedSubject);
+                      if (selectedSubject) onCellAdd?.(key, period, selectedSubject);
                     }}
                   >
                     <div
                       role={canAdd ? "button" : undefined}
                       tabIndex={canAdd && selectedSubject ? 0 : -1}
-                      onClick={() => { if (selectedSubject) onCellAdd?.(day, period, selectedSubject); }}
-                      onKeyDown={(e) => { if ((e.key === "Enter" || e.key === " ") && selectedSubject) onCellAdd?.(day, period, selectedSubject); }}
+                      onClick={() => { if (selectedSubject) onCellAdd?.(key, period, selectedSubject); }}
+                      onKeyDown={(e) => { if ((e.key === "Enter" || e.key === " ") && selectedSubject) onCellAdd?.(key, period, selectedSubject); }}
                       className="flex flex-col gap-1 min-h-[36px] rounded-xl p-1 transition-colors"
                       style={{
                         backgroundColor: isOver ? "var(--primary-50)" : (canAdd && selectedSubject) ? "rgba(79,70,229,0.04)" : "transparent",
