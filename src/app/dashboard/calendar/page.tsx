@@ -262,7 +262,7 @@ export default function CalendarPage() {
         {/* カレンダー */}
         <div className="card overflow-x-auto">
           {/* 曜日ヘッダー */}
-          <table className="w-full border-collapse">
+          <table className="w-full border-collapse table-fixed">
             <thead>
               <tr className="border-b-2" style={{ borderColor: "var(--border)" }}>
                 {["日", "月", "火", "水", "木", "金", "土"].map((day, index) => (
@@ -271,6 +271,7 @@ export default function CalendarPage() {
                     className="text-center text-sm font-bold py-3 px-2"
                     style={{
                       color: index === 0 ? "#dc2626" : index === 6 ? "#2563eb" : "var(--foreground)",
+                      width: "14.28%",
                     }}
                   >
                     {day}
@@ -301,14 +302,15 @@ export default function CalendarPage() {
                           key={actualIndex}
                           className="relative align-top p-0"
                           style={{
-                            minHeight: "80px",
+                            minHeight: "100px",
+                            width: "14.28%",
                             backgroundColor: day.isCurrentMonth ? "var(--card)" : "var(--background)",
                           }}
                         >
                           <button
                             onClick={() => hasIncompleteTasks && day.isCurrentMonth ? setSelectedDay(day) : null}
                             disabled={!hasIncompleteTasks || !day.isCurrentMonth}
-                            className={`w-full h-full min-h-[80px] p-2 text-left transition-all ${
+                            className={`w-full h-full min-h-[100px] p-2 text-left transition-all ${
                               hasIncompleteTasks && day.isCurrentMonth ? "cursor-pointer hover:bg-[var(--primary-50)]" : "cursor-default"
                             }`}
                             style={{
@@ -344,20 +346,30 @@ export default function CalendarPage() {
                               )}
                             </div>
 
-                            {/* タスクドット表示（色は緊急度で変化） */}
+                            {/* 教科名のみ表示（色は緊急度で変化） */}
                             {hasIncompleteTasks && (
-                              <div className="flex items-center gap-1 flex-wrap mt-1">
-                                {day.tasks.slice(0, 5).map((_, i) => (
+                              <div className="flex flex-col gap-0.5 mt-1">
+                                {/* 重複する教科を除外してユニークな教科のみ表示 */}
+                                {Array.from(new Set(day.tasks.map(t => t.subject))).slice(0, 3).map((subject, i) => (
                                   <div
                                     key={i}
-                                    className="w-1.5 h-1.5 rounded-full"
-                                    style={{ backgroundColor: dotColor }}
-                                  />
+                                    className="text-[10px] font-medium px-1 py-0.5 rounded truncate"
+                                    style={{
+                                      backgroundColor: `${dotColor}15`,
+                                      color: dotColor,
+                                      border: `1px solid ${dotColor}`,
+                                    }}
+                                  >
+                                    {subject}
+                                  </div>
                                 ))}
-                                {day.tasks.length > 5 && (
-                                  <span className="text-[9px] font-bold ml-0.5" style={{ color: dotColor }}>
-                                    +{day.tasks.length - 5}
-                                  </span>
+                                {Array.from(new Set(day.tasks.map(t => t.subject))).length > 3 && (
+                                  <div
+                                    className="text-[9px] font-bold text-center py-0.5"
+                                    style={{ color: dotColor }}
+                                  >
+                                    +{Array.from(new Set(day.tasks.map(t => t.subject))).length - 3}科目
+                                  </div>
                                 )}
                               </div>
                             )}
@@ -377,22 +389,23 @@ export default function CalendarPage() {
           <h3 className="text-sm font-bold text-[var(--foreground)] mb-3">凡例</h3>
           <div className="space-y-2 text-sm text-[var(--muted)]">
             <p>📌 日付をタップすると、その日のタスク一覧が表示されます</p>
+            <p>📌 カレンダーには教科名のみが表示されます</p>
             <p>📌 完了したタスクは自動的に非表示になります</p>
             <div className="flex flex-wrap items-center gap-4 mt-3 pt-3 border-t" style={{ borderColor: "var(--border)" }}>
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: "#dc2626" }}></div>
+                <div className="w-3 h-3 rounded" style={{ backgroundColor: "#dc2626", opacity: 0.2, border: "1px solid #dc2626" }}></div>
                 <span className="text-xs">期限切れ・今日</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: "#ea580c" }}></div>
+                <div className="w-3 h-3 rounded" style={{ backgroundColor: "#ea580c", opacity: 0.2, border: "1px solid #ea580c" }}></div>
                 <span className="text-xs">明日</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: "#ca8a04" }}></div>
+                <div className="w-3 h-3 rounded" style={{ backgroundColor: "#ca8a04", opacity: 0.2, border: "1px solid #ca8a04" }}></div>
                 <span className="text-xs">2〜3日以内</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: "#4f46e5" }}></div>
+                <div className="w-3 h-3 rounded" style={{ backgroundColor: "#4f46e5", opacity: 0.2, border: "1px solid #4f46e5" }}></div>
                 <span className="text-xs">4日以上先</span>
               </div>
             </div>
