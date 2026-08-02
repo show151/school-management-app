@@ -249,8 +249,9 @@ export default function DashboardPage() {
           <div className="card space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-lg font-bold text-[var(--foreground)]">課題の状況</h2>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-sm text-[var(--muted)]">未完了 {incompleteTasks.length} / 全 {data.tasks.length}</span>
+                <button onClick={() => router.push("/dashboard/calendar")} className="text-xs font-medium px-3 py-1.5 rounded-xl border transition-colors" style={{ borderColor: "var(--border)", color: "var(--muted)", backgroundColor: "var(--card)" }}>📅 カレンダー</button>
                 <button onClick={() => router.push("/dashboard/tasks")} className="text-xs font-medium px-3 py-1.5 rounded-xl border transition-colors" style={{ borderColor: "var(--border)", color: "var(--muted)", backgroundColor: "var(--card)" }}>すべて見る →</button>
               </div>
             </div>
