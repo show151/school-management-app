@@ -276,15 +276,15 @@ a, span, small {
   .container-calendar {
     width: 100%;
     max-width: 100%;
-    padding-left: 0.75rem;
-    padding-right: 0.75rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
     margin-left: auto;
     margin-right: auto;
   }
   @media (min-width: 640px) {
-    .container-calendar { padding-left: 1rem; padding-right: 1rem; }
+    .container-calendar { padding-left: 0.5rem; padding-right: 0.5rem; }
   }
   @media (min-width: 1024px) {
-    .container-calendar { padding-left: 1.5rem; padding-right: 1.5rem; }
+    .container-calendar { padding-left: 0.5rem; padding-right: 0.5rem; }
   }
 }

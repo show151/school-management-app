@@ -260,9 +260,9 @@ export default function CalendarPage() {
         </div>
 
         {/* カレンダー */}
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto rounded-2xl" style={{ border: "1px solid var(--border)" }}>
           {/* 曜日ヘッダー */}
-          <table className="w-full border-collapse table-fixed bg-[var(--card)] rounded-2xl overflow-hidden shadow-sm" style={{ border: "1px solid var(--border)" }}>
+          <table className="w-full border-collapse table-fixed">
             <thead>
               <tr className="border-b-2" style={{ borderColor: "var(--border)" }}>
                 {["日", "月", "火", "水", "木", "金", "土"].map((day, index) => (
@@ -302,22 +302,20 @@ export default function CalendarPage() {
                           key={actualIndex}
                           className="relative align-top p-0"
                           style={{
-                            minHeight: "100px",
+                            height: "100px",
                             width: "14.28%",
-                            backgroundColor: day.isCurrentMonth ? "var(--card)" : "var(--background)",
+                            backgroundColor: day.isCurrentMonth ? "var(--card)" : "var(--card)",
+                            opacity: day.isCurrentMonth ? 1 : 0.5,
                           }}
                         >
                           <button
                             onClick={() => hasIncompleteTasks && day.isCurrentMonth ? setSelectedDay(day) : null}
                             disabled={!hasIncompleteTasks || !day.isCurrentMonth}
-                            className={`w-full h-full min-h-[100px] p-2 text-left transition-all ${
+                            className={`w-full h-full p-2 text-left transition-all flex flex-col ${
                               hasIncompleteTasks && day.isCurrentMonth ? "cursor-pointer hover:bg-[var(--primary-50)]" : "cursor-default"
                             }`}
-                            style={{
-                              opacity: day.isCurrentMonth ? 1 : 0.4,
-                            }}
                           >
-                            <div className="flex items-start justify-between mb-1">
+                            <div className="flex items-start justify-between mb-1 flex-shrink-0">
                               <div
                                 className={`text-sm font-semibold ${
                                   day.isToday
@@ -348,7 +346,11 @@ export default function CalendarPage() {
 
                             {/* 教科名のみ表示（色は緊急度で変化） */}
                             {hasIncompleteTasks && (
-                              <div className="flex flex-col gap-0.5 mt-1">
+                              <div className="flex flex-col gap-0.5 overflow-y-auto flex-1"
+                                style={{
+                                  maxHeight: "calc(100px - 2.5rem)", // セル高さ - 日付部分 - パディング
+                                }}
+                              >
                                 {/* 重複する教科を除外してユニークな教科のみ表示 */}
                                 {Array.from(new Set(day.tasks.map(t => t.subject))).slice(0, 3).map((subject, i) => (
                                   <div
