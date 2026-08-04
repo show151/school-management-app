@@ -355,7 +355,7 @@ export default function CalendarPage() {
                                 {Array.from(new Set(day.tasks.map(t => t.subject))).slice(0, 3).map((subject, i) => (
                                   <div
                                     key={i}
-                                    className="text-[10px] font-medium px-1 py-0.5 rounded overflow-hidden whitespace-nowrap"
+                                    className="text-[7px] sm:text-[10px] font-medium px-1 py-0.5 rounded overflow-hidden whitespace-nowrap"
                                     style={{
                                       backgroundColor: `${dotColor}15`,
                                       color: dotColor,
@@ -368,7 +368,7 @@ export default function CalendarPage() {
                                 ))}
                                 {Array.from(new Set(day.tasks.map(t => t.subject))).length > 3 && (
                                   <div
-                                    className="text-[9px] font-bold text-center py-0.5"
+                                    className="text-[6px] sm:text-[9px] font-bold text-center py-0.5"
                                     style={{ color: dotColor }}
                                   >
                                     +{Array.from(new Set(day.tasks.map(t => t.subject))).length - 3}科目
