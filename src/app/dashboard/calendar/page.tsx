@@ -120,6 +120,7 @@ export default function CalendarPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDay, setSelectedDay] = useState<CalendarDay | null>(null);
+  const [currentMonthIndex, setCurrentMonthIndex] = useState(1); // 初期値は今月（インデックス1）
 
   // 過去1ヶ月、今月、未来3ヶ月の計5ヶ月を表示
   const today = new Date();
@@ -152,12 +153,37 @@ export default function CalendarPage() {
   // 今月のカレンダーまでスクロール
   useEffect(() => {
     if (!loading) {
-      const currentMonthElement = document.getElementById('current-month');
-      if (currentMonthElement) {
-        currentMonthElement.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-      }
+      scrollToMonth(currentMonthIndex);
     }
   }, [loading]);
+
+  const scrollToMonth = (index: number) => {
+    const element = document.getElementById(`month-${index}`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
+    }
+  };
+
+  const handlePrevMonth = () => {
+    if (currentMonthIndex > 0) {
+      const newIndex = currentMonthIndex - 1;
+      setCurrentMonthIndex(newIndex);
+      scrollToMonth(newIndex);
+    }
+  };
+
+  const handleNextMonth = () => {
+    if (currentMonthIndex < calendars.length - 1) {
+      const newIndex = currentMonthIndex + 1;
+      setCurrentMonthIndex(newIndex);
+      scrollToMonth(newIndex);
+    }
+  };
+
+  const handleToday = () => {
+    setCurrentMonthIndex(1); // 今月はインデックス1
+    scrollToMonth(1);
+  };
 
   const handleToggleTask = async (id: string, isCompleted: boolean) => {
     const res = await fetch("/api/tasks", {
@@ -223,6 +249,50 @@ export default function CalendarPage() {
           >
             ← ダッシュボード
           </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handlePrevMonth}
+              disabled={currentMonthIndex === 0}
+              className="px-3 py-1.5 rounded-xl border text-sm font-medium transition-colors disabled:opacity-40"
+              style={{
+                borderColor: "var(--border)",
+                color: "var(--muted)",
+                backgroundColor: "var(--card)",
+              }}
+            >
+              ← 前月
+            </button>
+            <button
+              onClick={handleToday}
+              className="px-3 py-1.5 rounded-xl text-sm font-medium text-white"
+              style={{ backgroundColor: "var(--primary)" }}
+            >
+              今日
+            </button>
+            <button
+              onClick={handleNextMonth}
+              disabled={currentMonthIndex === calendars.length - 1}
+              className="px-3 py-1.5 rounded-xl border text-sm font-medium transition-colors disabled:opacity-40"
+              style={{
+                borderColor: "var(--border)",
+                color: "var(--muted)",
+                backgroundColor: "var(--card)",
+              }}
+            >
+              次月 →
+            </button>
+          </div>
+        </div>
+
+        <h1 className="text-xl font-bold text-[var(--foreground)]">カレンダー（横スクロール対応）</h1>
+        {/* ヘッダー */}
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <button
+            onClick={() => router.push("/dashboard")}
+            className="text-sm text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
+          >
+            ← ダッシュボード
+          </button>
           <h1 className="text-xl font-bold text-[var(--foreground)]">カレンダー</h1>
         </div>
 
@@ -233,7 +303,7 @@ export default function CalendarPage() {
               {calendars.map((calendar, calendarIndex) => (
                 <div
                   key={`${calendar.year}-${calendar.month}`}
-                  id={calendar.isCurrentMonth ? 'current-month' : undefined}
+                  id={`month-${calendarIndex}`}
                   className="flex-shrink-0"
                   style={{
                     width: '100%',
