@@ -119,9 +119,22 @@ export default function CalendarPage() {
   const router = useRouter();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
-  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const [selectedDay, setSelectedDay] = useState<CalendarDay | null>(null);
+
+  // 過去1ヶ月、今月、未来3ヶ月の計5ヶ月を表示
+  const today = new Date();
+  const baseYear = today.getFullYear();
+  const baseMonth = today.getMonth();
+  
+  // 表示する月のリストを生成（過去1ヶ月、今月、未来3ヶ月）
+  const months = Array.from({ length: 5 }, (_, i) => {
+    const offset = i - 1; // -1, 0, 1, 2, 3
+    const date = new Date(baseYear, baseMonth + offset, 1);
+    return {
+      year: date.getFullYear(),
+      month: date.getMonth(),
+    };
+  });
 
   useEffect(() => {
     fetch("/api/tasks")
@@ -136,29 +149,15 @@ export default function CalendarPage() {
       .finally(() => setLoading(false));
   }, [router]);
 
-  const handlePrevMonth = () => {
-    if (currentMonth === 0) {
-      setCurrentMonth(11);
-      setCurrentYear(currentYear - 1);
-    } else {
-      setCurrentMonth(currentMonth - 1);
+  // 今月のカレンダーまでスクロール
+  useEffect(() => {
+    if (!loading) {
+      const currentMonthElement = document.getElementById('current-month');
+      if (currentMonthElement) {
+        currentMonthElement.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      }
     }
-  };
-
-  const handleNextMonth = () => {
-    if (currentMonth === 11) {
-      setCurrentMonth(0);
-      setCurrentYear(currentYear + 1);
-    } else {
-      setCurrentMonth(currentMonth + 1);
-    }
-  };
-
-  const handleToday = () => {
-    const now = new Date();
-    setCurrentYear(now.getFullYear());
-    setCurrentMonth(now.getMonth());
-  };
+  }, [loading]);
 
   const handleToggleTask = async (id: string, isCompleted: boolean) => {
     const res = await fetch("/api/tasks", {
@@ -184,16 +183,25 @@ export default function CalendarPage() {
   // 未完了タスクのみをフィルタリング
   const incompleteTasks = tasks.filter((t) => !t.isCompleted);
 
-  // カレンダーの日付を生成
-  const calendarDays = getDaysInMonth(currentYear, currentMonth);
-
-  // 各日付にタスクを割り当てる
-  calendarDays.forEach((day) => {
-    day.tasks = incompleteTasks.filter((task) => {
-      const taskDate = new Date(task.dueDate);
-      taskDate.setHours(0, 0, 0, 0);
-      return taskDate.getTime() === day.date.getTime();
+  // 各月のカレンダーデータを生成
+  const calendars = months.map(({ year, month }) => {
+    const calendarDays = getDaysInMonth(year, month);
+    
+    // 各日付にタスクを割り当てる
+    calendarDays.forEach((day) => {
+      day.tasks = incompleteTasks.filter((task) => {
+        const taskDate = new Date(task.dueDate);
+        taskDate.setHours(0, 0, 0, 0);
+        return taskDate.getTime() === day.date.getTime();
+      });
     });
+
+    return {
+      year,
+      month,
+      days: calendarDays,
+      isCurrentMonth: year === baseYear && month === baseMonth,
+    };
   });
 
   if (loading) {
@@ -208,183 +216,167 @@ export default function CalendarPage() {
     <div className="min-h-screen bg-[var(--background)]">
       <main className="container-calendar py-6 space-y-6">
         {/* ヘッダー */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <button
             onClick={() => router.push("/dashboard")}
             className="text-sm text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
           >
             ← ダッシュボード
           </button>
-        </div>
-
-        <div className="flex items-center justify-between flex-wrap gap-3">
           <h1 className="text-xl font-bold text-[var(--foreground)]">カレンダー</h1>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handlePrevMonth}
-              className="px-3 py-1.5 rounded-xl border text-sm font-medium transition-colors"
-              style={{
-                borderColor: "var(--border)",
-                color: "var(--muted)",
-                backgroundColor: "var(--card)",
-              }}
-            >
-              ← 前月
-            </button>
-            <button
-              onClick={handleToday}
-              className="px-3 py-1.5 rounded-xl text-sm font-medium text-white"
-              style={{ backgroundColor: "var(--primary)" }}
-            >
-              今日
-            </button>
-            <button
-              onClick={handleNextMonth}
-              className="px-3 py-1.5 rounded-xl border text-sm font-medium transition-colors"
-              style={{
-                borderColor: "var(--border)",
-                color: "var(--muted)",
-                backgroundColor: "var(--card)",
-              }}
-            >
-              次月 →
-            </button>
-          </div>
         </div>
 
-        {/* 年月表示 */}
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-[var(--foreground)]">
-            {formatYearMonth(currentYear, currentMonth)}
-          </h2>
-        </div>
+        {/* 横スクロールカレンダー */}
+        <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--border)", backgroundColor: "var(--card)" }}>
+          <div className="overflow-x-auto pb-4 scroll-smooth" style={{ scrollSnapType: 'x mandatory' }}>
+            <div className="flex">
+              {calendars.map((calendar, calendarIndex) => (
+                <div
+                  key={`${calendar.year}-${calendar.month}`}
+                  id={calendar.isCurrentMonth ? 'current-month' : undefined}
+                  className="flex-shrink-0"
+                  style={{
+                    width: '100%',
+                    minWidth: '100%',
+                    scrollSnapAlign: 'start',
+                    borderRight: calendarIndex < calendars.length - 1 ? '2px solid var(--border)' : 'none',
+                  }}
+                >
+                  {/* 年月表示 */}
+                  <div className="text-center py-3 border-b-2" style={{ borderColor: "var(--border)", backgroundColor: calendar.isCurrentMonth ? "var(--primary-50)" : "transparent" }}>
+                    <h2 className="text-lg font-bold" style={{ color: calendar.isCurrentMonth ? "var(--primary)" : "var(--foreground)" }}>
+                      {formatYearMonth(calendar.year, calendar.month)}
+                    </h2>
+                  </div>
 
-        {/* カレンダー */}
-        <div className="overflow-x-auto rounded-2xl" style={{ border: "1px solid var(--border)" }}>
-          {/* 曜日ヘッダー */}
-          <table className="w-full border-collapse table-fixed">
-            <thead>
-              <tr className="border-b-2" style={{ borderColor: "var(--border)" }}>
-                {["日", "月", "火", "水", "木", "金", "土"].map((day, index) => (
-                  <th
-                    key={day}
-                    className="text-center text-sm font-bold py-3 px-2"
-                    style={{
-                      color: index === 0 ? "#dc2626" : index === 6 ? "#2563eb" : "var(--foreground)",
-                      width: "14.28%",
-                    }}
-                  >
-                    {day}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {Array.from({ length: 6 }, (_, weekIndex) => {
-                const weekStart = weekIndex * 7;
-                const weekEnd = weekStart + 7;
-                const weekDays = calendarDays.slice(weekStart, weekEnd);
-                
-                // この週に当月の日付がない場合はスキップ
-                if (!weekDays.some(d => d.isCurrentMonth)) {
-                  return null;
-                }
-
-                return (
-                  <tr key={weekIndex} className="border-b" style={{ borderColor: "var(--border)" }}>
-                    {weekDays.map((day, dayIndex) => {
-                      const hasIncompleteTasks = day.tasks.length > 0;
-                      const dotColor = getDotColor(day.tasks, day.date);
-                      const actualIndex = weekStart + dayIndex;
-                      
-                      return (
-                        <td
-                          key={actualIndex}
-                          className="relative align-top p-0"
-                          style={{
-                            height: "100px",
-                            width: "14.28%",
-                            backgroundColor: day.isCurrentMonth ? "var(--card)" : "var(--card)",
-                            opacity: day.isCurrentMonth ? 1 : 0.5,
-                          }}
-                        >
-                          <button
-                            onClick={() => hasIncompleteTasks && day.isCurrentMonth ? setSelectedDay(day) : null}
-                            disabled={!hasIncompleteTasks || !day.isCurrentMonth}
-                            className={`w-full h-full p-2 text-left transition-all flex flex-col ${
-                              hasIncompleteTasks && day.isCurrentMonth ? "cursor-pointer hover:bg-[var(--primary-50)]" : "cursor-default"
-                            }`}
+                  {/* カレンダーテーブル */}
+                  <table className="w-full border-collapse table-fixed">
+                    <thead>
+                      <tr className="border-b" style={{ borderColor: "var(--border)" }}>
+                        {["日", "月", "火", "水", "木", "金", "土"].map((day, index) => (
+                          <th
+                            key={day}
+                            className="text-center text-xs sm:text-sm font-bold py-2 px-1"
+                            style={{
+                              color: index === 0 ? "#dc2626" : index === 6 ? "#2563eb" : "var(--foreground)",
+                              width: "14.28%",
+                            }}
                           >
-                            <div className="flex items-start justify-between mb-1 flex-shrink-0">
-                              <div
-                                className={`text-sm font-semibold ${
-                                  day.isToday
-                                    ? "text-white bg-[var(--primary)] rounded-full w-6 h-6 flex items-center justify-center"
-                                    : ""
-                                }`}
-                                style={{
-                                  color: day.isToday
-                                    ? "white"
-                                    : actualIndex % 7 === 0
-                                    ? "#dc2626"
-                                    : actualIndex % 7 === 6
-                                    ? "#2563eb"
-                                    : "var(--foreground)",
-                                }}
-                              >
-                                {day.dayOfMonth}
-                              </div>
-                              
-                              {/* 今日のリングインジケーター */}
-                              {day.isToday && (
-                                <div
-                                  className="absolute top-1 right-1 w-2 h-2 rounded-full"
-                                  style={{ backgroundColor: "var(--primary)" }}
-                                />
-                              )}
-                            </div>
+                            {day}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Array.from({ length: 6 }, (_, weekIndex) => {
+                        const weekStart = weekIndex * 7;
+                        const weekEnd = weekStart + 7;
+                        const weekDays = calendar.days.slice(weekStart, weekEnd);
+                        
+                        // この週に当月の日付がない場合はスキップ
+                        if (!weekDays.some(d => d.isCurrentMonth)) {
+                          return null;
+                        }
 
-                            {/* 教科名のみ表示（色は緊急度で変化） */}
-                            {hasIncompleteTasks && (
-                              <div className="flex flex-col gap-0.5 overflow-y-auto flex-1"
-                                style={{
-                                  maxHeight: "calc(100px - 2.5rem)", // セル高さ - 日付部分 - パディング
-                                }}
-                              >
-                                {/* 重複する教科を除外してユニークな教科のみ表示 */}
-                                {Array.from(new Set(day.tasks.map(t => t.subject))).slice(0, 3).map((subject, i) => (
-                                  <div
-                                    key={i}
-                                    className="text-[7px] sm:text-[10px] font-medium px-1 py-0.5 rounded overflow-hidden whitespace-nowrap"
-                                    style={{
-                                      backgroundColor: `${dotColor}15`,
-                                      color: dotColor,
-                                      border: `1px solid ${dotColor}`,
-                                      textOverflow: "clip",
-                                    }}
+                        return (
+                          <tr key={weekIndex} className="border-b" style={{ borderColor: "var(--border)" }}>
+                            {weekDays.map((day, dayIndex) => {
+                              const hasIncompleteTasks = day.tasks.length > 0;
+                              const dotColor = getDotColor(day.tasks, day.date);
+                              const actualIndex = weekStart + dayIndex;
+                              
+                              return (
+                                <td
+                                  key={actualIndex}
+                                  className="relative align-top p-0"
+                                  style={{
+                                    height: "100px",
+                                    width: "14.28%",
+                                    backgroundColor: day.isCurrentMonth ? "var(--card)" : "var(--card)",
+                                    opacity: day.isCurrentMonth ? 1 : 0.5,
+                                  }}
+                                >
+                                  <button
+                                    onClick={() => hasIncompleteTasks && day.isCurrentMonth ? setSelectedDay(day) : null}
+                                    disabled={!hasIncompleteTasks || !day.isCurrentMonth}
+                                    className={`w-full h-full p-2 text-left transition-all flex flex-col ${
+                                      hasIncompleteTasks && day.isCurrentMonth ? "cursor-pointer hover:bg-[var(--primary-50)]" : "cursor-default"
+                                    }`}
                                   >
-                                    {subject}
-                                  </div>
-                                ))}
-                                {Array.from(new Set(day.tasks.map(t => t.subject))).length > 3 && (
-                                  <div
-                                    className="text-[6px] sm:text-[9px] font-bold text-center py-0.5"
-                                    style={{ color: dotColor }}
-                                  >
-                                    +{Array.from(new Set(day.tasks.map(t => t.subject))).length - 3}科目
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </button>
-                        </td>
-                      );
-                    })}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                                    <div className="flex items-start justify-between mb-1 flex-shrink-0">
+                                      <div
+                                        className={`text-sm font-semibold ${
+                                          day.isToday
+                                            ? "text-white bg-[var(--primary)] rounded-full w-6 h-6 flex items-center justify-center"
+                                            : ""
+                                        }`}
+                                        style={{
+                                          color: day.isToday
+                                            ? "white"
+                                            : actualIndex % 7 === 0
+                                            ? "#dc2626"
+                                            : actualIndex % 7 === 6
+                                            ? "#2563eb"
+                                            : "var(--foreground)",
+                                        }}
+                                      >
+                                        {day.dayOfMonth}
+                                      </div>
+                                      
+                                      {/* 今日のリングインジケーター */}
+                                      {day.isToday && (
+                                        <div
+                                          className="absolute top-1 right-1 w-2 h-2 rounded-full"
+                                          style={{ backgroundColor: "var(--primary)" }}
+                                        />
+                                      )}
+                                    </div>
+
+                                    {/* 教科名のみ表示（色は緊急度で変化） */}
+                                    {hasIncompleteTasks && (
+                                      <div className="flex flex-col gap-0.5 overflow-y-auto flex-1"
+                                        style={{
+                                          maxHeight: "calc(100px - 2.5rem)", // セル高さ - 日付部分 - パディング
+                                        }}
+                                      >
+                                        {/* 重複する教科を除外してユニークな教科のみ表示 */}
+                                        {Array.from(new Set(day.tasks.map(t => t.subject))).slice(0, 3).map((subject, i) => (
+                                          <div
+                                            key={i}
+                                            className="text-[7px] sm:text-[10px] font-medium px-1 py-0.5 rounded overflow-hidden whitespace-nowrap"
+                                            style={{
+                                              backgroundColor: `${dotColor}15`,
+                                              color: dotColor,
+                                              border: `1px solid ${dotColor}`,
+                                              textOverflow: "clip",
+                                            }}
+                                          >
+                                            {subject}
+                                          </div>
+                                        ))}
+                                        {Array.from(new Set(day.tasks.map(t => t.subject))).length > 3 && (
+                                          <div
+                                            className="text-[6px] sm:text-[9px] font-bold text-center py-0.5"
+                                            style={{ color: dotColor }}
+                                          >
+                                            +{Array.from(new Set(day.tasks.map(t => t.subject))).length - 3}科目
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+                                  </button>
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* 凡例 */}
