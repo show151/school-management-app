@@ -260,9 +260,9 @@ export default function CalendarPage() {
         </div>
 
         {/* カレンダー */}
-        <div className="card overflow-x-auto">
+        <div className="overflow-x-auto">
           {/* 曜日ヘッダー */}
-          <table className="w-full border-collapse table-fixed">
+          <table className="w-full border-collapse table-fixed bg-[var(--card)] rounded-2xl overflow-hidden shadow-sm" style={{ border: "1px solid var(--border)" }}>
             <thead>
               <tr className="border-b-2" style={{ borderColor: "var(--border)" }}>
                 {["日", "月", "火", "水", "木", "金", "土"].map((day, index) => (
