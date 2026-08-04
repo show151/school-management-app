@@ -206,7 +206,7 @@ export default function CalendarPage() {
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
-      <main className="container-responsive py-6 space-y-6">
+      <main className="container-calendar py-6 space-y-6">
         {/* ヘッダー */}
         <div className="flex items-center gap-3">
           <button
@@ -353,11 +353,12 @@ export default function CalendarPage() {
                                 {Array.from(new Set(day.tasks.map(t => t.subject))).slice(0, 3).map((subject, i) => (
                                   <div
                                     key={i}
-                                    className="text-[10px] font-medium px-1 py-0.5 rounded truncate"
+                                    className="text-[10px] font-medium px-1 py-0.5 rounded overflow-hidden whitespace-nowrap"
                                     style={{
                                       backgroundColor: `${dotColor}15`,
                                       color: dotColor,
                                       border: `1px solid ${dotColor}`,
+                                      textOverflow: "clip",
                                     }}
                                   >
                                     {subject}
