@@ -97,9 +97,9 @@ export async function syncClassroomForUser(userId: string) {
   try {
     const accessToken = await exchangeRefreshToken(decryptSecret(connection.encryptedRefreshToken));
     const courses = await classroomListAll<{ courses?: Array<{ id: string; name?: string; section?: string; descriptionHeading?: string; courseState?: string }> }>(accessToken, "courses?courseStates=ACTIVE&pageSize=100", "courses") as Array<{ id: string; name?: string; section?: string; descriptionHeading?: string; courseState?: string }>;
-    const userLessons = await prisma.lesson.findMany({ where: { userId }, select: { subject: true } });
+    const userLessons = await prisma.lesson.findMany({ select: { subject: true } });
     const subjectNames = Array.from(new Set(userLessons.map((item) => item.subject)));
-    if (subjectNames.length === 0) throw new Error("同期対象の登録済み教科がありません。");
+    if (subjectNames.length === 0) throw new Error("時間割に登録された教科がありません。");
     const matchedCourses = courses.filter((course) => courseMatchesSubject(course, subjectNames));
     const syncedCourseIds: string[] = [];
     const syncedTaskIds: string[] = [];
