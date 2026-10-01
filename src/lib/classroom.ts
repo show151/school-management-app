@@ -2,6 +2,8 @@ import { createCipheriv, createDecipheriv, createHash, randomBytes } from "crypt
 import { prisma } from "@/lib/prisma";
 
 export const CLASSROOM_SCOPES = [
+  "openid",
+  "email",
   "https://www.googleapis.com/auth/classroom.courses.readonly",
   "https://www.googleapis.com/auth/classroom.coursework.me.readonly",
   "https://www.googleapis.com/auth/classroom.announcements.readonly",
