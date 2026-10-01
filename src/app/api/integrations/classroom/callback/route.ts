@@ -19,8 +19,16 @@ export async function GET(request: Request) {
     const tokenData = await tokenResponse.json() as { access_token?: string; refresh_token?: string; scope?: string; error?: string };
     if (!tokenResponse.ok || !tokenData.access_token || !tokenData.refresh_token) throw new Error(tokenData.error || "Google OAuthトークン取得に失敗しました。");
     const profileResponse = await fetch("https://classroom.googleapis.com/v1/userProfiles/me", { headers: { Authorization: `Bearer ${tokenData.access_token}` } });
-    const profile = await profileResponse.json() as { id?: string; emailAddress?: string };
-    if (!profileResponse.ok || !profile.id || !profile.emailAddress) throw new Error("Google Classroomプロフィールを取得できませんでした。");
+    const profileBody = await profileResponse.json().catch(() => ({})) as { id?: string; emailAddress?: string; error?: { status?: string; message?: string; details?: unknown[] } };
+    if (!profileResponse.ok || !profileBody.id || !profileBody.emailAddress) {
+      console.error("Classroom profile request failed:", JSON.stringify({
+        status: profileResponse.status,
+        errorStatus: profileBody.error?.status,
+        errorMessage: profileBody.error?.message,
+      }));
+      throw new Error("Google Classroomプロフィールを取得できませんでした。");
+    }
+    const profile = profileBody;
     await prisma.classroomConnection.upsert({ where: { userId: payload.userId }, create: { userId: payload.userId, googleUserId: profile.id, googleEmail: profile.emailAddress, encryptedRefreshToken: encryptSecret(tokenData.refresh_token), scopes: tokenData.scope || "", status: "connected" }, update: { googleUserId: profile.id, googleEmail: profile.emailAddress, encryptedRefreshToken: encryptSecret(tokenData.refresh_token), scopes: tokenData.scope || "", status: "connected", lastError: null } });
     await syncClassroomForUser(payload.userId);
     const response = NextResponse.redirect(`${redirectBase}?classroom=connected`);
