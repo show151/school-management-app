@@ -7,7 +7,7 @@ type AdminTaskSummary = {
   batchId: string;
   subject: string;
   title: string;
-  dueDate: Date;
+  dueDate: Date | null;
   note: string | null;
   assignedCount: number;
   completedCount: number;
@@ -73,8 +73,8 @@ export async function POST(request: Request) {
       note?: string;
     };
 
-    if (!subject?.trim() || !title?.trim() || !dueDate) {
-      return NextResponse.json({ error: "教科、課題名、締切日を入力してください。" }, { status: 400 });
+    if (!subject?.trim() || !title?.trim()) {
+      return NextResponse.json({ error: "教科と課題名を入力してください。" }, { status: 400 });
     }
 
     const users = await prisma.user.findMany({ select: { id: true } });
@@ -93,7 +93,7 @@ export async function POST(request: Request) {
         adminBatchId,
         subject: subject.trim(),
         title: title.trim(),
-        dueDate: new Date(dueDate),
+        dueDate: dueDate ? new Date(dueDate) : null,
         note: note?.trim() || null,
         isCompleted: false,
       })),
@@ -116,13 +116,13 @@ export async function PATCH(request: Request) {
 
   try {
     const { batchId, dueDate, note } = (await request.json()) as { batchId?: string; dueDate?: string; note?: string };
-    if (!batchId || !dueDate) {
-      return NextResponse.json({ error: "batchIdとdueDateが必要です。" }, { status: 400 });
+    if (!batchId) {
+      return NextResponse.json({ error: "batchIdが必要です。" }, { status: 400 });
     }
 
     await prisma.task.updateMany({
       where: { OR: [{ adminBatchId: batchId }, { id: batchId }] },
-      data: { dueDate: new Date(dueDate), note: note?.trim() ?? null, isCompleted: false },
+      data: { dueDate: dueDate ? new Date(dueDate) : null, note: note?.trim() ?? null, isCompleted: false },
     });
 
     return NextResponse.json({ message: "締切日を更新しました。" });

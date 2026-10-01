@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { AnnouncementBody } from "@/components/AnnouncementBody";
 import { formatSchedulePeriod } from "@/lib/test-schedule";
 
-type Task = { id: string; subject: string; title: string; dueDate: string; isCompleted: boolean; note?: string | null };
+type Task = { id: string; subject: string; title: string; dueDate: string | null; isCompleted: boolean; note?: string | null };
 type Lesson = { id: string; dayOfWeek: string; period: number; subject: string };
 type Announcement = { id: string; title: string; body: string; date: string; announcementType: string };
 type TestScheduleSummary = { id: string; title: string; startDate: string; endDate: string; entryCount: number };
@@ -275,7 +275,7 @@ export default function DashboardPage() {
                 <p className="text-sm text-[var(--muted)]">現在登録されている未完了の課題はありません。</p>
               ) : (
                 displayTasks.map((task) => {
-                  const days = getDaysUntil(task.dueDate);
+                  const days = task.dueDate ? getDaysUntil(task.dueDate) : null;
                   return (
                     <div key={task.id} className={`task-item ${task.isCompleted ? "task-complete" : ""}`}>
                       <input type="checkbox" checked={task.isCompleted}
@@ -286,10 +286,10 @@ export default function DashboardPage() {
                           <p className={`text-sm font-semibold ${task.isCompleted ? "text-[var(--muted)]" : "text-[var(--foreground)]"}`}>
                             【{task.subject}】{task.title}
                           </p>
-                          {!task.isCompleted && <UrgencyBadge daysUntil={days} />}
+                          {!task.isCompleted && days !== null && <UrgencyBadge daysUntil={days} />}
                         </div>
-                        <p className="mt-0.5 text-xs text-[var(--muted)]">締切: {new Date(task.dueDate).toLocaleDateString()}</p>
-                        {task.note && <p className="mt-0.5 text-xs text-[var(--muted)] italic">補足: {task.note}</p>}
+                        <p className="mt-0.5 text-xs text-[var(--muted)]">締切: {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : "期限なし"}</p>
+                        {task.note && <AnnouncementBody body={`補足: ${task.note}`} muted className="mt-1 text-xs italic" />}
                       </div>
                       <button onClick={() => handleToggleTask(task.id, task.isCompleted)}
                         className={`shrink-0 rounded-xl px-3 py-1.5 text-xs font-medium ${task.isCompleted ? "bg-[var(--background)] text-[var(--muted)] border" : "bg-[var(--primary)] text-white"}`}

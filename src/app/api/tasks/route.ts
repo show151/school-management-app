@@ -29,20 +29,15 @@ export async function GET(request: Request) {
   if (!userId) return NextResponse.json({ error: '認証が必要です。' }, { status: 401 });
 
   try {
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
+    const visibleFrom = new Date();
+    visibleFrom.setHours(0, 0, 0, 0);
+    visibleFrom.setDate(visibleFrom.getDate() - 14);
     
     const tasks = await prisma.task.findMany({
       where: {
         userId,
         isVisible: true,
-        // 締め切り翌日以降 かつ 完了済み の課題は自動的に非表示
-        NOT: {
-          AND: [
-            { dueDate: { lt: startOfToday } },
-            { isCompleted: true },
-          ],
-        },
+        OR: [{ dueDate: { gte: visibleFrom } }, { dueDate: null }],
       },
       orderBy: { dueDate: 'asc' },
     });

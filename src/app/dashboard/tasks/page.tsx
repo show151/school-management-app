@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { AnnouncementBody } from "@/components/AnnouncementBody";
 
-type Task = { id: string; subject: string; title: string; dueDate: string; isCompleted: boolean; note?: string | null };
+type Task = { id: string; subject: string; title: string; dueDate: string | null; isCompleted: boolean; note?: string | null };
 
 function getDaysUntil(dateStr: string) {
   const due = new Date(dateStr); due.setHours(0, 0, 0, 0);
@@ -114,7 +115,7 @@ export default function TasksPage() {
             </div>
           ) : (
             filtered.map((task) => {
-              const days = getDaysUntil(task.dueDate);
+              const days = task.dueDate ? getDaysUntil(task.dueDate) : null;
               return (
                 <div key={task.id} className={`task-item ${task.isCompleted ? "task-complete" : ""}`}>
                   <input type="checkbox" checked={task.isCompleted}
@@ -125,13 +126,13 @@ export default function TasksPage() {
                       <span className="text-xs font-bold px-2 py-0.5 rounded-lg" style={{ backgroundColor: "var(--primary-50)", color: "var(--primary)" }}>
                         {task.subject}
                       </span>
-                      {!task.isCompleted && <UrgencyBadge daysUntil={days} />}
+                      {!task.isCompleted && days !== null && <UrgencyBadge daysUntil={days} />}
                     </div>
                     <p className={`text-sm font-semibold mt-1 ${task.isCompleted ? "text-[var(--muted)] line-through" : "text-[var(--foreground)]"}`}>
                       {task.title}
                     </p>
-                    <p className="text-xs text-[var(--muted)] mt-0.5">締切: {new Date(task.dueDate).toLocaleDateString()}</p>
-                    {task.note && <p className="text-xs text-[var(--muted)] mt-0.5 italic">補足: {task.note}</p>}
+                    <p className="text-xs text-[var(--muted)] mt-0.5">締切: {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : "期限なし"}</p>
+                    {task.note && <AnnouncementBody body={`補足: ${task.note}`} muted className="mt-1 text-xs italic" />}
                   </div>
                   <button onClick={() => handleToggle(task.id, task.isCompleted)}
                     className={`shrink-0 rounded-xl px-3 py-1.5 text-xs font-medium transition-colors ${task.isCompleted ? "border" : "bg-[var(--primary)] text-white"}`}

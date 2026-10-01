@@ -70,6 +70,7 @@ export async function GET(request: Request) {
 
     for (const task of tasksDueSoon) {
       try {
+        if (!task.dueDate) continue;
         if (task.user?.email) {
           await sendTaskReminderEmail(
             task.user.email,
@@ -100,4 +101,4 @@ export async function GET(request: Request) {
       details: error instanceof Error ? error.message : String(error) 
     }, { status: 500 });
   }
-}
+}

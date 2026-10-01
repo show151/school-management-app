@@ -64,7 +64,7 @@ model Task {
   adminBatchId String?
   subject   String   // 教科名
   title     String   // 課題のタイトル
-  dueDate   DateTime // 締切日
+  dueDate   DateTime? // 締切日（期限なし可）
   note      String?  // 補足
   sourceProvider   String?
   sourceGroupId    String?

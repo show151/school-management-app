@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { AnnouncementBody } from "@/components/AnnouncementBody";
 
 type Task = {
   id: string;
   subject: string;
   title: string;
-  dueDate: string;
+  dueDate: string | null;
   isCompleted: boolean;
   note?: string | null;
 };
@@ -43,6 +44,7 @@ function getDotColor(tasks: Task[], targetDate: Date): string {
   let minDaysUntil = Infinity;
   
   tasks.forEach((task) => {
+    if (!task.dueDate) return;
     const daysUntil = getDaysUntil(task.dueDate);
     if (daysUntil < minDaysUntil) {
       minDaysUntil = daysUntil;
@@ -207,7 +209,7 @@ export default function CalendarPage() {
   };
 
   // 未完了タスクのみをフィルタリング
-  const incompleteTasks = tasks.filter((t) => !t.isCompleted);
+  const incompleteTasks = tasks.filter((t) => !t.isCompleted && t.dueDate);
 
   // 各月のカレンダーデータを生成
   const calendars = months.map(({ year, month }) => {
@@ -216,6 +218,7 @@ export default function CalendarPage() {
     // 各日付にタスクを割り当てる
     calendarDays.forEach((day) => {
       day.tasks = incompleteTasks.filter((task) => {
+        if (!task.dueDate) return false;
         const taskDate = new Date(task.dueDate);
         taskDate.setHours(0, 0, 0, 0);
         return taskDate.getTime() === day.date.getTime();
@@ -517,7 +520,7 @@ export default function CalendarPage() {
                 </p>
               ) : (
                 selectedDay.tasks.map((task) => {
-                  const days = getDaysUntil(task.dueDate);
+                  const days = task.dueDate ? getDaysUntil(task.dueDate) : null;
                   return (
                     <div key={task.id} className={`task-item ${task.isCompleted ? "task-complete" : ""}`}>
                       <input
@@ -536,16 +539,12 @@ export default function CalendarPage() {
                           >
                             【{task.subject}】{task.title}
                           </p>
-                          {!task.isCompleted && <UrgencyBadge daysUntil={days} />}
+                          {!task.isCompleted && days !== null && <UrgencyBadge daysUntil={days} />}
                         </div>
                         <p className="mt-0.5 text-xs text-[var(--muted)]">
-                          締切: {new Date(task.dueDate).toLocaleDateString()}
+                          締切: {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : "期限なし"}
                         </p>
-                        {task.note && (
-                          <p className="mt-0.5 text-xs text-[var(--muted)] italic">
-                            補足: {task.note}
-                          </p>
-                        )}
+                        {task.note && <AnnouncementBody body={`補足: ${task.note}`} muted className="mt-1 text-xs italic" />}
                       </div>
                       <button
                         onClick={() => handleToggleTask(task.id, task.isCompleted)}

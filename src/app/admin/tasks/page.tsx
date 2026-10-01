@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { sendAdminEmail } from "@/lib/send-admin-email";
 
-type Task = { batchId: string; subject: string; title: string; dueDate: string; note: string | null; assignedCount: number; completedCount: number; assignedUserIds: string[] };
+type Task = { batchId: string; subject: string; title: string; dueDate: string | null; note: string | null; assignedCount: number; completedCount: number; assignedUserIds: string[] };
 type Subject = { id: string; name: string };
 type User = { id: string; studentNumber?: number | null; name: string; email: string; createdAt: string };
 
@@ -80,8 +80,7 @@ export default function AdminTasksPage() {
     setSubjectError(""); setTitleError(""); setDueDateError("");
     if (!subject) setSubjectError("教科を選択してください。");
     if (!title) setTitleError("課題タイトルを入力してください。");
-    if (!dueDate) setDueDateError("締切日を入力してください。");
-    if (!subject || !title || !dueDate) return;
+    if (!subject || !title) return;
 
     const res = await fetch("/api/admin/tasks", {
       method: "POST",
@@ -91,15 +90,17 @@ export default function AdminTasksPage() {
     });
     if (!res.ok) { alert("追加に失敗しました。"); return; }
 
-    const emailResult = await sendAdminEmail({
-      type: "task",
-      selectedUserIds,
-      studentNumberFrom,
-      studentNumberTo,
-      payload: { taskTitle: title, dueDate, note },
-    });
-    if (!emailResult.ok) {
-      alert(`メール送信に失敗しました: ${emailResult.error}`);
+    if (dueDate) {
+      const emailResult = await sendAdminEmail({
+        type: "task",
+        selectedUserIds,
+        studentNumberFrom,
+        studentNumberTo,
+        payload: { taskTitle: title, dueDate, note },
+      });
+      if (!emailResult.ok) {
+        alert(`メール送信に失敗しました: ${emailResult.error}`);
+      }
     }
 
     setSubject(""); setTitle(""); setDueDate(""); setNote(""); setSelectedUserIds([]);
@@ -120,13 +121,13 @@ export default function AdminTasksPage() {
 
   const handleEditTask = (task: Task) => {
     setEditTarget(task);
-    setEditDueDate(task.dueDate.slice(0, 10));
+    setEditDueDate(task.dueDate ? task.dueDate.slice(0, 10) : "");
     setEditNote(task.note ?? "");
     setEditUserIds([]);
   };
 
   const handleSaveEditTask = async () => {
-    if (!editTarget || !editDueDate) return;
+    if (!editTarget) return;
     const res = await fetch("/api/admin/tasks", {
       method: "PATCH",
       credentials: "same-origin",
@@ -135,14 +136,14 @@ export default function AdminTasksPage() {
     });
     if (!res.ok) { alert("更新に失敗しました。"); return; }
 
-    if (editUserIds.length > 0) {
+    if (editUserIds.length > 0 && editDueDate) {
       const emailResult = await sendAdminEmail({
-        type: "taskDueDateUpdate",
-        selectedUserIds: editUserIds,
-        studentNumberFrom: "",
-        studentNumberTo: "",
-        payload: { taskTitle: editTarget.title, subject: editTarget.subject, dueDate: editDueDate, note: editNote },
-      });
+          type: "taskDueDateUpdate",
+          selectedUserIds: editUserIds,
+          studentNumberFrom: "",
+          studentNumberTo: "",
+          payload: { taskTitle: editTarget.title, subject: editTarget.subject, dueDate: editDueDate, note: editNote },
+        });
       if (!emailResult.ok) alert(`通知メールの送信に失敗しました: ${emailResult.error}`);
     }
 
@@ -180,6 +181,7 @@ export default function AdminTasksPage() {
     let emailFailCount = 0;
 
     for (const target of resendTargets) {
+      if (!target.dueDate) continue;
       const emailResult = await sendAdminEmail({
         type: "task",
         selectedUserIds: resendUserIds,
@@ -225,7 +227,7 @@ export default function AdminTasksPage() {
               {resendTargets.map(t => (
                 <div key={t.batchId} className="text-sm text-[var(--foreground)]">
                   <p>【{t.subject}】{t.title}</p>
-                  <p className="text-xs text-[var(--muted)]">締切: {new Date(t.dueDate).toLocaleDateString()}</p>
+                  <p className="text-xs text-[var(--muted)]">締切: {t.dueDate ? new Date(t.dueDate).toLocaleDateString() : "期限なし"}</p>
                 </div>
               ))}
             </div>
@@ -312,7 +314,7 @@ export default function AdminTasksPage() {
             <h3 className="text-base font-bold text-[var(--foreground)]">締切日を変更</h3>
             <p className="text-sm text-[var(--foreground)]">【{editTarget.subject}】{editTarget.title}</p>
             <div>
-              <label className="mb-1 block text-xs font-medium text-[var(--muted)]">新しい締切日</label>
+              <label className="mb-1 block text-xs font-medium text-[var(--muted)]">新しい締切日（空欄で期限なし）</label>
               <input type="date" value={editDueDate} onChange={(e) => setEditDueDate(e.target.value)} />
             </div>
             <div>
@@ -365,7 +367,7 @@ export default function AdminTasksPage() {
                 {titleError && <small className="text-xs text-red-600 mt-1 block">{titleError}</small>}
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-[var(--muted)]">締切日</label>
+                <label className="mb-1 block text-xs font-medium text-[var(--muted)]">締切日（任意）</label>
                 <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
                 {dueDateError && <small className="text-xs text-red-600 mt-1 block">{dueDateError}</small>}
               </div>
@@ -454,7 +456,7 @@ export default function AdminTasksPage() {
                       />
                       <div className="min-w-0">
                         <p className="text-sm font-semibold text-[var(--foreground)]">【{task.subject}】{task.title}</p>
-                        <p className="text-xs text-[var(--muted)]">締切: {new Date(task.dueDate).toLocaleDateString()} / 完了 {task.completedCount} / 配布 {task.assignedCount}</p>
+                        <p className="text-xs text-[var(--muted)]">締切: {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : "期限なし"} / 完了 {task.completedCount} / 配布 {task.assignedCount}</p>
                         {task.note && <p className="text-xs text-[var(--muted)] mt-0.5">補足: {task.note}</p>}
                       </div>
                     </div>
