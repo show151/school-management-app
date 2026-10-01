@@ -91,7 +91,7 @@ export async function GET(request: Request) {
         },
         orderBy: { dueDate: 'asc' },
       }),
-      prisma.announcement.findMany({ orderBy: [{ date: 'desc' }, { createdAt: 'desc' }], take: 3 }),
+      prisma.announcement.findMany({ where: { OR: [{ recipients: { some: { userId } } }, { recipients: { none: {} } }] }, orderBy: [{ date: 'desc' }, { createdAt: 'desc' }], take: 3 }),
       prisma.lesson.findMany({ orderBy: [{ dayOfWeek: 'asc' }, { period: 'asc' }] }),
       prisma.testSchedule.findMany({
         where: { endDate: { gte: now } },

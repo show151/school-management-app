@@ -218,6 +218,28 @@ CRON_SECRET="your_shared_cron_secret"
 
 - `npm run build` でビルド確認済み
 
+## 外部サービス連携
+
+Teams、Google Classroom、MoodleからのWebhookを次の共通エンドポイントで受信できます。
+
+`POST /api/integrations/teams/webhook`
+
+`POST /api/integrations/classroom/webhook`
+
+`POST /api/integrations/moodle/webhook`
+
+イベント本文は `id`（または `eventId`）、`type`、`title`、`body`、任意で `url`、`subject`、`dueDate` を送ります。`type` に `assignment`、`coursework`、`task` が含まれる場合は課題、それ以外は連絡として取り込みます。課題は登録済みユーザー全員へ配布され、元URLが補足欄に保存されます。イベントIDで重複取り込みを防止します。
+
+本番環境では `.env` に `INTEGRATION_TEAMS_SECRET`、`INTEGRATION_CLASSROOM_SECRET`、`INTEGRATION_MOODLE_SECRET` を設定してください。設定した場合、`x-integration-signature: sha256=<HMAC-SHA256>` が必要です。Teamsの検証リクエスト（`validationToken`）にも対応しています。
+
+各サービス側では、TeamsはMicrosoft Graphの変更通知、ClassroomはGoogle Classroom API／Pub/Sub、MoodleはWebサービスまたはWebhookプラグインからこのエンドポイントへ転送する設定が必要です。
+
+Google Classroomを本格運用する場合のOAuth、Pub/Sub、課題・名簿同期の手順は [docs/google-classroom-integration.md](docs/google-classroom-integration.md) にまとめています。Classroomは短期アクセストークンを環境変数に固定する方式ではなく、教師OAuthのリフレッシュトークンを暗号化して保存する方式へ移行します。
+
+旧設計用の受信APIは `POST /api/integrations/classroom/pubsub` に残していますが、通常のClassroom連携では使用しません。現在の基本フローは生徒OAuth＋定期同期です。同期は `POST /api/integrations/classroom/sync`、全接続ユーザーの定期同期は `/api/cron/classroom-sync` で行います。
+
+対象学生を限定する場合は、管理者用の `POST /api/admin/integrations/{provider}/sync-members` に `groupId` を渡して参加者を同期します。Teamsの`groupId`は `teamId:channelId`、ClassroomとMoodleはコースIDです。メールアドレスが本アプリのユーザーと一致した参加者だけが紐づき、Webhookに同じ`groupId`を含めれば、そのチャンネル／コースの参加者だけへ課題・連絡を配信します。Webhookの`recipients`／`members`／`audience`でも個別指定できます。グループ情報がないイベントは従来どおり全員配布として扱います。
+
 ## ライセンス
 
 必要に応じて追記してください。

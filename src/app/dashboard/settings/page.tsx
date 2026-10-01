@@ -17,6 +17,9 @@ export default function SettingsPage() {
   const [studentNumber, setStudentNumber] = useState("");
   const [studentNumberLoading, setStudentNumberLoading] = useState(false);
   const [studentNumberMessage, setStudentNumberMessage] = useState("");
+  const [classroom, setClassroom] = useState<{ connected: boolean; connection?: { googleEmail?: string; status?: string; lastSyncedAt?: string | null } | null }>({ connected: false });
+  const [classroomMessage, setClassroomMessage] = useState("");
+  const [classroomLoading, setClassroomLoading] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -35,6 +38,32 @@ export default function SettingsPage() {
     })();
     return () => { mounted = false; };
   }, []);
+
+  useEffect(() => {
+    fetch('/api/integrations/classroom/status').then((res) => res.ok ? res.json() : null).then((data) => { if (data) setClassroom(data); }).catch(() => undefined);
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('classroom') === 'connected') setClassroomMessage('Google Classroomと連携しました。');
+    if (params.get('classroom') === 'error') setClassroomMessage(params.get('message') || 'Classroom連携に失敗しました。');
+  }, []);
+
+  const syncClassroom = async () => {
+    setClassroomLoading(true); setClassroomMessage("");
+    try {
+      const res = await fetch('/api/integrations/classroom/sync', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) { setClassroomMessage(data.error || '同期に失敗しました。'); return; }
+      setClassroomMessage(`${data.courses ?? 0}コースを同期しました。`);
+      const status = await fetch('/api/integrations/classroom/status');
+      if (status.ok) setClassroom(await status.json());
+    } finally { setClassroomLoading(false); }
+  };
+
+  const disconnectClassroom = async () => {
+    if (!window.confirm('Google Classroomとの連携を解除しますか？')) return;
+    setClassroomLoading(true);
+    try { await fetch('/api/integrations/classroom/connection', { method: 'DELETE' }); setClassroom({ connected: false }); setClassroomMessage('Classroom連携を解除しました。'); }
+    finally { setClassroomLoading(false); }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,6 +147,17 @@ export default function SettingsPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
           <div className="space-y-6">
+            <div className="card w-full">
+              <h2 className="text-lg font-bold text-[var(--foreground)] mb-2">Google Classroom</h2>
+              {classroomMessage && <div className="p-3 mb-3 rounded-xl bg-blue-50 border border-blue-200 text-sm text-blue-700">{classroomMessage}</div>}
+              {classroom.connected ? (
+                <>
+                  <p className="text-sm text-[var(--muted)]">連携済み: {classroom.connection?.googleEmail}</p>
+                  <p className="text-xs text-[var(--muted)] mt-1">最終同期: {classroom.connection?.lastSyncedAt ? new Date(classroom.connection.lastSyncedAt).toLocaleString('ja-JP') : '未実行'}</p>
+                  <div className="flex gap-2 mt-4"><button type="button" onClick={syncClassroom} disabled={classroomLoading} className="btn-primary disabled:opacity-50">{classroomLoading ? '処理中...' : '今すぐ同期'}</button><button type="button" onClick={disconnectClassroom} disabled={classroomLoading} className="px-4 py-2 rounded-lg border border-red-200 text-red-600 disabled:opacity-50">連携解除</button></div>
+                </>
+              ) : <a href="/api/integrations/classroom/connect" className="inline-block btn-primary mt-3">Google Classroomと連携</a>}
+            </div>
             <div className="card w-full">
               <h2 className="text-lg font-bold text-[var(--foreground)] mb-4">プロフィール</h2>
               <form onSubmit={handleNameSave} className="space-y-4">

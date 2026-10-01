@@ -22,6 +22,9 @@ model User {
   lessons                 Lesson[]
   tasks                   Task[]
   createdAt               DateTime @default(now())
+  integrationIdentities   IntegrationIdentity[]
+  classroomConnection     ClassroomConnection?
+  announcementRecipients  AnnouncementRecipient[]
 }
 
 // 1b. 監査ログ
@@ -63,7 +66,13 @@ model Task {
   title     String   // 課題のタイトル
   dueDate   DateTime // 締切日
   note      String?  // 補足
+  sourceProvider   String?
+  sourceGroupId    String?
+  sourceExternalId String?
+  sourceUrl        String?
   isCompleted Boolean @default(false) // 状態（未完了: false, 完了: true）
+
+  @@unique([sourceProvider, sourceGroupId, sourceExternalId, userId])
 }
 
 // 4. テストスケジュール（期間）
@@ -102,7 +111,89 @@ model Announcement {
   body             String
   date             DateTime @default(now())
   createdAt        DateTime @default(now())
+  sourceProvider   String?
+  sourceGroupId    String?
+  sourceExternalId String?
+  sourceUrl        String?
   reads            AnnouncementRead[]
+  recipients       AnnouncementRecipient[]
+
+  @@unique([sourceProvider, sourceGroupId, sourceExternalId])
+}
+
+model AnnouncementRecipient {
+  id             String       @id @default(uuid())
+  userId         String
+  announcementId String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  @@unique([userId, announcementId])
+  @@index([userId])
+}
+
+model ClassroomConnection {
+  id                    String   @id @default(uuid())
+  userId                String   @unique
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  googleUserId          String
+  googleEmail           String
+  encryptedRefreshToken String
+  scopes                String
+  status                String   @default("connected")
+  lastSyncedAt          DateTime?
+  lastError             String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  courses               ClassroomCourse[]
+}
+
+model ClassroomCourse {
+  id           String              @id @default(uuid())
+  connectionId String
+  connection   ClassroomConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  courseId     String
+  name         String
+  section      String?
+  description  String?
+  courseState  String
+  isActive     Boolean             @default(true)
+  lastSyncedAt DateTime?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  @@unique([connectionId, courseId])
+}
+
+// 9. 外部サービスから受信したイベントの重複防止・監査
+model IntegrationEvent {
+  id             String   @id @default(uuid())
+  provider       String
+  externalId     String
+  eventType      String
+  payload        Json?
+  status         String   @default("received")
+  errorMessage   String?
+  receivedAt     DateTime @default(now())
+  processedAt    DateTime?
+
+  @@unique([provider, externalId])
+  @@index([provider, receivedAt])
+}
+
+// 10. 外部サービスの学生アカウントと本アプリのユーザーの対応表
+model IntegrationIdentity {
+  id             String   @id @default(uuid())
+  provider       String
+  externalGroupId String?
+  externalUserId String
+  email          String?
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([provider, externalUserId])
+  @@index([provider, email])
+  @@index([provider, externalGroupId])
 }
 
 // 7. 連絡の既読管理

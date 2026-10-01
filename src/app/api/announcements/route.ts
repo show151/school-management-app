@@ -20,7 +20,7 @@ export async function GET(request: Request) {
   if (!userId) return NextResponse.json({ error: '認証が必要です。' }, { status: 401 });
 
   const [announcements, reads] = await Promise.all([
-    prisma.announcement.findMany({ orderBy: [{ date: 'desc' }, { createdAt: 'desc' }] }),
+    prisma.announcement.findMany({ where: { OR: [{ recipients: { some: { userId } } }, { recipients: { none: {} } }] }, orderBy: [{ date: 'desc' }, { createdAt: 'desc' }] }),
     prisma.announcementRead.findMany({ where: { userId }, select: { announcementId: true } }),
   ]);
 
