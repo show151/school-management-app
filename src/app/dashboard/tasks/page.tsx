@@ -69,17 +69,26 @@ export default function TasksPage() {
             <h1 className="text-xl font-bold text-[var(--foreground)]">課題一覧</h1>
             <span className="text-sm text-[var(--muted)]">未完了 {tasks.filter(t => !t.isCompleted).length} / 全 {tasks.length}</span>
           </div>
-          <div className="flex max-w-full rounded-xl border overflow-hidden text-sm" style={{ borderColor: "var(--border)" }}>
-            {(["incomplete", "all", "completed"] as const).map((f) => (
-              <button key={f} onClick={() => setFilter(f)}
-                className="px-3 py-1.5 font-medium transition-colors"
-                style={{
-                  backgroundColor: filter === f ? "var(--primary)" : "var(--card)",
-                  color: filter === f ? "#fff" : "var(--muted)",
-                }}>
-                {f === "incomplete" ? "未完了" : f === "completed" ? "完了済み" : "すべて"}
-              </button>
-            ))}
+          <div className="flex gap-2 flex-wrap">
+            <button 
+              onClick={() => router.push("/dashboard/calendar")} 
+              className="px-3 py-1.5 rounded-xl border text-sm font-medium transition-colors"
+              style={{ borderColor: "var(--border)", color: "var(--muted)", backgroundColor: "var(--card)" }}
+            >
+              📅 カレンダー
+            </button>
+            <div className="flex rounded-xl border overflow-hidden text-sm" style={{ borderColor: "var(--border)" }}>
+              {(["incomplete", "all", "completed"] as const).map((f) => (
+                <button key={f} onClick={() => setFilter(f)}
+                  className="px-3 py-1.5 font-medium transition-colors"
+                  style={{
+                    backgroundColor: filter === f ? "var(--primary)" : "var(--card)",
+                    color: filter === f ? "#fff" : "var(--muted)",
+                  }}>
+                  {f === "incomplete" ? "未完了" : f === "completed" ? "完了済み" : "すべて"}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
