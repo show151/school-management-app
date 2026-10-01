@@ -35,6 +35,7 @@ export async function GET(request: Request) {
     const tasks = await prisma.task.findMany({
       where: {
         userId,
+        isVisible: true,
         // 締め切り翌日以降 かつ 完了済み の課題は自動的に非表示
         NOT: {
           AND: [

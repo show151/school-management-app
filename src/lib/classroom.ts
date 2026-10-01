@@ -85,12 +85,16 @@ export async function syncClassroomForUser(userId: string) {
   try {
     const accessToken = await exchangeRefreshToken(decryptSecret(connection.encryptedRefreshToken));
     const courses = await classroomListAll<{ courses?: Array<{ id: string; name?: string; section?: string; descriptionHeading?: string; courseState?: string }> }>(accessToken, "courses?courseStates=ACTIVE&pageSize=100", "courses") as Array<{ id: string; name?: string; section?: string; descriptionHeading?: string; courseState?: string }>;
+    const syncedCourseIds: string[] = [];
+    const syncedTaskIds: string[] = [];
     for (const course of courses) {
+      syncedCourseIds.push(course.id);
       const savedCourse = await prisma.classroomCourse.upsert({ where: { connectionId_courseId: { connectionId: connection.id, courseId: course.id } }, create: { connectionId: connection.id, courseId: course.id, name: course.name || course.id, section: course.section || null, description: course.descriptionHeading || null, courseState: course.courseState || "ACTIVE" }, update: { name: course.name || course.id, section: course.section || null, description: course.descriptionHeading || null, courseState: course.courseState || "ACTIVE", isActive: true } });
       const courseWork = await classroomListAll<{ courseWork?: ClassroomCourseWork[] }>(accessToken, `courses/${encodeURIComponent(course.id)}/courseWork?courseWorkStates=PUBLISHED&pageSize=100`, "courseWork") as ClassroomCourseWork[];
       for (const work of courseWork) {
+        syncedTaskIds.push(work.id);
         const dueDate = work.dueDate ? new Date(Date.UTC(work.dueDate.year || new Date().getUTCFullYear(), (work.dueDate.month || 1) - 1, work.dueDate.day || 1, work.dueTime?.hours || 23, work.dueTime?.minutes || 59)) : new Date(Date.now() + 7 * 86400000);
-        await prisma.task.upsert({ where: { sourceProvider_sourceGroupId_sourceExternalId_userId: { sourceProvider: "classroom", sourceGroupId: course.id, sourceExternalId: work.id, userId } }, create: { userId, subject: course.name || "Google Classroom", title: work.title || "Classroomの課題", dueDate, note: [work.description, work.alternateLink].filter(Boolean).join("\n"), sourceProvider: "classroom", sourceGroupId: course.id, sourceExternalId: work.id, sourceUrl: work.alternateLink, isCompleted: false }, update: { subject: course.name || "Google Classroom", title: work.title || "Classroomの課題", dueDate, note: [work.description, work.alternateLink].filter(Boolean).join("\n"), sourceUrl: work.alternateLink } });
+        await prisma.task.upsert({ where: { sourceProvider_sourceGroupId_sourceExternalId_userId: { sourceProvider: "classroom", sourceGroupId: course.id, sourceExternalId: work.id, userId } }, create: { userId, subject: course.name || "Google Classroom", title: work.title || "Classroomの課題", dueDate, note: [work.description, work.alternateLink].filter(Boolean).join("\n"), sourceProvider: "classroom", sourceGroupId: course.id, sourceExternalId: work.id, sourceUrl: work.alternateLink, isCompleted: false, isVisible: true }, update: { subject: course.name || "Google Classroom", title: work.title || "Classroomの課題", dueDate, note: [work.description, work.alternateLink].filter(Boolean).join("\n"), sourceUrl: work.alternateLink, isVisible: true } });
       }
       const announcements = await classroomListAll<{ announcements?: ClassroomAnnouncement[] }>(accessToken, `courses/${encodeURIComponent(course.id)}/announcements?pageSize=100`, "announcements") as ClassroomAnnouncement[];
       for (const item of announcements) {
@@ -99,6 +103,8 @@ export async function syncClassroomForUser(userId: string) {
       }
       await prisma.classroomCourse.update({ where: { id: savedCourse.id }, data: { lastSyncedAt: new Date() } });
     }
+    await prisma.classroomCourse.updateMany({ where: { connectionId: connection.id, ...(syncedCourseIds.length ? { courseId: { notIn: syncedCourseIds } } : {}) }, data: { isActive: false } });
+    await prisma.task.updateMany({ where: { userId, sourceProvider: "classroom", ...(syncedTaskIds.length ? { sourceExternalId: { notIn: syncedTaskIds } } : {}) }, data: { isVisible: false } });
     await prisma.classroomConnection.update({ where: { id: connection.id }, data: { status: "connected", lastSyncedAt: new Date(), lastError: null } });
     return { courses: courses.length };
   } catch (error) {

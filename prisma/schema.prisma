@@ -71,6 +71,7 @@ model Task {
   sourceExternalId String?
   sourceUrl        String?
   isCompleted Boolean @default(false) // 状態（未完了: false, 完了: true）
+  isVisible   Boolean @default(true)
 
   @@unique([sourceProvider, sourceGroupId, sourceExternalId, userId])
 }
