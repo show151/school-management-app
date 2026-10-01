@@ -79,15 +79,31 @@ export function oauthStateHash(value: string) {
   return createHash("sha256").update(value).digest("hex");
 }
 
+function normalizeSubjectName(value: string) {
+  return value.toLocaleLowerCase("ja-JP").replace(/[\s　・･、。，．()（）\[\]【】「」『』]/g, "");
+}
+
+function courseMatchesSubject(course: { name?: string; section?: string; descriptionHeading?: string }, subjectNames: string[]) {
+  const courseText = normalizeSubjectName([course.name, course.section, course.descriptionHeading].filter(Boolean).join(" "));
+  return subjectNames.some((subject) => {
+    const normalized = normalizeSubjectName(subject);
+    return normalized.length >= 2 && (courseText.includes(normalized) || normalized.includes(courseText));
+  });
+}
+
 export async function syncClassroomForUser(userId: string) {
   const connection = await prisma.classroomConnection.findUnique({ where: { userId } });
   if (!connection) throw new Error("Google Classroomが連携されていません。");
   try {
     const accessToken = await exchangeRefreshToken(decryptSecret(connection.encryptedRefreshToken));
     const courses = await classroomListAll<{ courses?: Array<{ id: string; name?: string; section?: string; descriptionHeading?: string; courseState?: string }> }>(accessToken, "courses?courseStates=ACTIVE&pageSize=100", "courses") as Array<{ id: string; name?: string; section?: string; descriptionHeading?: string; courseState?: string }>;
+    const userLessons = await prisma.lesson.findMany({ where: { userId }, select: { subject: true } });
+    const subjectNames = Array.from(new Set(userLessons.map((item) => item.subject)));
+    if (subjectNames.length === 0) throw new Error("同期対象の登録済み教科がありません。");
+    const matchedCourses = courses.filter((course) => courseMatchesSubject(course, subjectNames));
     const syncedCourseIds: string[] = [];
     const syncedTaskIds: string[] = [];
-    for (const course of courses) {
+    for (const course of matchedCourses) {
       syncedCourseIds.push(course.id);
       const savedCourse = await prisma.classroomCourse.upsert({ where: { connectionId_courseId: { connectionId: connection.id, courseId: course.id } }, create: { connectionId: connection.id, courseId: course.id, name: course.name || course.id, section: course.section || null, description: course.descriptionHeading || null, courseState: course.courseState || "ACTIVE" }, update: { name: course.name || course.id, section: course.section || null, description: course.descriptionHeading || null, courseState: course.courseState || "ACTIVE", isActive: true } });
       const courseWork = await classroomListAll<{ courseWork?: ClassroomCourseWork[] }>(accessToken, `courses/${encodeURIComponent(course.id)}/courseWork?courseWorkStates=PUBLISHED&pageSize=100`, "courseWork") as ClassroomCourseWork[];
@@ -106,7 +122,7 @@ export async function syncClassroomForUser(userId: string) {
     await prisma.classroomCourse.updateMany({ where: { connectionId: connection.id, ...(syncedCourseIds.length ? { courseId: { notIn: syncedCourseIds } } : {}) }, data: { isActive: false } });
     await prisma.task.updateMany({ where: { userId, sourceProvider: "classroom", ...(syncedTaskIds.length ? { sourceExternalId: { notIn: syncedTaskIds } } : {}) }, data: { isVisible: false } });
     await prisma.classroomConnection.update({ where: { id: connection.id }, data: { status: "connected", lastSyncedAt: new Date(), lastError: null } });
-    return { courses: courses.length };
+    return { courses: matchedCourses.length, candidates: courses.length };
   } catch (error) {
     const message = error instanceof Error ? error.message : "同期に失敗しました。";
     await prisma.classroomConnection.update({ where: { id: connection.id }, data: { status: message.includes("invalid_grant") ? "expired" : "error", lastError: message } });
