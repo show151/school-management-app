@@ -28,8 +28,9 @@ export async function GET(request: Request) {
       }));
       throw new Error("Google Classroomプロフィールを取得できませんでした。");
     }
-    const profile = profileBody;
-    await prisma.classroomConnection.upsert({ where: { userId: payload.userId }, create: { userId: payload.userId, googleUserId: profile.id, googleEmail: profile.emailAddress, encryptedRefreshToken: encryptSecret(tokenData.refresh_token), scopes: tokenData.scope || "", status: "connected" }, update: { googleUserId: profile.id, googleEmail: profile.emailAddress, encryptedRefreshToken: encryptSecret(tokenData.refresh_token), scopes: tokenData.scope || "", status: "connected", lastError: null } });
+    const googleUserId = profileBody.id;
+    const googleEmail = profileBody.emailAddress;
+    await prisma.classroomConnection.upsert({ where: { userId: payload.userId }, create: { userId: payload.userId, googleUserId, googleEmail, encryptedRefreshToken: encryptSecret(tokenData.refresh_token), scopes: tokenData.scope || "", status: "connected" }, update: { googleUserId, googleEmail, encryptedRefreshToken: encryptSecret(tokenData.refresh_token), scopes: tokenData.scope || "", status: "connected", lastError: null } });
     await syncClassroomForUser(payload.userId);
     const response = NextResponse.redirect(`${redirectBase}?classroom=connected`);
     response.cookies.set("classroom_oauth_state", "", { maxAge: 0, path: "/" });
