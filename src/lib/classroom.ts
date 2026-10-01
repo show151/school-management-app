@@ -19,7 +19,7 @@ export function getClassroomRedirectUri(request: Request) {
   return process.env.GOOGLE_REDIRECT_URI;
 }
 
-type ClassroomCourseWork = { id: string; title?: string; description?: string; alternateLink?: string; dueDate?: { year?: number; month?: number; day?: number }; dueTime?: { hours?: number; minutes?: number }; state?: string; workType?: string };
+type ClassroomCourseWork = { id: string; title?: string; description?: string; alternateLink?: string; dueDate?: { year?: number; month?: number; day?: number }; dueTime?: { hours?: number; minutes?: number; seconds?: number }; state?: string; workType?: string };
 type ClassroomAnnouncement = { id: string; text?: string; creatorUserId?: string; alternateLink?: string; creationTime?: string };
 
 function encryptionKey() {
@@ -109,7 +109,19 @@ export async function syncClassroomForUser(userId: string) {
       const courseWork = await classroomListAll<{ courseWork?: ClassroomCourseWork[] }>(accessToken, `courses/${encodeURIComponent(course.id)}/courseWork?courseWorkStates=PUBLISHED&pageSize=100`, "courseWork") as ClassroomCourseWork[];
       for (const work of courseWork) {
         syncedTaskIds.push(work.id);
-        const dueDate = work.dueDate ? new Date(Date.UTC(work.dueDate.year || new Date().getUTCFullYear(), (work.dueDate.month || 1) - 1, work.dueDate.day || 1, work.dueTime?.hours || 23, work.dueTime?.minutes || 59)) : null;
+        const dueDate = work.dueDate
+          ? (() => {
+              const year = work.dueDate?.year || new Date().getUTCFullYear();
+              const month = (work.dueDate?.month || 1) - 1;
+              const day = work.dueDate?.day || 1;
+              if (work.dueTime) {
+                // ClassroomのdueTimeはUTC。画面表示時に日本時間へ変換される。
+                return new Date(Date.UTC(year, month, day, work.dueTime.hours || 0, work.dueTime.minutes || 0, work.dueTime.seconds || 0));
+              }
+              // 時刻なしは、日本時間の当日23:59を締切として扱う。
+              return new Date(Date.UTC(year, month, day, 14, 59, 59, 999));
+            })()
+          : null;
         await prisma.task.upsert({ where: { sourceProvider_sourceGroupId_sourceExternalId_userId: { sourceProvider: "classroom", sourceGroupId: course.id, sourceExternalId: work.id, userId } }, create: { userId, subject: course.name || "Google Classroom", title: work.title || "Classroomの課題", dueDate, note: [work.description, work.alternateLink].filter(Boolean).join("\n"), sourceProvider: "classroom", sourceGroupId: course.id, sourceExternalId: work.id, sourceUrl: work.alternateLink, isCompleted: false, isVisible: true }, update: { subject: course.name || "Google Classroom", title: work.title || "Classroomの課題", dueDate, note: [work.description, work.alternateLink].filter(Boolean).join("\n"), sourceUrl: work.alternateLink, isVisible: true } });
       }
       const announcements = await classroomListAll<{ announcements?: ClassroomAnnouncement[] }>(accessToken, `courses/${encodeURIComponent(course.id)}/announcements?pageSize=100`, "announcements") as ClassroomAnnouncement[];
