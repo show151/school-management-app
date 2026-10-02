@@ -98,11 +98,11 @@ export default function TasksPage() {
           <div className="card">
             <div className="flex justify-between text-sm mb-2">
               <span className="font-medium text-[var(--foreground)]">完了率</span>
-              <span className="font-bold" style={{ color: progressPct === 100 ? "#15803d" : "var(--primary)" }}>{progressPct}%</span>
+              <span className="font-bold" style={{ color: progressPct === 100 ? "var(--success)" : "var(--primary)" }}>{progressPct}%</span>
             </div>
             <div className="w-full h-3 rounded-full overflow-hidden" style={{ backgroundColor: "var(--border)" }}>
               <div className="h-3 rounded-full transition-all duration-500"
-                style={{ width: `${progressPct}%`, backgroundColor: progressPct === 100 ? "#15803d" : "var(--primary)" }} />
+                style={{ width: `${progressPct}%`, backgroundColor: progressPct === 100 ? "var(--success)" : "var(--primary)" }} />
             </div>
             <p className="text-xs text-[var(--muted)] mt-2">{completedCount} / {tasks.length} 件完了</p>
           </div>

@@ -21,6 +21,30 @@
   /* お知らせ（スカイブルー） */
   --accent: #0284c7; /* sky-600 */
   --accent-bg: #e0f2fe; /* sky-100 */
+
+  /* 状態表示（ライト／ダークで十分なコントラストを確保） */
+  --danger: #dc2626;
+  --danger-bg: #fee2e2;
+  --success: #15803d;
+  --success-bg: #dcfce7;
+  --warning: #a16207;
+  --warning-bg: #fef9c3;
+  --info: #2563eb;
+  --info-bg: #dbeafe;
+  --purple: #7e22ce;
+  --purple-bg: #f3e8ff;
+  --info-button: #2563eb;
+  --calendar-danger: #dc2626;
+  --calendar-warning: #ea580c;
+  --calendar-caution: #ca8a04;
+  --subject-1-bg: #dbeafe; --subject-1-text: #1d4ed8; --subject-1-border: #93c5fd;
+  --subject-2-bg: #dcfce7; --subject-2-text: #15803d; --subject-2-border: #86efac;
+  --subject-3-bg: #fef9c3; --subject-3-text: #a16207; --subject-3-border: #fde047;
+  --subject-4-bg: #fce7f3; --subject-4-text: #be185d; --subject-4-border: #f9a8d4;
+  --subject-5-bg: #ede9fe; --subject-5-text: #6d28d9; --subject-5-border: #c4b5fd;
+  --subject-6-bg: #ffedd5; --subject-6-text: #c2410c; --subject-6-border: #fdba74;
+  --subject-7-bg: #cffafe; --subject-7-text: #0e7490; --subject-7-border: #67e8f9;
+  --subject-8-bg: #f1f5f9; --subject-8-text: #475569; --subject-8-border: #cbd5e1;
 }
 
 @theme inline {
@@ -35,12 +59,63 @@
     --background: #0f172a;
     --card: #1e293b;
     --foreground: #e2e8f0;
-    --muted: #94a3b8;
-    --border: #334155;
+    --muted: #cbd5e1;
+    --border: #475569;
+    --primary: #818cf8;
+    --primary-700: #a5b4fc;
+    --admin: #2dd4bf;
+    --admin-600: #2dd4bf;
+    --accent: #38bdf8;
     --primary-50: #1e1b4b;
     --admin-50: #042f2e;
     --accent-bg: #0c4a6e;
+    --danger: #f87171;
+    --danger-bg: #450a0a;
+    --success: #4ade80;
+    --success-bg: #052e16;
+    --warning: #facc15;
+    --warning-bg: #422006;
+    --info: #60a5fa;
+    --info-bg: #172554;
+    --purple: #c084fc;
+    --purple-bg: #3b0764;
+    --info-button: #3b82f6;
+    --calendar-danger: #f87171;
+    --calendar-warning: #fb923c;
+    --calendar-caution: #facc15;
+    --subject-1-bg: #172554; --subject-1-text: #93c5fd; --subject-1-border: #2563eb;
+    --subject-2-bg: #052e16; --subject-2-text: #86efac; --subject-2-border: #16a34a;
+    --subject-3-bg: #422006; --subject-3-text: #fde68a; --subject-3-border: #ca8a04;
+    --subject-4-bg: #500724; --subject-4-text: #f9a8d4; --subject-4-border: #db2777;
+    --subject-5-bg: #2e1065; --subject-5-text: #c4b5fd; --subject-5-border: #7c3aed;
+    --subject-6-bg: #431407; --subject-6-text: #fdba74; --subject-6-border: #ea580c;
+    --subject-7-bg: #083344; --subject-7-text: #67e8f9; --subject-7-border: #0891b2;
+    --subject-8-bg: #1e293b; --subject-8-text: #cbd5e1; --subject-8-border: #64748b;
   }
+}
+
+/* Tailwind の固定ステータス色もテーマ変数に揃える */
+@media (prefers-color-scheme: dark) {
+  .bg-red-50, .bg-red-100 { background-color: var(--danger-bg) !important; }
+  .text-red-500, .text-red-600, .text-red-700 { color: var(--danger) !important; }
+  .border-red-200, .border-red-500 { border-color: var(--danger) !important; }
+
+  .bg-green-50, .bg-green-100 { background-color: var(--success-bg) !important; }
+  .text-green-600, .text-green-700 { color: var(--success) !important; }
+  .border-green-200, .border-green-500 { border-color: var(--success) !important; }
+
+  .bg-yellow-100 { background-color: var(--warning-bg) !important; }
+  .text-yellow-700 { color: var(--warning) !important; }
+  .bg-orange-100 { background-color: #431407 !important; }
+  .text-orange-700 { color: #fdba74 !important; }
+
+  .bg-blue-50, .bg-blue-100 { background-color: var(--info-bg) !important; }
+  .text-blue-500, .text-blue-600, .text-blue-700 { color: var(--info) !important; }
+  .border-blue-200, .border-blue-500 { border-color: var(--info) !important; }
+  .bg-blue-500, .bg-blue-600 { background-color: var(--info-button) !important; }
+
+  .bg-purple-100 { background-color: var(--purple-bg) !important; }
+  .text-purple-700 { color: var(--purple) !important; }
 }
 
 body {
@@ -51,6 +126,11 @@ body {
   line-height: 1.7;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  body { color-scheme: dark; }
 }
 
 h1, h2, h3, h4 {

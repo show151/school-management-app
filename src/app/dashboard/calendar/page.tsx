@@ -52,13 +52,13 @@ function getDotColor(tasks: Task[], targetDate: Date): string {
   });
 
   // 期限切れまたは今日: 赤
-  if (minDaysUntil <= 0) return "#dc2626"; // red-600
+  if (minDaysUntil <= 0) return "var(--calendar-danger)";
   // 明日: オレンジ
-  if (minDaysUntil === 1) return "#ea580c"; // orange-600
+  if (minDaysUntil === 1) return "var(--calendar-warning)";
   // 2-3日以内: 黄色
-  if (minDaysUntil <= 3) return "#ca8a04"; // yellow-600
+  if (minDaysUntil <= 3) return "var(--calendar-caution)";
   // それ以上: 青
-  return "#4f46e5"; // indigo-600 (var(--primary))
+  return "var(--primary)";
 }
 
 function getDaysInMonth(year: number, month: number): CalendarDay[] {
@@ -331,7 +331,7 @@ export default function CalendarPage() {
                             key={day}
                             className="text-center text-xs sm:text-sm font-bold py-2 px-1"
                             style={{
-                              color: index === 0 ? "#dc2626" : index === 6 ? "#2563eb" : "var(--foreground)",
+                              color: index === 0 ? "var(--calendar-danger)" : index === 6 ? "var(--info)" : "var(--foreground)",
                               width: "14.28%",
                             }}
                           >
@@ -387,9 +387,9 @@ export default function CalendarPage() {
                                           color: day.isToday
                                             ? "white"
                                             : actualIndex % 7 === 0
-                                            ? "#dc2626"
+                                            ? "var(--calendar-danger)"
                                             : actualIndex % 7 === 6
-                                            ? "#2563eb"
+                                            ? "var(--info)"
                                             : "var(--foreground)",
                                         }}
                                       >
@@ -418,7 +418,7 @@ export default function CalendarPage() {
                                             key={i}
                                             className="text-[7px] sm:text-[10px] font-medium px-1 py-0.5 rounded overflow-hidden whitespace-nowrap"
                                             style={{
-                                              backgroundColor: `${dotColor}15`,
+                                              backgroundColor: `color-mix(in srgb, ${dotColor} 12%, transparent)`,
                                               color: dotColor,
                                               border: `1px solid ${dotColor}`,
                                               textOverflow: "clip",
@@ -461,19 +461,19 @@ export default function CalendarPage() {
             <p>📌 完了したタスクは自動的に非表示になります</p>
             <div className="flex flex-wrap items-center gap-4 mt-3 pt-3 border-t" style={{ borderColor: "var(--border)" }}>
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded" style={{ backgroundColor: "#dc2626", opacity: 0.2, border: "1px solid #dc2626" }}></div>
+                <div className="w-3 h-3 rounded" style={{ backgroundColor: "var(--calendar-danger)", opacity: 0.2, border: "1px solid var(--calendar-danger)" }}></div>
                 <span className="text-xs">期限切れ・今日</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded" style={{ backgroundColor: "#ea580c", opacity: 0.2, border: "1px solid #ea580c" }}></div>
+                <div className="w-3 h-3 rounded" style={{ backgroundColor: "var(--calendar-warning)", opacity: 0.2, border: "1px solid var(--calendar-warning)" }}></div>
                 <span className="text-xs">明日</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded" style={{ backgroundColor: "#ca8a04", opacity: 0.2, border: "1px solid #ca8a04" }}></div>
+                <div className="w-3 h-3 rounded" style={{ backgroundColor: "var(--calendar-caution)", opacity: 0.2, border: "1px solid var(--calendar-caution)" }}></div>
                 <span className="text-xs">2〜3日以内</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded" style={{ backgroundColor: "#4f46e5", opacity: 0.2, border: "1px solid #4f46e5" }}></div>
+                <div className="w-3 h-3 rounded" style={{ backgroundColor: "var(--primary)", opacity: 0.2, border: "1px solid var(--primary)" }}></div>
                 <span className="text-xs">4日以上先</span>
               </div>
             </div>

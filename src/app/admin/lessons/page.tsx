@@ -10,14 +10,14 @@ const DAYS = ["月", "火", "水", "木", "金"];
 const PERIODS = [1, 2, 3, 4];
 
 const COLORS = [
-  { bg: "#dbeafe", text: "#1d4ed8", border: "#93c5fd" },
-  { bg: "#dcfce7", text: "#15803d", border: "#86efac" },
-  { bg: "#fef9c3", text: "#a16207", border: "#fde047" },
-  { bg: "#fce7f3", text: "#be185d", border: "#f9a8d4" },
-  { bg: "#ede9fe", text: "#6d28d9", border: "#c4b5fd" },
-  { bg: "#ffedd5", text: "#c2410c", border: "#fdba74" },
-  { bg: "#cffafe", text: "#0e7490", border: "#67e8f9" },
-  { bg: "#f1f5f9", text: "#475569", border: "#cbd5e1" },
+  { bg: "var(--subject-1-bg)", text: "var(--subject-1-text)", border: "var(--subject-1-border)" },
+  { bg: "var(--subject-2-bg)", text: "var(--subject-2-text)", border: "var(--subject-2-border)" },
+  { bg: "var(--subject-3-bg)", text: "var(--subject-3-text)", border: "var(--subject-3-border)" },
+  { bg: "var(--subject-4-bg)", text: "var(--subject-4-text)", border: "var(--subject-4-border)" },
+  { bg: "var(--subject-5-bg)", text: "var(--subject-5-text)", border: "var(--subject-5-border)" },
+  { bg: "var(--subject-6-bg)", text: "var(--subject-6-text)", border: "var(--subject-6-border)" },
+  { bg: "var(--subject-7-bg)", text: "var(--subject-7-text)", border: "var(--subject-7-border)" },
+  { bg: "var(--subject-8-bg)", text: "var(--subject-8-text)", border: "var(--subject-8-border)" },
 ];
 
 export default function AdminLessonsPage() {
