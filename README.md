@@ -236,6 +236,8 @@ Teams、Google Classroom、MoodleからのWebhookを次の共通エンドポイ�
 
 Google Classroomを本格運用する場合のOAuth、Pub/Sub、課題・名簿同期の手順は [docs/google-classroom-integration.md](docs/google-classroom-integration.md) にまとめています。Classroomは短期アクセストークンを環境変数に固定する方式ではなく、教師OAuthのリフレッシュトークンを暗号化して保存する方式へ移行します。
 
+Microsoft Teamsの学生OAuth、Microsoft Graphの教育クラス・課題同期、Azure側のアプリ登録手順は [docs/azure-teams-integration.md](docs/azure-teams-integration.md) にまとめています。初期実装では、時間割に登録した教科名に一致するクラスの課題だけを取り込みます。
+
 旧設計用の受信APIは `POST /api/integrations/classroom/pubsub` に残していますが、通常のClassroom連携では使用しません。現在の基本フローは生徒OAuth＋定期同期です。同期は `POST /api/integrations/classroom/sync`、全接続ユーザーの定期同期は `/api/cron/classroom-sync` で行います。
 
 対象学生を限定する場合は、管理者用の `POST /api/admin/integrations/{provider}/sync-members` に `groupId` を渡して参加者を同期します。Teamsの`groupId`は `teamId:channelId`、ClassroomとMoodleはコースIDです。メールアドレスが本アプリのユーザーと一致した参加者だけが紐づき、Webhookに同じ`groupId`を含めれば、そのチャンネル／コースの参加者だけへ課題・連絡を配信します。Webhookの`recipients`／`members`／`audience`でも個別指定できます。グループ情報がないイベントは従来どおり全員配布として扱います。
