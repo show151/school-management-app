@@ -19,19 +19,9 @@ export function getClassroomRedirectUri(request: Request) {
   return process.env.GOOGLE_REDIRECT_URI;
 }
 
-type ClassroomCourseWork = {
-  id: string;
-  title?: string;
-  description?: string;
-  alternateLink?: string;
-  dueDate?: { year?: number; month?: number; day?: number };
-  dueTime?: { hours?: number; minutes?: number; seconds?: number };
-  state?: string;
-  workType?: string;
-  assigneeMode?: "ALL_STUDENTS" | "INDIVIDUAL_STUDENTS";
-  individualStudentsOptions?: { studentIds?: string[] };
-};
+type ClassroomCourseWork = { id: string; title?: string; description?: string; alternateLink?: string; dueDate?: { year?: number; month?: number; day?: number }; dueTime?: { hours?: number; minutes?: number; seconds?: number }; state?: string; workType?: string };
 type ClassroomAnnouncement = { id: string; text?: string; creatorUserId?: string; alternateLink?: string; creationTime?: string };
+type ClassroomStudentSubmission = { courseWorkId?: string };
 
 function encryptionKey() {
   const value = process.env.APP_ENCRYPTION_KEY;
@@ -102,21 +92,11 @@ function courseMatchesSubject(course: { name?: string; section?: string; descrip
   });
 }
 
-function isCourseWorkAssignedToStudent(work: ClassroomCourseWork, classroomUserId: string) {
-  if (work.assigneeMode !== "INDIVIDUAL_STUDENTS") return true;
-  return work.individualStudentsOptions?.studentIds?.includes(classroomUserId) === true;
-}
-
 export async function syncClassroomForUser(userId: string) {
   const connection = await prisma.classroomConnection.findUnique({ where: { userId } });
   if (!connection) throw new Error("Google Classroomが連携されていません。");
   try {
     const accessToken = await exchangeRefreshToken(decryptSecret(connection.encryptedRefreshToken));
-    const classroomProfile = await classroomGet<{ id?: string }>(accessToken, "userProfiles/me");
-    if (!classroomProfile.id) throw new Error("Google ClassroomプロフィールIDを取得できませんでした。");
-    if (classroomProfile.id !== connection.googleUserId) {
-      await prisma.classroomConnection.update({ where: { id: connection.id }, data: { googleUserId: classroomProfile.id } });
-    }
     const courses = await classroomListAll<{ courses?: Array<{ id: string; name?: string; section?: string; descriptionHeading?: string; courseState?: string }> }>(accessToken, "courses?courseStates=ACTIVE&pageSize=100", "courses") as Array<{ id: string; name?: string; section?: string; descriptionHeading?: string; courseState?: string }>;
     const userLessons = await prisma.lesson.findMany({ select: { subject: true } });
     const subjectNames = Array.from(new Set(userLessons.map((item) => item.subject)));
@@ -128,8 +108,10 @@ export async function syncClassroomForUser(userId: string) {
       syncedCourseIds.push(course.id);
       const savedCourse = await prisma.classroomCourse.upsert({ where: { connectionId_courseId: { connectionId: connection.id, courseId: course.id } }, create: { connectionId: connection.id, courseId: course.id, name: course.name || course.id, section: course.section || null, description: course.descriptionHeading || null, courseState: course.courseState || "ACTIVE" }, update: { name: course.name || course.id, section: course.section || null, description: course.descriptionHeading || null, courseState: course.courseState || "ACTIVE", isActive: true } });
       const courseWork = await classroomListAll<{ courseWork?: ClassroomCourseWork[] }>(accessToken, `courses/${encodeURIComponent(course.id)}/courseWork?courseWorkStates=PUBLISHED&pageSize=100`, "courseWork") as ClassroomCourseWork[];
+      const studentSubmissions = await classroomListAll<{ studentSubmissions?: ClassroomStudentSubmission[] }>(accessToken, `courses/${encodeURIComponent(course.id)}/courseWork/-/studentSubmissions?userId=me&pageSize=100`, "studentSubmissions") as ClassroomStudentSubmission[];
+      const assignedCourseWorkIds = new Set(studentSubmissions.map((submission) => submission.courseWorkId).filter((id): id is string => Boolean(id)));
       for (const work of courseWork) {
-        if (!isCourseWorkAssignedToStudent(work, classroomProfile.id)) continue;
+        if (!assignedCourseWorkIds.has(work.id)) continue;
         syncedTaskIds.push(work.id);
         const dueDate = work.dueDate
           ? (() => {
