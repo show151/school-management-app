@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 import { getRequiredEnv } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
-import { encryptSecret, getClassroomRedirectUri, syncClassroomForUser } from "@/lib/classroom";
+import { classroomGet, encryptSecret, getClassroomRedirectUri, syncClassroomForUser } from "@/lib/classroom";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -24,7 +24,9 @@ export async function GET(request: Request) {
       console.error("Google userinfo request failed:", JSON.stringify({ status: userInfoResponse.status, error: userInfo.error, errorDescription: userInfo.error_description }));
       throw new Error("Googleユーザー情報を取得できませんでした。");
     }
-    const googleUserId = userInfo.sub;
+    const classroomProfile = await classroomGet<{ id?: string }>(tokenData.access_token, "userProfiles/me");
+    if (!classroomProfile.id) throw new Error("Google ClassroomプロフィールIDを取得できませんでした。");
+    const googleUserId = classroomProfile.id;
     const googleEmail = userInfo.email;
     await prisma.classroomConnection.upsert({ where: { userId: payload.userId }, create: { userId: payload.userId, googleUserId, googleEmail, encryptedRefreshToken: encryptSecret(tokenData.refresh_token), scopes: tokenData.scope || "", status: "connected" }, update: { googleUserId, googleEmail, encryptedRefreshToken: encryptSecret(tokenData.refresh_token), scopes: tokenData.scope || "", status: "connected", lastError: null } });
     await syncClassroomForUser(payload.userId);

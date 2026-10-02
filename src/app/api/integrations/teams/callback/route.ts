@@ -11,7 +11,10 @@ export async function GET(request: Request) {
   const state = url.searchParams.get("state");
   const code = url.searchParams.get("code");
   const storedState = request.headers.get("cookie")?.split("; ").find((row) => row.startsWith("teams_oauth_state="))?.split("=")[1];
-  const clearCookie = (response: NextResponse) => response.cookies.set("teams_oauth_state", "", { maxAge: 0, path: "/" });
+  const clearCookie = (response: NextResponse) => {
+    response.cookies.set("teams_oauth_state", "", { maxAge: 0, path: "/" });
+    return response;
+  };
 
   if (!state || !code || !storedState || state !== storedState) return clearCookie(NextResponse.redirect(`${redirectBase}?teams=state_error`));
   try {
