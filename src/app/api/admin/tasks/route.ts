@@ -138,16 +138,24 @@ export async function DELETE(request: Request) {
   }
 
   try {
-    const { batchId } = (await request.json()) as { batchId?: string };
-    if (!batchId) return NextResponse.json({ error: "IDが必要です。" }, { status: 400 });
+    const body = (await request.json()) as { batchId?: string; batchIds?: string[] };
+    const ids = Array.isArray(body.batchIds) && body.batchIds.length > 0
+      ? body.batchIds
+      : body.batchId
+        ? [body.batchId]
+        : [];
+
+    if (ids.length === 0) {
+      return NextResponse.json({ error: "IDが必要です。" }, { status: 400 });
+    }
 
     await prisma.task.deleteMany({
       where: {
-        OR: [{ adminBatchId: batchId }, { id: batchId }],
+        OR: ids.flatMap((id) => [{ adminBatchId: id }, { id }]),
       },
     });
 
-    return NextResponse.json({ message: "削除しました。" });
+    return NextResponse.json({ message: "削除しました。", deletedCount: ids.length });
   } catch {
     return NextResponse.json({ error: "課題の削除に失敗しました。" }, { status: 500 });
   }

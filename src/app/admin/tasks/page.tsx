@@ -115,8 +115,27 @@ export default function AdminTasksPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ batchId }),
     });
-    if (res.ok) fetchTasks();
-    else alert("削除に失敗しました。");
+    if (res.ok) {
+      setSelectedTaskBatchIds((prev) => prev.filter((id) => id !== batchId));
+      fetchTasks();
+    } else alert("削除に失敗しました。");
+  };
+
+  const handleBulkDeleteTasks = async () => {
+    if (selectedTaskBatchIds.length === 0) return;
+    if (!confirm(`選択した ${selectedTaskBatchIds.length} 件の課題を削除してもよろしいですか？`)) return;
+    const res = await fetch("/api/admin/tasks", {
+      method: "DELETE",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ batchIds: selectedTaskBatchIds }),
+    });
+    if (!res.ok) {
+      alert("一括削除に失敗しました。");
+      return;
+    }
+    setSelectedTaskBatchIds([]);
+    fetchTasks();
   };
 
   const handleEditTask = (task: Task) => {
@@ -411,19 +430,29 @@ export default function AdminTasksPage() {
           </div>
 
           <div className="card">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
               <h2 className="text-base font-bold text-[var(--foreground)]">現在の課題一覧</h2>
               {selectedTaskBatchIds.length > 0 && (
-                <button 
-                  onClick={() => {
-                    const targets = tasks.filter(t => selectedTaskBatchIds.includes(t.batchId));
-                    setResendTargets(targets);
-                    setResendUserIds([]);
-                  }}
-                  className="text-xs bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded font-medium transition-colors"
-                >
-                  一括再送信 ({selectedTaskBatchIds.length})
-                </button>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const targets = tasks.filter((t) => selectedTaskBatchIds.includes(t.batchId));
+                      setResendTargets(targets);
+                      setResendUserIds([]);
+                    }}
+                    className="text-xs bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded font-medium transition-colors"
+                  >
+                    一括再送信 ({selectedTaskBatchIds.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleBulkDeleteTasks}
+                    className="text-xs bg-red-500 hover:bg-red-600 text-white py-1 px-3 rounded font-medium transition-colors"
+                  >
+                    一括削除 ({selectedTaskBatchIds.length})
+                  </button>
+                </div>
               )}
             </div>
             {tasks.length === 0 ? (
