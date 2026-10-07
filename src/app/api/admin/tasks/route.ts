@@ -12,9 +12,28 @@ type AdminTaskSummary = {
   assignedCount: number;
   completedCount: number;
   assignedUserIds: string[];
+  sourceProvider?: string | null;
 };
 
 type TaskRow = Awaited<ReturnType<typeof prisma.task.findMany>>[number];
+
+function classroomGroupKey(task: Pick<TaskRow, "sourceProvider" | "sourceGroupId" | "sourceExternalId">) {
+  if (task.sourceProvider === "classroom" && task.sourceGroupId && task.sourceExternalId) {
+    return `classroom:${task.sourceGroupId}:${task.sourceExternalId}`;
+  }
+  return null;
+}
+
+function taskGroupWhere(groupId: string) {
+  if (groupId.startsWith("classroom:")) {
+    const [, sourceGroupId, ...externalIdParts] = groupId.split(":");
+    const sourceExternalId = externalIdParts.join(":");
+    if (sourceGroupId && sourceExternalId) {
+      return { sourceProvider: "classroom", sourceGroupId, sourceExternalId };
+    }
+  }
+  return { OR: [{ adminBatchId: groupId }, { id: groupId }] };
+}
 
 export async function GET(request: Request) {
   const adminSession = await getAdminSessionFromRequest(request);
@@ -30,7 +49,7 @@ export async function GET(request: Request) {
   const summaries = Array.from(
     tasks
       .reduce((map: Map<string, AdminTaskSummary>, task: TaskRow) => {
-        const batchId = task.adminBatchId || task.id;
+        const batchId = classroomGroupKey(task) || task.adminBatchId || task.id;
         const current =
           map.get(batchId) ||
           ({
@@ -42,6 +61,7 @@ export async function GET(request: Request) {
             assignedCount: 0,
             completedCount: 0,
             assignedUserIds: [],
+            sourceProvider: task.sourceProvider,
           } satisfies AdminTaskSummary);
 
         current.assignedCount += 1;
@@ -121,7 +141,7 @@ export async function PATCH(request: Request) {
     }
 
     await prisma.task.updateMany({
-      where: { OR: [{ adminBatchId: batchId }, { id: batchId }] },
+      where: taskGroupWhere(batchId),
       data: { dueDate: dueDate ? new Date(dueDate) : null, note: note?.trim() ?? null, isCompleted: false },
     });
 
@@ -151,7 +171,7 @@ export async function DELETE(request: Request) {
 
     await prisma.task.deleteMany({
       where: {
-        OR: ids.flatMap((id) => [{ adminBatchId: id }, { id }]),
+        OR: ids.map((id) => taskGroupWhere(id)),
       },
     });
 

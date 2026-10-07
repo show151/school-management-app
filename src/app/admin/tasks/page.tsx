@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { sendAdminEmail } from "@/lib/send-admin-email";
 
-type Task = { batchId: string; subject: string; title: string; dueDate: string | null; note: string | null; assignedCount: number; completedCount: number; assignedUserIds: string[] };
+type Task = { batchId: string; subject: string; title: string; dueDate: string | null; note: string | null; assignedCount: number; completedCount: number; assignedUserIds: string[]; sourceProvider?: string | null };
 type Subject = { id: string; name: string };
 type User = { id: string; studentNumber?: number | null; name: string; email: string; createdAt: string };
 
@@ -484,7 +484,12 @@ export default function AdminTasksPage() {
                         }}
                       />
                       <div className="min-w-0">
-                        <p className="text-sm font-semibold text-[var(--foreground)]">【{task.subject}】{task.title}</p>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-sm font-semibold text-[var(--foreground)]">【{task.subject}】{task.title}</p>
+                          {task.sourceProvider === "classroom" && (
+                            <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-700">Classroom</span>
+                          )}
+                        </div>
                         <p className="text-xs text-[var(--muted)]">締切: {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : "期限なし"} / 完了 {task.completedCount} / 配布 {task.assignedCount}</p>
                         {task.note && <p className="text-xs text-[var(--muted)] mt-0.5">補足: {task.note}</p>}
                       </div>

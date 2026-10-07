@@ -2,6 +2,17 @@ import { NextResponse } from "next/server";
 import { getAdminSessionFromRequest } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
 
+function taskGroupWhere(groupId: string) {
+  if (groupId.startsWith("classroom:")) {
+    const [, sourceGroupId, ...externalIdParts] = groupId.split(":");
+    const sourceExternalId = externalIdParts.join(":");
+    if (sourceGroupId && sourceExternalId) {
+      return { sourceProvider: "classroom", sourceGroupId, sourceExternalId };
+    }
+  }
+  return { OR: [{ adminBatchId: groupId }, { id: groupId }] };
+}
+
 export async function POST(request: Request) {
   const adminSession = await getAdminSessionFromRequest(request);
   if (!adminSession) {
@@ -22,7 +33,7 @@ export async function POST(request: Request) {
     for (const currentBatchId of targetBatchIds) {
       // 元となる課題を取得
       const templateTask = await prisma.task.findFirst({
-        where: { OR: [{ adminBatchId: currentBatchId }, { id: currentBatchId }] },
+        where: taskGroupWhere(currentBatchId),
       });
 
       if (!templateTask) {
@@ -34,7 +45,13 @@ export async function POST(request: Request) {
       const existingTasks = await prisma.task.findMany({
         where: {
           userId: { in: userIds },
-          adminBatchId: templateTask.adminBatchId ?? templateTask.id,
+          ...(templateTask.sourceProvider === "classroom"
+            ? {
+                sourceProvider: templateTask.sourceProvider,
+                sourceGroupId: templateTask.sourceGroupId,
+                sourceExternalId: templateTask.sourceExternalId,
+              }
+            : { adminBatchId: templateTask.adminBatchId ?? templateTask.id }),
         },
         select: { userId: true },
       });
@@ -52,6 +69,10 @@ export async function POST(request: Request) {
             title: templateTask.title,
             dueDate: templateTask.dueDate,
             note: templateTask.note,
+            sourceProvider: templateTask.sourceProvider,
+            sourceGroupId: templateTask.sourceGroupId,
+            sourceExternalId: templateTask.sourceExternalId,
+            sourceUrl: templateTask.sourceUrl,
             isCompleted: false,
           })),
         });

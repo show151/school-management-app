@@ -72,6 +72,8 @@ OAuth callbackではstateをJWTで検証し、現在のログインユーザー�
 
 課題は`userId + courseId + courseWorkId`で重複を防ぎます。お知らせは`AnnouncementRecipient`で生徒ごとの表示対象を管理し、別の生徒へ漏れないようにします。
 
+管理者の課題一覧では、同じClassroom課題を生徒ごとのレコードとして複数表示せず、`courseId + courseWorkId`単位で1件に集約します。完了数・配布数は生徒ごとのレコードから集計し、締切変更・削除・再送信は集約された課題全体に適用されます。
+
 ## 定期同期
 
 `vercel.json`で30分ごとに`/api/cron/classroom-sync`を呼び出します。Vercel CronのBearerトークンまたは`x-cron-secret`を`CRON_SECRET`と照合します。秘密情報をURLクエリには置きません。
