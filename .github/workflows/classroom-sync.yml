@@ -1,0 +1,17 @@
+name: Google Classroom Sync
+
+on:
+  schedule:
+    # 毎日 6:30 JST (UTC 21:30 前日) に実行
+    - cron: '30 21 * * *'
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call Classroom sync API
+        run: |
+          curl -f -X GET \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.SITE_URL }}/api/cron/classroom-sync"

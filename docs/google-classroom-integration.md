@@ -5,7 +5,7 @@
 ```text
 生徒ログイン → Google OAuth → refresh tokenを暗号化保存
              → 本人のコース・課題・お知らせを取得
-             → 30分ごとの定期同期
+             → 毎日1回の定期同期
 ```
 
 ## Google Cloud設定
@@ -76,7 +76,7 @@ OAuth callbackではstateをJWTで検証し、現在のログインユーザー�
 
 ## 定期同期
 
-`vercel.json`で30分ごとに`/api/cron/classroom-sync`を呼び出します。Vercel CronのBearerトークンまたは`x-cron-secret`を`CRON_SECRET`と照合します。秘密情報をURLクエリには置きません。
+`.github/workflows/classroom-sync.yml`で毎日6:30（日本時間）に`/api/cron/classroom-sync`を呼び出します。`x-cron-secret`ヘッダーの値を`CRON_SECRET`と照合します。秘密情報をURLクエリには置きません。GitHub Actionsの手動実行（`workflow_dispatch`）も利用できます。
 
 ## 連携解除
 
