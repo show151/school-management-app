@@ -143,6 +143,7 @@ export async function syncClassroomForUser(userId: string) {
     }
     await prisma.classroomCourse.updateMany({ where: { connectionId: connection.id, ...(syncedCourseIds.length ? { courseId: { notIn: syncedCourseIds } } : {}) }, data: { isActive: false } });
     await prisma.task.updateMany({ where: { userId, sourceProvider: "classroom", ...(syncedTaskIds.length ? { sourceExternalId: { notIn: syncedTaskIds } } : {}) }, data: { isVisible: false } });
+    await prisma.task.updateMany({ where: { userId, sourceProvider: "classroom", isCompleted: true }, data: { isVisible: false } });
     await prisma.classroomConnection.update({ where: { id: connection.id }, data: { status: "connected", lastSyncedAt: new Date(), lastError: null } });
     return { courses: matchedCourses.length, candidates: courses.length };
   } catch (error) {

@@ -73,7 +73,7 @@ OAuth callbackではstateをJWTで検証し、現在のログインユーザー�
 
 課題は`userId + courseId + courseWorkId`で重複を防ぎます。お知らせは`AnnouncementRecipient`で生徒ごとの表示対象を管理し、別の生徒へ漏れないようにします。
 
-Classroom上で提出済み（`TURNED_IN`、`RETURNED`、`STUDENT_EDITED_AFTER_TURN_IN`）の課題は、同期時にアプリの一覧でも非表示にします。Classroom上で提出を取り消した課題（`RECLAIMED_BY_STUDENT`）は再表示します。
+Classroom上で提出済み（`TURNED_IN`、`RETURNED`、`STUDENT_EDITED_AFTER_TURN_IN`）の課題、およびアプリ内で完了にした課題は、同期時に一覧でも非表示にします。Classroom上で提出を取り消した課題（`RECLAIMED_BY_STUDENT`）や、アプリ内で未完了に戻した課題は再表示します。
 
 管理者の課題一覧では、同じClassroom課題を生徒ごとのレコードとして複数表示せず、`courseId + courseWorkId`単位で1件に集約します。完了数・配布数は生徒ごとのレコードから集計し、締切変更・削除・再送信は集約された課題全体に適用されます。
 
