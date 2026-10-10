@@ -21,7 +21,11 @@ export function getClassroomRedirectUri(request: Request) {
 
 type ClassroomCourseWork = { id: string; title?: string; description?: string; alternateLink?: string; dueDate?: { year?: number; month?: number; day?: number }; dueTime?: { hours?: number; minutes?: number; seconds?: number }; state?: string; workType?: string };
 type ClassroomAnnouncement = { id: string; text?: string; creatorUserId?: string; alternateLink?: string; creationTime?: string };
-type ClassroomStudentSubmission = { courseWorkId?: string };
+type ClassroomStudentSubmission = { courseWorkId?: string; state?: string };
+
+function isClassroomSubmissionComplete(state?: string) {
+  return state === "TURNED_IN" || state === "RETURNED" || state === "STUDENT_EDITED_AFTER_TURN_IN";
+}
 
 function encryptionKey() {
   const value = process.env.APP_ENCRYPTION_KEY;
@@ -109,9 +113,11 @@ export async function syncClassroomForUser(userId: string) {
       const savedCourse = await prisma.classroomCourse.upsert({ where: { connectionId_courseId: { connectionId: connection.id, courseId: course.id } }, create: { connectionId: connection.id, courseId: course.id, name: course.name || course.id, section: course.section || null, description: course.descriptionHeading || null, courseState: course.courseState || "ACTIVE" }, update: { name: course.name || course.id, section: course.section || null, description: course.descriptionHeading || null, courseState: course.courseState || "ACTIVE", isActive: true } });
       const courseWork = await classroomListAll<{ courseWork?: ClassroomCourseWork[] }>(accessToken, `courses/${encodeURIComponent(course.id)}/courseWork?courseWorkStates=PUBLISHED&pageSize=100`, "courseWork") as ClassroomCourseWork[];
       const studentSubmissions = await classroomListAll<{ studentSubmissions?: ClassroomStudentSubmission[] }>(accessToken, `courses/${encodeURIComponent(course.id)}/courseWork/-/studentSubmissions?userId=me&pageSize=100`, "studentSubmissions") as ClassroomStudentSubmission[];
-      const assignedCourseWorkIds = new Set(studentSubmissions.map((submission) => submission.courseWorkId).filter((id): id is string => Boolean(id)));
+      const submissionsByCourseWorkId = new Map(studentSubmissions.map((submission) => [submission.courseWorkId, submission]));
       for (const work of courseWork) {
-        if (!assignedCourseWorkIds.has(work.id)) continue;
+        const submission = submissionsByCourseWorkId.get(work.id);
+        if (!submission) continue;
+        const isVisible = !isClassroomSubmissionComplete(submission.state);
         syncedTaskIds.push(work.id);
         const dueDate = work.dueDate
           ? (() => {
@@ -126,7 +132,7 @@ export async function syncClassroomForUser(userId: string) {
               return new Date(Date.UTC(year, month, day, 14, 59, 59, 999));
             })()
           : null;
-        await prisma.task.upsert({ where: { sourceProvider_sourceGroupId_sourceExternalId_userId: { sourceProvider: "classroom", sourceGroupId: course.id, sourceExternalId: work.id, userId } }, create: { userId, subject: course.name || "Google Classroom", title: work.title || "Classroomの課題", dueDate, note: [work.description, work.alternateLink].filter(Boolean).join("\n"), sourceProvider: "classroom", sourceGroupId: course.id, sourceExternalId: work.id, sourceUrl: work.alternateLink, isCompleted: false, isVisible: true }, update: { subject: course.name || "Google Classroom", title: work.title || "Classroomの課題", dueDate, note: [work.description, work.alternateLink].filter(Boolean).join("\n"), sourceUrl: work.alternateLink, isVisible: true } });
+        await prisma.task.upsert({ where: { sourceProvider_sourceGroupId_sourceExternalId_userId: { sourceProvider: "classroom", sourceGroupId: course.id, sourceExternalId: work.id, userId } }, create: { userId, subject: course.name || "Google Classroom", title: work.title || "Classroomの課題", dueDate, note: [work.description, work.alternateLink].filter(Boolean).join("\n"), sourceProvider: "classroom", sourceGroupId: course.id, sourceExternalId: work.id, sourceUrl: work.alternateLink, isCompleted: false, isVisible }, update: { subject: course.name || "Google Classroom", title: work.title || "Classroomの課題", dueDate, note: [work.description, work.alternateLink].filter(Boolean).join("\n"), sourceUrl: work.alternateLink, isVisible } });
       }
       const announcements = await classroomListAll<{ announcements?: ClassroomAnnouncement[] }>(accessToken, `courses/${encodeURIComponent(course.id)}/announcements?pageSize=100`, "announcements") as ClassroomAnnouncement[];
       for (const item of announcements) {
